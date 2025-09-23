@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
   const [loading, setLoading] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
 
   useEffect(() => {
@@ -70,8 +71,8 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#0a1929]">
       <Toaster position="top-right" />
-      <Sidebar userRole={userRole} />
-      <main className="lg:ml-64">
+      <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
+      <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Header com logo mobile */}
         <header className="lg:hidden bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 p-4">
           <img 

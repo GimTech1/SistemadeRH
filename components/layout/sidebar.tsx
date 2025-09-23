@@ -21,6 +21,8 @@ import {
   Bell,
   ChevronDown,
   UserCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -29,13 +31,17 @@ import type { Database } from '@/lib/supabase/database.types'
 
 interface SidebarProps {
   userRole?: 'admin' | 'manager' | 'employee'
+  onCollapseChange?: (isCollapsed: boolean) => void
 }
 
-export function Sidebar({ userRole = 'employee' }: SidebarProps) {
+export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isProfileHovered, setIsProfileHovered] = useState(false)
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
@@ -122,6 +128,36 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
   }, [pathname])
 
   useEffect(() => {
+    if (isCollapsed) {
+      setIsProfileOpen(false)
+    }
+  }, [isCollapsed])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout)
+      }
+    }
+  }, [hoverTimeout])
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isProfileOpen) {
+        const target = event.target as Element
+        if (!target.closest('[data-profile-dropdown]')) {
+          setIsProfileOpen(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isProfileOpen])
+
+  useEffect(() => {
     const loadProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -180,21 +216,45 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-dark-900/95 backdrop-blur-md border-r border-dark-800 z-40",
-          "transform transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-0 h-full bg-dark-900/95 backdrop-blur-md border-r border-dark-800 z-40",
+          "transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          isCollapsed ? "w-16" : "w-64"
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-dark-800">
-            <img 
-              src="/logo-full-horizontal-branco.png" 
-              alt="Logo da Empresa" 
-              className="h-24 w-auto object-contain mx-auto"
-              style={{ maxWidth: '95%' }}
-            />
+          {/* Header with Logo and Toggle */}
+          <div className="p-6 border-b border-dark-800 flex items-center justify-between">
+            {!isCollapsed && (
+              <img 
+                src="/logo-full-horizontal-branco.png" 
+                alt="Logo da Empresa" 
+                className="h-24 w-auto object-contain mx-auto"
+                style={{ maxWidth: '95%' }}
+              />
+            )}
+            {isCollapsed && (
+              <img 
+                src="/logo-brasão-branco.png" 
+                alt="Logo da Empresa" 
+                className="h-12 w-12 object-contain mx-auto"
+              />
+            )}
+            <button
+              onClick={() => {
+                const newCollapsed = !isCollapsed
+                setIsCollapsed(newCollapsed)
+                onCollapseChange?.(newCollapsed)
+              }}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-dark-800/50 hover:bg-dark-800 transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
           </div>
 
           {/* Navigation */}
@@ -211,11 +271,15 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
                         "hover:bg-dark-800/50",
-                        isActive && "bg-primary-600/20 text-primary-400 border-l-4 border-primary-500"
+                        isActive && "bg-primary-600/20 text-primary-400 border-l-4 border-primary-500",
+                        isCollapsed && "justify-center px-2"
                       )}
+                      title={isCollapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium">{item.title}</span>
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!isCollapsed && (
+                        <span className="font-medium truncate">{item.title}</span>
+                      )}
                     </Link>
                   </li>
                 )
@@ -225,28 +289,106 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
 
           {/* User Profile Section */}
           <div className="border-t border-dark-800 p-4">
-            <div className="relative">
+            <div className="relative" data-profile-dropdown>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-dark-800/50 transition-colors"
+                onMouseEnter={() => {
+                  if (isCollapsed) {
+                    if (hoverTimeout) {
+                      clearTimeout(hoverTimeout)
+                      setHoverTimeout(null)
+                    }
+                    setIsProfileHovered(true)
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (isCollapsed) {
+                    const timeout = setTimeout(() => {
+                      setIsProfileHovered(false)
+                    }, 200)
+                    setHoverTimeout(timeout)
+                  }
+                }}
+                className={cn(
+                  "flex items-center gap-3 w-full p-3 rounded-lg hover:bg-dark-800/50 transition-colors",
+                  isCollapsed && "justify-center px-2"
+                )}
+                title={isCollapsed ? userName : undefined}
               >
-                <div className="h-10 w-10 rounded-full bg-primary-600/20 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-primary-600/20 flex items-center justify-center flex-shrink-0">
                   <UserCircle className="h-6 w-6 text-primary-400" />
                 </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-200 truncate" title={userName}>{userName}</p>
-                  <p className="text-xs text-gray-500 truncate" title={userPosition || userRole}>
-                    {userPosition || userRole}
-                  </p>
-                </div>
-                <ChevronDown className={cn(
-                  "h-4 w-4 transition-transform",
-                  isProfileOpen && "rotate-180"
-                )} />
+                {!isCollapsed && (
+                  <>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium text-gray-200 truncate" title={userName}>{userName}</p>
+                      <p className="text-xs text-gray-500 truncate" title={userPosition || userRole}>
+                        {userPosition || userRole}
+                      </p>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      isProfileOpen && "rotate-180"
+                    )} />
+                  </>
+                )}
               </button>
 
-              {isProfileOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
+              {isProfileOpen && !isCollapsed && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden z-[9999]">
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
+                  >
+                    <UserCircle className="h-4 w-4" />
+                    <span className="text-sm">Meu Perfil</span>
+                  </Link>
+                  <Link
+                    href="/notifications"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span className="text-sm">Notificações</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 w-full hover:bg-dark-700 transition-colors text-red-400"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="text-sm">Sair</span>
+                  </button>
+                </div>
+              )}
+
+              {isCollapsed && (isProfileOpen || isProfileHovered) && (
+                <div 
+                  className="absolute left-full ml-2 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden shadow-lg z-[9999] animate-in slide-in-from-left-2 duration-200"
+                  style={{ 
+                    top: 'auto',
+                    bottom: '100%',
+                    marginBottom: '8px',
+                    minWidth: '200px',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}
+                  onMouseEnter={() => {
+                    if (hoverTimeout) {
+                      clearTimeout(hoverTimeout)
+                      setHoverTimeout(null)
+                    }
+                    setIsProfileHovered(true)
+                  }}
+                  onMouseLeave={() => {
+                    const timeout = setTimeout(() => {
+                      setIsProfileHovered(false)
+                    }, 200)
+                    setHoverTimeout(timeout)
+                  }}
+                >
+                  <div className="p-3 border-b border-dark-700">
+                    <p className="text-sm font-medium text-gray-200">{userName}</p>
+                    <p className="text-xs text-gray-500">{userPosition || userRole}</p>
+                  </div>
                   <Link
                     href="/profile"
                     className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
