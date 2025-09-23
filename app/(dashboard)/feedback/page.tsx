@@ -91,7 +91,6 @@ export default function FeedbackPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar feedbacks:', error)
     } finally {
       setLoading(false)
     }

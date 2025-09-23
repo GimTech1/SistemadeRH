@@ -145,7 +145,6 @@ export default function GoalsPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar metas:', error)
     } finally {
       setLoading(false)
     }

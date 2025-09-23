@@ -120,7 +120,6 @@ export default function EmployeesPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar colaboradores:', error)
     } finally {
       setLoading(false)
     }

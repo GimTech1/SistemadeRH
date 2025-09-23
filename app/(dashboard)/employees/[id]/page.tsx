@@ -251,7 +251,6 @@ export default function EmployeeProfilePage() {
         notes: 'Colaborador exemplar, sempre pontual e dedicado. Potencial para liderança.',
       })
     } catch (error) {
-      console.error('Erro ao carregar dados do colaborador:', error)
     } finally {
       setLoading(false)
     }

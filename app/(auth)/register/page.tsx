@@ -73,7 +73,6 @@ export default function RegisterPage() {
           .insert([newProfile])
 
         if (profileError) {
-          console.error('Erro ao criar perfil:', profileError)
         }
 
         toast.success('Conta criada com sucesso! Verifique seu email.')

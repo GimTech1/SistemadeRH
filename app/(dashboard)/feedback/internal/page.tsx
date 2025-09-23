@@ -122,7 +122,6 @@ export default function InternalFeedbackPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar colegas:', error)
     } finally {
       setLoading(false)
     }

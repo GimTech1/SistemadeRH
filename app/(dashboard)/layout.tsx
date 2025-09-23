@@ -39,7 +39,6 @@ export default function DashboardLayout({
           setUserRole(profile.role as 'admin' | 'manager' | 'employee')
         }
       } catch (error) {
-        console.error('Erro ao verificar autenticação:', error)
         router.push('/login')
       } finally {
         setLoading(false)

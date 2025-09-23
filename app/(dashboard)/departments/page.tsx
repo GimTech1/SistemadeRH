@@ -157,7 +157,6 @@ export default function DepartmentsPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar departamentos:', error)
     } finally {
       setLoading(false)
     }

@@ -78,7 +78,6 @@ export default function DashboardPage() {
         performanceTrend: 12.5,
       })
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
     }
