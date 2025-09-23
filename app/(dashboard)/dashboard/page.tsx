@@ -50,13 +50,21 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      setUserProfile(profile)
+      if (profileError) {
+        // Tentar usar dados do user_metadata como fallback
+        const metaName = user.user_metadata?.full_name || user.user_metadata?.name
+        if (metaName) {
+          setUserProfile({ full_name: metaName })
+        }
+      } else {
+        setUserProfile(profile)
+      }
 
       // Simular dados
       setData({
@@ -134,7 +142,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Bem-vindo de volta, {userProfile?.full_name || 'Usuário'}
+          Bem-vindo, {userProfile?.full_name || userProfile?.email || 'Usuário'}
         </p>
       </div>
 
