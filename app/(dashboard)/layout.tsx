@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Toaster } from 'react-hot-toast'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 
 export default function DashboardLayout({
   children,
@@ -14,7 +16,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabase: SupabaseClient<Database> = createClient()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,7 +33,7 @@ export default function DashboardLayout({
           .from('profiles')
           .select('role')
           .eq('id', user.id)
-          .single()
+          .single<{ role: Database['public']['Tables']['profiles']['Row']['role'] }>()
 
         if (profile) {
           setUserRole(profile.role as 'admin' | 'manager' | 'employee')
