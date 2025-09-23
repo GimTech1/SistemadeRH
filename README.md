@@ -2,7 +2,7 @@
 
 Sistema completo de RH para avaliação de desempenho baseado na metodologia CHA (Conhecimentos, Habilidades e Atitudes), desenvolvido com Next.js, React e Supabase.
 
-## 🚀 Características Principais
+## Características Principais
 
 - **Avaliação CHA Completa**: Sistema de avaliação baseado em Conhecimentos, Habilidades e Atitudes
 - **Múltiplos Níveis de Acesso**: Admin, Manager e Employee com permissões específicas
@@ -33,7 +33,7 @@ Sistema completo de RH para avaliação de desempenho baseado na metodologia CHA
 - Receber e visualizar feedbacks
 - Acessar histórico de desempenho
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Estilização**: Tailwind CSS, Framer Motion
@@ -42,7 +42,7 @@ Sistema completo de RH para avaliação de desempenho baseado na metodologia CHA
 - **Formulários**: React Hook Form + Zod
 - **Gráficos**: Recharts
 
-## 📦 Instalação
+## Instalação
 
 ### Pré-requisitos
 
@@ -89,7 +89,7 @@ npm run dev
 
 Acesse http://localhost:3000
 
-## 🔐 Configuração Inicial
+## Configuração Inicial
 
 ### Criando o Primeiro Usuário Admin
 
@@ -103,14 +103,14 @@ Acesse http://localhost:3000
 - **Manager**: Gerencia equipes e avaliações
 - **Employee**: Acesso às próprias informações
 
-## 📱 Responsividade
+## Responsividade
 
 O sistema é totalmente responsivo e otimizado para:
 - Desktop (1920x1080 e superiores)
 - Tablet (768px - 1024px)
 - Mobile (320px - 768px)
 
-## 🎨 Personalização
+## Personalização
 
 ### Cores do Tema
 
@@ -119,7 +119,7 @@ As cores podem ser personalizadas em `tailwind.config.ts`:
 - Dark: Tons de cinza escuro
 - Accent: Cores de destaque
 
-## 📊 Metodologia CHA
+## Metodologia CHA
 
 ### Conhecimentos
 - Conhecimento Técnico
@@ -136,7 +136,7 @@ As cores podem ser personalizadas em `tailwind.config.ts`:
 - Trabalho em Equipe
 - Comprometimento
 
-## 🚀 Deploy
+## Deploy
 
 ### Vercel (Recomendado)
 
@@ -153,15 +153,15 @@ O projeto pode ser deployado em qualquer plataforma que suporte Next.js:
 - Render
 - AWS Amplify
 
-## 📝 Licença
+## Licença
 
 Este projeto está sob licença MIT.
 
-## 🤝 Suporte
+## Suporte
 
 Para suporte, envie um email para suporte@rhperformance.com
 
-## 🔄 Atualizações Futuras
+## Atualizações Futuras
 
 - [ ] Integração com sistemas de folha de pagamento
 - [ ] App mobile nativo
@@ -173,4 +173,4 @@ Para suporte, envie um email para suporte@rhperformance.com
 
 ---
 
-Desenvolvido com ❤️ para otimizar a gestão de pessoas
+Desenvolvido para otimizar a gestão de pessoas
