@@ -195,7 +195,6 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
               className="h-24 w-auto object-contain mx-auto"
               style={{ maxWidth: '95%' }}
             />
-            <p className="text-xs text-gray-500 mt-4 text-center">Sistema de Gestão de RH</p>
           </div>
 
           {/* Navigation */}

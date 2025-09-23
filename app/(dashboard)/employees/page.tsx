@@ -16,6 +16,9 @@ import {
   Mail,
   ChevronRight,
 } from 'lucide-react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface Employee {
   id: string
@@ -37,6 +40,13 @@ export default function EmployeesPage() {
   const [sortBy, setSortBy] = useState('name')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const [isNewOpen, setIsNewOpen] = useState(false)
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    email: '',
+    position: '',
+    department: '',
+  })
 
   useEffect(() => {
     loadEmployees()
@@ -161,10 +171,104 @@ export default function EmployeesPage() {
             Gerencie e visualize o desempenho de todos os colaboradores
           </p>
         </div>
-        <button className="btn-primary">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Colaborador
-        </button>
+        <Dialog.Root open={isNewOpen} onOpenChange={setIsNewOpen}>
+          <Dialog.Trigger asChild>
+            <button className="btn-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Colaborador
+            </button>
+          </Dialog.Trigger>
+
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+            <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="w-full max-w-lg card">
+                <div className="p-6 border-b border-neutral-800">
+                  <Dialog.Title className="text-lg font-semibold text-neutral-200">Adicionar colaborador</Dialog.Title>
+                  <Dialog.Description className="text-sm text-neutral-400 mt-1">
+                    Preencha as informações básicas do novo colaborador.
+                  </Dialog.Description>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emp-name">Nome completo</Label>
+                    <Input
+                      id="emp-name"
+                      placeholder="João Silva"
+                      value={newEmployee.name}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emp-email">Email</Label>
+                    <Input
+                      id="emp-email"
+                      type="email"
+                      placeholder="joao@empresa.com"
+                      value={newEmployee.email}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emp-position">Cargo</Label>
+                      <Input
+                        id="emp-position"
+                        placeholder="Analista"
+                        value={newEmployee.position}
+                        onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emp-dept">Departamento</Label>
+                      <Input
+                        id="emp-dept"
+                        placeholder="Vendas, Marketing, TI..."
+                        value={newEmployee.department}
+                        onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 border-t border-neutral-800 flex items-center justify-end gap-2">
+                  <Dialog.Close asChild>
+                    <button className="btn-ghost">Cancelar</button>
+                  </Dialog.Close>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      if (!newEmployee.name || !newEmployee.email || !newEmployee.position || !newEmployee.department) return
+                      const id = String(Date.now())
+                      setEmployees(prev => [
+                        ...prev,
+                        {
+                          id,
+                          name: newEmployee.name,
+                          email: newEmployee.email,
+                          position: newEmployee.position,
+                          department: newEmployee.department,
+                          score: 0,
+                          trend: 'stable',
+                          evaluations: 0,
+                          feedbacks: 0,
+                          avatar: newEmployee.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')
+                            .toUpperCase(),
+                        },
+                      ])
+                      setNewEmployee({ name: '', email: '', position: '', department: '' })
+                      setIsNewOpen(false)
+                    }}
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
       </div>
 
       {/* Stats */}
