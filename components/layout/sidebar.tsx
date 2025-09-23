@@ -24,6 +24,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 
 interface SidebarProps {
   userRole?: 'admin' | 'manager' | 'employee'
@@ -34,7 +36,9 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const supabase = createClient()
+  const supabase: SupabaseClient<Database> = createClient()
+  const [userName, setUserName] = useState<string>('Usuário')
+  const [userPosition, setUserPosition] = useState<string>('')
 
   const menuItems = [
     {
@@ -117,6 +121,44 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
     setIsOpen(false)
   }, [pathname])
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Fallback imediato a partir do Auth metadata
+        const metaName = (user.user_metadata as any)?.full_name as string | undefined
+        const metaPosition = (user.user_metadata as any)?.position as string | undefined
+        if (metaName) setUserName(metaName)
+        else if (user.email) setUserName(user.email)
+        if (metaPosition) setUserPosition(metaPosition)
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, position')
+          .eq('id', user.id)
+          .single<{ full_name: string; position: string | null }>()
+
+        if (profile) {
+          setUserName(profile.full_name || 'Usuário')
+          setUserPosition(profile.position || '')
+        }
+      } catch (error) {
+        // silencioso
+      }
+    }
+
+    loadProfile()
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      loadProfile()
+    })
+    return () => {
+      listener.subscription.unsubscribe()
+    }
+  }, [supabase])
+
   return (
     <>
       {/* Mobile Menu Button */}
@@ -193,8 +235,10 @@ export function Sidebar({ userRole = 'employee' }: SidebarProps) {
                   <UserCircle className="h-6 w-6 text-primary-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-200">Usuário</p>
-                  <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+                  <p className="text-sm font-medium text-gray-200 truncate" title={userName}>{userName}</p>
+                  <p className="text-xs text-gray-500 truncate" title={userPosition || userRole}>
+                    {userPosition || userRole}
+                  </p>
                 </div>
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
