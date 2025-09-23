@@ -11,7 +11,7 @@ Sistema completo de RH para avaliação de desempenho baseado na metodologia CHA
 - **Design Responsivo**: Interface otimizada para desktop e mobile
 - **Tema Dark Azul**: Interface moderna e elegante com tema escuro
 
-## 📋 Funcionalidades
+## Funcionalidades
 
 ### Para Administradores
 - Gerenciar todos os colaboradores e departamentos

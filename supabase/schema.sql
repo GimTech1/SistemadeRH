@@ -168,6 +168,56 @@ ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.performance_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+-- Employees (colaboradores sem conta no Auth)
+CREATE TABLE IF NOT EXISTS public.employees (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  full_name TEXT NOT NULL,
+  email TEXT,
+  position TEXT,
+  department TEXT,
+  -- pessoais
+  cpf TEXT,
+  rg TEXT,
+  birth_date DATE,
+  gender TEXT,
+  marital_status TEXT,
+  nationality TEXT,
+  contacts JSONB,
+  address JSONB,
+  -- profissionais
+  employee_code TEXT,
+  admission_date DATE,
+  contract_type TEXT,
+  work_schedule TEXT,
+  salary NUMERIC(12,2),
+  -- documentos/benefícios
+  documents JSONB,
+  benefits JSONB,
+  -- família/dependentes
+  dependents JSONB,
+  -- formação
+  education JSONB,
+  -- bancário
+  bank JSONB,
+  -- observações
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+
+-- Policies for employees (qualquer usuário autenticado pode ler/criar/atualizar)
+CREATE POLICY "Employees are viewable by authenticated users" ON public.employees
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Employees insert by authenticated users" ON public.employees
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Employees update by authenticated users" ON public.employees
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
+CREATE INDEX IF NOT EXISTS idx_employees_name ON public.employees(full_name);
+
 -- Policies for profiles
 CREATE POLICY "Profiles are viewable by authenticated users" ON public.profiles
   FOR SELECT USING (auth.role() = 'authenticated');

@@ -40,6 +40,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import * as Dialog from '@radix-ui/react-dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface EmployeeProfile {
   // Informações Pessoais
@@ -139,6 +142,43 @@ export default function EmployeeProfilePage() {
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('personal')
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editTab, setEditTab] = useState('pessoal')
+  const [saving, setSaving] = useState(false)
+  const [editData, setEditData] = useState({
+    // Básico
+    name: '',
+    email: '',
+    position: '',
+    department: '',
+    // Pessoal
+    cpf: '',
+    rg: '',
+    birth_date: '',
+    gender: '',
+    marital_status: '',
+    nationality: '',
+    contacts: { personal_email: '', phone: '', cellphone: '', emergency_contact: '' },
+    address: { street: '', neighborhood: '', city: '', zip: '', state: '' },
+    // Profissional
+    employee_code: '',
+    admission_date: '',
+    contract_type: '',
+    work_schedule: '',
+    salary: '',
+    // Documentos
+    documents: { ctps: '', pis: '', voter_id: '', driver_license: '', military_cert: '' },
+    // Benefícios
+    benefits: { health_plan: '', dental_plan: '', life_insurance: '', meal_voucher: '', transport_voucher: '' },
+    // Dependentes
+    dependents: [] as Array<{ name: string; relationship: string; birth_date: string; cpf: string }>,
+    // Formação
+    education: { level: '', institution: '', course: '', graduation_year: '', certifications: '', languages: '' },
+    // Bancário
+    bank: { bank_name: '', agency: '', account: '', account_type: '', pix_key: '' },
+    // Observações
+    notes: '',
+  })
   const supabase = createClient()
 
   useEffect(() => {
@@ -147,110 +187,173 @@ export default function EmployeeProfilePage() {
 
   const loadEmployeeData = async () => {
     try {
-      // Simular dados completos do colaborador
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('id', params.id as string)
+        .single()
+
+      if (error) {
+        toast.error('Erro ao carregar dados do colaborador')
+        return
+      }
+
+      if (!data) {
+        toast.error('Colaborador não encontrado')
+        return
+      }
+
+      // Parse JSON fields
+      const contacts = (data as any).contacts || {}
+      const address = (data as any).address || {}
+      const documents = (data as any).documents || {}
+      const benefits = (data as any).benefits || {}
+      const dependents = (data as any).dependents || []
+      const education = (data as any).education || {}
+      const bank = (data as any).bank || {}
+
       setEmployee({
-        id: params.id as string,
-        full_name: 'João Carlos da Silva',
-        cpf: '123.456.789-00',
-        rg: '12.345.678-9',
-        birth_date: '15/03/1990',
-        gender: 'Masculino',
-        marital_status: 'Casado',
-        nationality: 'Brasileiro',
+        id: (data as any).id,
+        full_name: (data as any).full_name || '',
+        cpf: (data as any).cpf || '',
+        rg: (data as any).rg || '',
+        birth_date: (data as any).birth_date || '',
+        gender: (data as any).gender || '',
+        marital_status: (data as any).marital_status || '',
+        nationality: (data as any).nationality || '',
         
-        email: 'joao.silva@empresa.com',
-        personal_email: 'joao.carlos@gmail.com',
-        phone: '(11) 3456-7890',
-        mobile: '(11) 98765-4321',
-        emergency_contact: 'Maria Silva (Esposa)',
-        emergency_phone: '(11) 98765-1234',
+        email: (data as any).email || '',
+        personal_email: contacts.personal_email || '',
+        phone: contacts.phone || '',
+        mobile: contacts.cellphone || '',
+        emergency_contact: contacts.emergency_contact || '',
+        emergency_phone: contacts.emergency_phone || '',
         
-        address: 'Rua das Flores',
-        number: '123',
-        complement: 'Apto 45',
-        neighborhood: 'Jardim Primavera',
-        city: 'São Paulo',
-        state: 'SP',
-        zip_code: '01234-567',
+        address: address.street || '',
+        number: address.number || '',
+        complement: address.complement || '',
+        neighborhood: address.neighborhood || '',
+        city: address.city || '',
+        state: address.state || '',
+        zip_code: address.zip || '',
         
-        employee_id: 'EMP-2022-0156',
-        position: 'Analista de Vendas Sênior',
-        department: 'Vendas',
-        admission_date: '15/03/2022',
-        contract_type: 'CLT',
-        work_schedule: '08:00 - 18:00',
-        salary: 8500.00,
+        employee_id: (data as any).employee_code || '',
+        position: (data as any).position || '',
+        department: (data as any).department || '',
+        admission_date: (data as any).admission_date || '',
+        contract_type: (data as any).contract_type || '',
+        work_schedule: (data as any).work_schedule || '',
+        salary: (data as any).salary || 0,
         
-        ctps: '12345 / 001-SP',
-        pis_pasep: '123.45678.90-1',
-        voter_registration: '1234 5678 9012',
-        driver_license: '12345678900',
-        military_certificate: '123456789012',
+        ctps: documents.ctps || '',
+        pis_pasep: documents.pis || '',
+        voter_registration: documents.voter_id || '',
+        driver_license: documents.driver_license || '',
+        military_certificate: documents.military_cert || '',
         
-        health_plan: 'Unimed Nacional Plus',
-        dental_plan: 'OdontoPrev Premium',
-        life_insurance: true,
-        meal_voucher: 850.00,
-        transport_voucher: true,
+        health_plan: benefits.health_plan || '',
+        dental_plan: benefits.dental_plan || '',
+        life_insurance: benefits.life_insurance === 'Sim',
+        meal_voucher: parseFloat(benefits.meal_voucher?.replace('R$ ', '').replace(',', '.') || '0'),
+        transport_voucher: benefits.transport_voucher === 'Sim',
         
-        children_count: 2,
-        dependents: [
-          {
-            name: 'Pedro Silva',
-            relationship: 'Filho',
-            birth_date: '10/05/2015',
-            cpf: '123.456.789-01'
-          },
-          {
-            name: 'Ana Silva',
-            relationship: 'Filha',
-            birth_date: '20/08/2018',
-            cpf: '123.456.789-02'
-          }
-        ],
+        children_count: dependents.length,
+        dependents: dependents,
         
-        education_level: 'Superior Completo',
-        institution: 'Universidade de São Paulo',
-        course: 'Administração de Empresas',
-        graduation_year: '2012',
-        certifications: ['MBA em Vendas', 'Certificação em Negociação', 'Scrum Master'],
-        languages: ['Inglês Avançado', 'Espanhol Intermediário'],
+        education_level: education.level || '',
+        institution: education.institution || '',
+        course: education.course || '',
+        graduation_year: education.graduation_year || '',
+        certifications: education.certifications ? education.certifications.split(',').map((c: string) => c.trim()) : [],
+        languages: education.languages ? education.languages.split(',').map((l: string) => l.trim()) : [],
         
-        bank: 'Banco do Brasil',
-        agency: '1234-5',
-        account: '12345-6',
-        account_type: 'Conta Corrente',
-        pix_key: '123.456.789-00',
+        bank: bank.bank_name || '',
+        agency: bank.agency || '',
+        account: bank.account || '',
+        account_type: bank.account_type || '',
+        pix_key: bank.pix_key || '',
         
-        overall_score: 8.7,
-        total_evaluations: 12,
+        overall_score: 8.7, // Placeholder - calcular baseado em avaliações
+        total_evaluations: 0, // Placeholder
         cha_scores: {
-          conhecimento: 8.5,
-          habilidade: 9.0,
-          atitude: 8.6,
+          conhecimento: 8.5, // Placeholder
+          habilidade: 9.0, // Placeholder
+          atitude: 8.6, // Placeholder
         },
-        recent_feedbacks: [
-          {
-            id: 1,
-            from: 'Maria Santos',
-            role: 'Gerente',
-            date: '10/01/2024',
-            score: 9,
-            comment: 'Excelente trabalho em equipe e sempre disposto a ajudar os colegas.',
-          },
-        ],
-        goals: [
-          { id: 1, title: 'Aumentar vendas em 20%', progress: 75, deadline: '31/03/2024' },
-        ],
-        evaluations_history: [
-          { period: 'Q4 2023', score: 8.5, trend: 'up' },
-        ],
+        recent_feedbacks: [], // Placeholder
+        goals: [], // Placeholder
+        evaluations_history: [], // Placeholder
         
         avatar_url: '',
         status: 'active',
-        notes: 'Colaborador exemplar, sempre pontual e dedicado. Potencial para liderança.',
+        notes: (data as any).notes || '',
+      })
+
+      // Preencher dados de edição
+      const dataAny = data as any
+      setEditData({
+        name: dataAny.full_name || '',
+        email: dataAny.email || '',
+        position: dataAny.position || '',
+        department: dataAny.department || '',
+        cpf: dataAny.cpf || '',
+        rg: dataAny.rg || '',
+        birth_date: dataAny.birth_date || '',
+        gender: dataAny.gender || '',
+        marital_status: dataAny.marital_status || '',
+        nationality: dataAny.nationality || '',
+        contacts: {
+          personal_email: contacts.personal_email || '',
+          phone: contacts.phone || '',
+          cellphone: contacts.cellphone || '',
+          emergency_contact: contacts.emergency_contact || '',
+        },
+        address: {
+          street: address.street || '',
+          neighborhood: address.neighborhood || '',
+          city: address.city || '',
+          zip: address.zip || '',
+          state: address.state || '',
+        },
+        employee_code: dataAny.employee_code || '',
+        admission_date: dataAny.admission_date || '',
+        contract_type: dataAny.contract_type || '',
+        work_schedule: dataAny.work_schedule || '',
+        salary: dataAny.salary?.toString() || '',
+        documents: {
+          ctps: documents.ctps || '',
+          pis: documents.pis || '',
+          voter_id: documents.voter_id || '',
+          driver_license: documents.driver_license || '',
+          military_cert: documents.military_cert || '',
+        },
+        benefits: {
+          health_plan: benefits.health_plan || '',
+          dental_plan: benefits.dental_plan || '',
+          life_insurance: benefits.life_insurance || '',
+          meal_voucher: benefits.meal_voucher || '',
+          transport_voucher: benefits.transport_voucher || '',
+        },
+        dependents: dependents,
+        education: {
+          level: education.level || '',
+          institution: education.institution || '',
+          course: education.course || '',
+          graduation_year: education.graduation_year || '',
+          certifications: education.certifications || '',
+          languages: education.languages || '',
+        },
+        bank: {
+          bank_name: bank.bank_name || '',
+          agency: bank.agency || '',
+          account: bank.account || '',
+          account_type: bank.account_type || '',
+          pix_key: bank.pix_key || '',
+        },
+        notes: dataAny.notes || '',
       })
     } catch (error) {
+      toast.error('Erro ao carregar dados do colaborador')
     } finally {
       setLoading(false)
     }
@@ -272,6 +375,29 @@ export default function EmployeeProfilePage() {
       case 'leave': return 'bg-orange-500'
       case 'inactive': return 'bg-red-500'
       default: return 'bg-neutral-500'
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    try {
+      setSaving(true)
+      const res = await fetch(`/api/employees/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.message || 'Falha ao salvar')
+      }
+
+      toast.success('Colaborador atualizado com sucesso')
+      setIsEditOpen(false)
+      loadEmployeeData() // Recarregar dados
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar colaborador')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -337,7 +463,10 @@ export default function EmployeeProfilePage() {
             <button className="btn-secondary p-2">
               <Share2 className="h-4 w-4" />
             </button>
-            <button className="btn-primary">
+            <button 
+              className="btn-primary"
+              onClick={() => setIsEditOpen(true)}
+            >
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </button>
@@ -787,6 +916,363 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      <Dialog.Root open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+          <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-4xl max-h-[90vh] card overflow-hidden">
+              <div className="p-6 border-b border-neutral-800">
+                <Dialog.Title className="text-lg font-semibold text-neutral-200">Editar colaborador</Dialog.Title>
+                <Dialog.Description className="text-sm text-neutral-400 mt-1">
+                  Edite as informações do colaborador.
+                </Dialog.Description>
+              </div>
+              
+              {/* Tabs */}
+              <div className="border-b border-neutral-800">
+                <nav className="flex space-x-8 px-6">
+                  {[
+                    { id: 'pessoal', label: 'Pessoal' },
+                    { id: 'profissional', label: 'Profissional' },
+                    { id: 'documentos', label: 'Documentos' },
+                    { id: 'beneficios', label: 'Benefícios' },
+                    { id: 'dependentes', label: 'Dependentes' },
+                    { id: 'formacao', label: 'Formação' },
+                    { id: 'bancario', label: 'Bancário' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setEditTab(tab.id)}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        editTab === tab.id
+                          ? 'border-primary-500 text-primary-400'
+                          : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-6 max-h-96 overflow-y-auto">
+                {editTab === 'pessoal' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name">Nome completo *</Label>
+                        <Input
+                          id="edit-name"
+                          placeholder="João Silva"
+                          value={editData.name}
+                          onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-email">Email</Label>
+                        <Input
+                          id="edit-email"
+                          type="email"
+                          placeholder="joao@empresa.com"
+                          value={editData.email}
+                          onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-cpf">CPF</Label>
+                        <Input
+                          id="edit-cpf"
+                          placeholder="123.456.789-00"
+                          value={editData.cpf}
+                          onChange={(e) => setEditData({ ...editData, cpf: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-rg">RG</Label>
+                        <Input
+                          id="edit-rg"
+                          placeholder="12.345.678-9"
+                          value={editData.rg}
+                          onChange={(e) => setEditData({ ...editData, rg: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-birth">Data de Nascimento</Label>
+                        <Input
+                          id="edit-birth"
+                          type="date"
+                          value={editData.birth_date}
+                          onChange={(e) => setEditData({ ...editData, birth_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-gender">Gênero</Label>
+                        <select
+                          id="edit-gender"
+                          value={editData.gender}
+                          onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
+                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="Masculino">Masculino</option>
+                          <option value="Feminino">Feminino</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-marital">Estado Civil</Label>
+                        <select
+                          id="edit-marital"
+                          value={editData.marital_status}
+                          onChange={(e) => setEditData({ ...editData, marital_status: e.target.value })}
+                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="Solteiro">Solteiro</option>
+                          <option value="Casado">Casado</option>
+                          <option value="Divorciado">Divorciado</option>
+                          <option value="Viúvo">Viúvo</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-nationality">Nacionalidade</Label>
+                        <Input
+                          id="edit-nationality"
+                          placeholder="Brasileiro"
+                          value={editData.nationality}
+                          onChange={(e) => setEditData({ ...editData, nationality: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-neutral-300">Contatos</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-personal-email">Email Pessoal</Label>
+                          <Input
+                            id="edit-personal-email"
+                            type="email"
+                            placeholder="joao@gmail.com"
+                            value={editData.contacts.personal_email}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              contacts: { ...editData.contacts, personal_email: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-phone">Telefone</Label>
+                          <Input
+                            id="edit-phone"
+                            placeholder="(11) 3456-7890"
+                            value={editData.contacts.phone}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              contacts: { ...editData.contacts, phone: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-cellphone">Celular</Label>
+                          <Input
+                            id="edit-cellphone"
+                            placeholder="(11) 98765-4321"
+                            value={editData.contacts.cellphone}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              contacts: { ...editData.contacts, cellphone: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-emergency">Contato de Emergência</Label>
+                          <Input
+                            id="edit-emergency"
+                            placeholder="Maria Silva (Esposa) - (11) 98765-1234"
+                            value={editData.contacts.emergency_contact}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              contacts: { ...editData.contacts, emergency_contact: e.target.value }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-neutral-300">Endereço</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-street">Logradouro</Label>
+                          <Input
+                            id="edit-street"
+                            placeholder="Rua das Flores, 123 Apto 45"
+                            value={editData.address.street}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, street: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-neighborhood">Bairro</Label>
+                          <Input
+                            id="edit-neighborhood"
+                            placeholder="Jardim Primavera"
+                            value={editData.address.neighborhood}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, neighborhood: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-city">Cidade</Label>
+                          <Input
+                            id="edit-city"
+                            placeholder="São Paulo"
+                            value={editData.address.city}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, city: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-zip">CEP</Label>
+                          <Input
+                            id="edit-zip"
+                            placeholder="01234-567"
+                            value={editData.address.zip}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, zip: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-state">Estado</Label>
+                          <Input
+                            id="edit-state"
+                            placeholder="SP"
+                            value={editData.address.state}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, state: e.target.value }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === 'profissional' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-position">Cargo *</Label>
+                        <Input
+                          id="edit-position"
+                          placeholder="Analista de Vendas Sênior"
+                          value={editData.position}
+                          onChange={(e) => setEditData({ ...editData, position: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-dept">Departamento</Label>
+                        <Input
+                          id="edit-dept"
+                          placeholder="Vendas"
+                          value={editData.department}
+                          onChange={(e) => setEditData({ ...editData, department: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-code">Matrícula</Label>
+                        <Input
+                          id="edit-code"
+                          placeholder="EMP-2022-0156"
+                          value={editData.employee_code}
+                          onChange={(e) => setEditData({ ...editData, employee_code: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-admission">Data de Admissão</Label>
+                        <Input
+                          id="edit-admission"
+                          type="date"
+                          value={editData.admission_date}
+                          onChange={(e) => setEditData({ ...editData, admission_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-contract">Tipo de Contrato</Label>
+                        <select
+                          id="edit-contract"
+                          value={editData.contract_type}
+                          onChange={(e) => setEditData({ ...editData, contract_type: e.target.value })}
+                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="CLT">CLT</option>
+                          <option value="PJ">PJ</option>
+                          <option value="Estagiário">Estagiário</option>
+                          <option value="Terceirizado">Terceirizado</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-schedule">Jornada de Trabalho</Label>
+                        <Input
+                          id="edit-schedule"
+                          placeholder="08:00 - 18:00"
+                          value={editData.work_schedule}
+                          onChange={(e) => setEditData({ ...editData, work_schedule: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-salary">Salário Base</Label>
+                        <Input
+                          id="edit-salary"
+                          type="number"
+                          placeholder="8500.00"
+                          value={editData.salary}
+                          onChange={(e) => setEditData({ ...editData, salary: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Outras abas podem ser adicionadas aqui seguindo o mesmo padrão */}
+              </div>
+              
+              <div className="p-6 border-t border-neutral-800 flex items-center justify-end gap-2">
+                <Dialog.Close asChild>
+                  <button className="btn-ghost">Cancelar</button>
+                </Dialog.Close>
+                <button
+                  className="btn-primary"
+                  disabled={saving}
+                  onClick={handleSaveEdit}
+                >
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }
