@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, UserPlus, User, Lock, Mail, Building } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
+import type { Database } from '@/lib/supabase/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -21,7 +23,7 @@ export default function RegisterPage() {
     position: '',
   })
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
+  const supabase: SupabaseClient<Database> = createClient()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,15 +60,17 @@ export default function RegisterPage() {
 
       if (authData.user) {
         // Criar perfil na tabela profiles
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: formData.email,
-            full_name: formData.fullName,
-            position: formData.position,
-            role: 'employee', // Por padrão, novos usuários são funcionários
-          })
+        type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
+        const newProfile: ProfileInsert = {
+          id: authData.user.id,
+          email: formData.email,
+          full_name: formData.fullName,
+          position: formData.position,
+          role: 'employee',
+        }
+
+        const { error: profileError } = await (supabase.from('profiles') as any)
+          .insert([newProfile])
 
         if (profileError) {
           console.error('Erro ao criar perfil:', profileError)
