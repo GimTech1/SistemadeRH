@@ -4,11 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, UserPlus, User, Lock, Mail, Building } from 'lucide-react'
+import { Loader2, User, Lock, Mail, Building, Eye, EyeOff } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import type { Database } from '@/lib/supabase/database.types'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -22,6 +18,8 @@ export default function RegisterPage() {
     fullName: '',
     position: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
 
@@ -93,155 +91,199 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-primary-950 flex items-center justify-center p-4">
-      <Toaster position="top-right" />
+    <div className="min-h-screen flex">
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#ffffff',
+            color: '#0D1B2A',
+            border: '1px solid #E0E1DD',
+          },
+        }}
+      />
       
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gradient mb-2">RH Performance</h1>
-          <p className="text-gray-400">Sistema de Avaliação de Desempenho</p>
-        </div>
-
-        <Card className="border-dark-800 bg-dark-900/80 backdrop-blur-xl">
-          <CardHeader className="space-y-1">
+      {/* Left Panel - Form */}
+      <div className="w-1/2 flex items-center justify-center px-8 py-12" style={{ backgroundColor: '#f8fafc' }}>
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="mb-8 text-center">
             <img 
-              src="/logo-brasão-branco.png" 
+              src="/logo-brasão-preto.png" 
               alt="Logo" 
-              className="mx-auto h-16 w-auto object-contain mb-4"
+              className="h-20 w-auto object-contain mx-auto mb-6"
             />
-            <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
-            <CardDescription className="text-center">
+            <h1 className="text-2xl font-roboto font-light text-rich-black-600 tracking-wide">Criar Conta</h1>
+            <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-2">
               Preencha os dados para criar sua conta
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
+            </p>
+          </div>
+
+          {/* Register Form */}
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-8">
+            <form onSubmit={handleRegister} className="space-y-6">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Nome Completo
+                </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <input
                     id="fullName"
                     name="fullName"
                     type="text"
-                    placeholder="João Silva"
                     value={formData.fullName}
                     onChange={handleChange}
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    placeholder="João Silva"
                     required
-                    className="pl-10"
                     disabled={loading}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+              <div>
+                <label htmlFor="email" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Email
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="seu@email.com"
                     value={formData.email}
                     onChange={handleChange}
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    placeholder="seu@email.com"
                     required
-                    className="pl-10"
                     disabled={loading}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="position">Cargo</Label>
+              <div>
+                <label htmlFor="position" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Cargo
+                </label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <input
                     id="position"
                     name="position"
                     type="text"
-                    placeholder="Analista de RH"
                     value={formData.position}
                     onChange={handleChange}
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    placeholder="Analista de RH"
                     required
-                    className="pl-10"
                     disabled={loading}
                   />
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+              <div>
+                <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Senha
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <input
                     id="password"
                     name="password"
-                    type="password"
-                    placeholder="••••••••"
+                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleChange}
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    placeholder="••••••••"
                     required
-                    className="pl-10"
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Confirmar Senha
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    placeholder="••••••••"
                     required
-                    className="pl-10"
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <Button
+              <button
                 type="submit"
-                className="w-full"
                 disabled={loading}
+                className="w-full text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+                style={{ backgroundColor: '#1B263B' }}
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Criando conta...
-                  </>
+                  </span>
                 ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Criar Conta
-                  </>
+                  'Criar Conta'
                 )}
-              </Button>
+              </button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-400">
+              <span className="text-sm font-roboto font-light text-oxford-blue-600">
                 Já tem uma conta?{' '}
-                <Link 
-                  href="/login"
-                  className="text-primary-400 hover:text-primary-300 transition-colors font-medium"
-                >
+                <Link href="/login" className="font-roboto font-medium text-yinmn-blue-600 hover:text-yinmn-blue-700 transition-colors">
                   Fazer login
                 </Link>
-              </p>
+              </span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
 
-        <p className="text-center text-xs text-gray-500 mt-8">
-          © 2024 RH Performance. Todos os direitos reservados.
-        </p>
+      {/* Right Panel - Logo InvestMoney */}
+      <div className="w-1/2 flex items-center justify-center px-8" style={{ backgroundColor: '#1B263B' }}>
+        <div className="text-center">
+          <img 
+            src="/logo-full-horizontal-branco.png" 
+            alt="InvestMoney Logo" 
+            className="h-32 w-auto object-contain mx-auto mb-8"
+          />
+        </div>
       </div>
     </div>
   )
