@@ -10,8 +10,13 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "RH Performance - Sistema de Avaliação de Desempenho",
+  title: "IM • Recursos Humanos",
   description: "Sistema completo de avaliação de desempenho com metodologia CHA",
+  icons: {
+    icon: "/logo-brasão-branco.png",
+    shortcut: "/logo-brasão-branco.png",
+    apple: "/logo-brasão-branco.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${roboto.variable} font-roboto antialiased bg-slate-50`}>
+      <body className={`${roboto.variable} font-roboto antialiased bg-platinum-900`}>
         {children}
       </body>
     </html>

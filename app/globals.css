@@ -8,15 +8,15 @@
   }
   
   body {
-    @apply bg-slate-50 antialiased font-roboto;
-    color: #334155;
+    @apply bg-platinum-900 antialiased font-roboto;
+    color: #415A77;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-weight: 300;
     letter-spacing: -0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply text-slate-900 font-roboto;
+    @apply text-rich-black-900 font-roboto;
     letter-spacing: -0.02em;
   }
 
@@ -31,32 +31,32 @@
 @layer components {
   /* Botões elegantes */
   .btn-primary {
-    @apply px-8 py-3 bg-blue-600 text-white rounded-2xl font-roboto;
-    @apply hover:bg-blue-700 active:bg-blue-800;
+    @apply px-8 py-3 bg-yinmn-blue-500 text-white rounded-2xl font-roboto;
+    @apply hover:bg-yinmn-blue-600 active:bg-yinmn-blue-700;
     @apply transition-all duration-300;
-    @apply shadow-[0_2px_8px_0_rgb(37_99_235_/_0.15)] hover:shadow-[0_4px_16px_0_rgb(37_99_235_/_0.25)];
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2 focus:ring-offset-white;
+    @apply shadow-[0_2px_8px_0_rgb(65_90_119_/_0.15)] hover:shadow-[0_4px_16px_0_rgb(65_90_119_/_0.25)];
+    @apply focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500/30 focus:ring-offset-2 focus:ring-offset-white;
     @apply hover:-translate-y-0.5;
     font-weight: 400;
     letter-spacing: 0.02em;
   }
 
   .btn-secondary {
-    @apply px-8 py-3 bg-white/80 backdrop-blur-sm text-slate-700 rounded-2xl font-roboto;
-    @apply hover:bg-white active:bg-slate-50;
+    @apply px-8 py-3 bg-white/80 backdrop-blur-sm text-oxford-blue-700 rounded-2xl font-roboto;
+    @apply hover:bg-white active:bg-platinum-100;
     @apply transition-all duration-300;
-    @apply border border-slate-200/60 shadow-[0_1px_3px_0_rgb(0_0_0_/_0.03)] hover:shadow-[0_4px_12px_0_rgb(0_0_0_/_0.08)];
-    @apply focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:ring-offset-2 focus:ring-offset-white;
-    @apply hover:-translate-y-0.5 hover:border-slate-300/60;
+    @apply border border-platinum-200/60 shadow-[0_1px_3px_0_rgb(0_0_0_/_0.03)] hover:shadow-[0_4px_12px_0_rgb(0_0_0_/_0.08)];
+    @apply focus:outline-none focus:ring-2 focus:ring-oxford-blue-500/20 focus:ring-offset-2 focus:ring-offset-white;
+    @apply hover:-translate-y-0.5 hover:border-platinum-300/60;
     font-weight: 400;
     letter-spacing: 0.02em;
   }
 
   .btn-ghost {
-    @apply px-8 py-3 text-slate-600 rounded-2xl font-roboto;
-    @apply hover:bg-slate-100/60 hover:text-slate-900;
+    @apply px-8 py-3 text-oxford-blue-600 rounded-2xl font-roboto;
+    @apply hover:bg-platinum-100/60 hover:text-oxford-blue-800;
     @apply transition-all duration-300;
-    @apply focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:ring-offset-2 focus:ring-offset-white;
+    @apply focus:outline-none focus:ring-2 focus:ring-oxford-blue-500/20 focus:ring-offset-2 focus:ring-offset-white;
     @apply hover:-translate-y-0.5;
     font-weight: 400;
     letter-spacing: 0.02em;
@@ -64,42 +64,42 @@
 
   /* Inputs elegantes */
   .input-field {
-    @apply w-full px-5 py-4 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl;
-    @apply text-slate-900 placeholder-slate-400 font-roboto;
-    @apply focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-100/40;
+    @apply w-full px-5 py-4 bg-white/80 backdrop-blur-sm border border-platinum-200/60 rounded-2xl;
+    @apply text-oxford-blue-800 placeholder-oxford-blue-400 font-roboto;
+    @apply focus:outline-none focus:border-yinmn-blue-500/60 focus:ring-2 focus:ring-yinmn-blue-100/40;
     @apply transition-all duration-300 shadow-[0_1px_3px_0_rgb(0_0_0_/_0.02)];
-    @apply hover:bg-white hover:border-slate-300/60;
+    @apply hover:bg-white hover:border-platinum-300/60;
     font-weight: 300;
     letter-spacing: 0.01em;
   }
 
   /* Cards minimalistas e elegantes */
   .card {
-    @apply bg-white/80 backdrop-blur-sm border border-slate-100 rounded-3xl;
+    @apply bg-white/80 backdrop-blur-sm border border-platinum-100 rounded-3xl;
     @apply shadow-[0_1px_3px_0_rgb(0_0_0_/_0.02)] hover:shadow-[0_4px_12px_0_rgb(0_0_0_/_0.05)] transition-all duration-300;
-    @apply hover:bg-white hover:border-slate-200/60;
+    @apply hover:bg-white hover:border-platinum-200/60;
   }
 
   .card-hover {
-    @apply hover:bg-slate-50/50 transition-all duration-300;
+    @apply hover:bg-platinum-50/50 transition-all duration-300;
   }
 
   .card-elegant {
-    @apply bg-white/90 backdrop-blur-md border border-slate-100/60 rounded-3xl;
+    @apply bg-white/90 backdrop-blur-md border border-platinum-100/60 rounded-3xl;
     @apply shadow-[0_1px_2px_0_rgb(0_0_0_/_0.02)] hover:shadow-[0_8px_25px_0_rgb(0_0_0_/_0.04)] transition-all duration-500;
-    @apply hover:bg-white hover:border-slate-200/80 hover:-translate-y-0.5;
+    @apply hover:bg-white hover:border-platinum-200/80 hover:-translate-y-0.5;
   }
 
   /* Navegação */
   .nav-item {
-    @apply px-4 py-3 text-slate-700 rounded-xl font-roboto;
-    @apply hover:bg-slate-100 hover:text-slate-900;
+    @apply px-4 py-3 text-oxford-blue-700 rounded-xl font-roboto;
+    @apply hover:bg-platinum-100 hover:text-oxford-blue-800;
     @apply transition-all duration-300;
     font-weight: 400;
   }
 
   .nav-item-active {
-    @apply bg-blue-100 text-blue-800 border-r-4 border-blue-600 shadow-sm;
+    @apply bg-yinmn-blue-100 text-yinmn-blue-800 border-r-4 border-yinmn-blue-600 shadow-sm;
     font-weight: 500;
   }
 

@@ -204,7 +204,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 flex-col bg-slate-50/95 backdrop-blur-md border-r border-slate-200 z-40 shadow-lg transition-all duration-300 h-screen",
+          "fixed left-0 top-0 flex-col bg-platinum-50/95 backdrop-blur-md border-r border-platinum-200 z-40 shadow-lg transition-all duration-300 h-screen",
           "lg:flex",
           isOpen ? "flex" : "hidden",
           isCollapsed ? "w-[70px]" : "w-64"
@@ -212,7 +212,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
       >
         {/* Header com logo */}
         <div className={cn(
-          "border-b border-slate-200 flex items-center justify-between flex-shrink-0",
+          "border-b border-platinum-200 flex items-center justify-between flex-shrink-0",
           isCollapsed ? "p-3" : "p-4"
         )}>
           {!isCollapsed && (
@@ -230,7 +230,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
           <button 
             onClick={toggleSidebar}
             className={cn(
-              "p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300",
+              "p-2 rounded-xl text-oxford-blue-600 hover:text-oxford-blue-800 hover:bg-platinum-100 transition-all duration-300",
               isCollapsed ? "mx-auto" : ""
             )}
             title={isCollapsed ? "Expandir menu" : "Colapsar menu"}
@@ -254,8 +254,8 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
                       "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
                       isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3",
                       isActive 
-                        ? "bg-blue-100 text-blue-800 shadow-sm" 
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        ? "bg-yinmn-blue-100 text-yinmn-blue-800 shadow-sm" 
+                        : "text-oxford-blue-700 hover:bg-platinum-100 hover:text-oxford-blue-800"
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >
@@ -271,13 +271,13 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
           </ul>
 
           {/* Footer com perfil do usuário e ações */}
-          <div className="border-t border-slate-200 pt-2 mt-2">
+          <div className="border-t border-platinum-200 pt-2 mt-2">
             {/* Botões de ação */}
             <div className="mb-2 space-y-1">
               <Link
                 href="/"
                 className={cn(
-                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-300",
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-oxford-blue-700 hover:bg-platinum-100 hover:text-oxford-blue-800 transition-all duration-300",
                   isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
                 )}
                 title="Início"
@@ -292,7 +292,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
               <button
                 onClick={handleLogout}
                 className={cn(
-                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-slate-700 hover:bg-red-50 hover:text-red-700 transition-all duration-300",
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-oxford-blue-700 hover:bg-red-50 hover:text-red-700 transition-all duration-300",
                   isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
                 )}
                 title="Sair"
@@ -308,16 +308,16 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
             {/* Perfil do usuário */}
             {userName && (
               <div className={cn(
-                "p-3 rounded-xl bg-blue-50/50 border border-blue-100/50",
+                "p-3 rounded-xl bg-yinmn-blue-50/50 border border-yinmn-blue-100/50",
                 isCollapsed ? "flex justify-center" : "flex items-center space-x-3"
               )}>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50 flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50 flex-shrink-0">
                   <UserCircle className="w-6 h-6 text-white" />
                 </div>
                 {!isCollapsed && (
                   <div className="min-w-0 flex-1">
-                    <p className="text-slate-900 text-sm font-roboto font-medium truncate tracking-wide">{userName}</p>
-                    <p className="text-slate-600 text-xs font-roboto font-light truncate tracking-wide">{userPosition || userRole}</p>
+                    <p className="text-rich-black-900 text-sm font-roboto font-medium truncate tracking-wide">{userName}</p>
+                    <p className="text-oxford-blue-600 text-xs font-roboto font-light truncate tracking-wide">{userPosition || userRole}</p>
                     <div className="flex items-center mt-1"></div>
                   </div>
                 )}
