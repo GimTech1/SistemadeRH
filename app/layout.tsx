@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${roboto.variable} font-roboto antialiased bg-platinum-900`}>
+      <body className={`${roboto.variable} font-roboto antialiased`} style={{ backgroundColor: '#f8fafc' }}>
         {children}
       </body>
     </html>

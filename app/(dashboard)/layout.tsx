@@ -72,7 +72,7 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-platinum-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8fafc' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yinmn-blue-600"></div>
       </div>
     )
@@ -98,7 +98,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-platinum-900">
+    <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
       <Toaster position="top-right" />
       <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
       <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
@@ -112,7 +112,7 @@ export default function DashboardLayout({
           userPosition={userPosition}
         />
 
-        <div className="min-h-screen">
+        <div className="min-h-screen pt-10">
           <div className="max-w-7xl mx-auto px-6 py-6">
             {children}
           </div>

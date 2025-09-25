@@ -204,21 +204,22 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 flex-col bg-platinum-50/95 backdrop-blur-md border-r border-platinum-200 z-40 shadow-lg transition-all duration-300 h-screen",
+          "fixed left-0 top-0 flex-col z-40 shadow-lg transition-all duration-300 h-screen",
           "lg:flex",
           isOpen ? "flex" : "hidden",
           isCollapsed ? "w-[70px]" : "w-64"
         )}
+        style={{ backgroundColor: '#0D1B2A' }}
       >
         {/* Header com logo */}
         <div className={cn(
-          "border-b border-platinum-200 flex items-center justify-between flex-shrink-0",
+          "border-b border-gray-600 flex items-center justify-between flex-shrink-0",
           isCollapsed ? "p-3" : "p-4"
         )}>
           {!isCollapsed && (
             <div className="flex items-center">
               <Image 
-                src="/logo-full-horizontal-preto.png" 
+                src="/logo-full-horizontal-branco.png" 
                 alt="Logo" 
                 width={500} 
                 height={500} 
@@ -230,7 +231,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
           <button 
             onClick={toggleSidebar}
             className={cn(
-              "p-2 rounded-xl text-oxford-blue-600 hover:text-oxford-blue-800 hover:bg-platinum-100 transition-all duration-300",
+              "p-2 rounded-xl text-white hover:text-white hover:bg-gray-700 transition-all duration-300",
               isCollapsed ? "mx-auto" : ""
             )}
             title={isCollapsed ? "Expandir menu" : "Colapsar menu"}
@@ -254,8 +255,8 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
                       "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
                       isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3",
                       isActive 
-                        ? "bg-yinmn-blue-100 text-yinmn-blue-800 shadow-sm" 
-                        : "text-oxford-blue-700 hover:bg-platinum-100 hover:text-oxford-blue-800"
+                        ? "bg-gray-700 text-white shadow-sm" 
+                        : "text-white hover:bg-gray-700 hover:text-white"
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >
@@ -271,12 +272,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
           </ul>
 
           {/* Footer - ações rápidas (sem bloco de perfil) */}
-          <div className="border-t border-platinum-200 pt-2 mt-2">
+          <div className="border-t border-gray-600 pt-2 mt-2">
             <div className="mb-2 space-y-1">
               <Link
                 href="/"
                 className={cn(
-                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-oxford-blue-700 hover:bg-platinum-100 hover:text-oxford-blue-800 transition-all duration-300",
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
                   isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
                 )}
                 title="Início"
@@ -291,7 +292,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
               <button
                 onClick={handleLogout}
                 className={cn(
-                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-oxford-blue-700 hover:bg-red-50 hover:text-red-700 transition-all duration-300",
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-red-600 hover:text-white transition-all duration-300",
                   isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
                 )}
                 title="Sair"
