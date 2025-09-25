@@ -64,7 +64,7 @@ export default function LoginPage() {
               alt="Logo" 
               className="h-20 w-auto object-contain mx-auto mb-6"
             />
-            <h2 className="text-3xl font-roboto font-light text-rich-black-900 tracking-wide">Gestão de Desempenho e Pessoas</h2>
+            <h1 className="text-2xl font-roboto font-light text-rich-black-600 tracking-wide">Gestão de Desempenho e Pessoas</h1>
           </div>
 
           {/* Login Form */}
