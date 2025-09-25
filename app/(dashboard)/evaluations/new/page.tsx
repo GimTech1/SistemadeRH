@@ -13,9 +13,11 @@ import {
   Plus,
   Minus,
   Star,
-  Info,
   User,
   Calendar,
+  Target,
+  Award,
+  TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -137,7 +139,7 @@ export default function NewEvaluationPage() {
       case 'atitude':
         return 'text-pink-500 bg-pink-500/10'
       default:
-        return 'text-neutral-500 bg-neutral-500/10'
+        return 'text-oxford-blue-500 bg-oxford-blue-500/10'
     }
   }
 
@@ -189,16 +191,16 @@ export default function NewEvaluationPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center space-x-4">
           <Link href="/evaluations">
-            <button className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
-              <ArrowLeft className="h-5 w-5 text-neutral-400" />
+            <button className="p-2 hover:bg-platinum-100 rounded-lg transition-colors">
+              <ArrowLeft className="h-5 w-5 text-oxford-blue-600" />
             </button>
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-50">Nova Avaliação CHA</h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Nova Avaliação CHA</h1>
+            <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
               Avalie Conhecimentos, Habilidades e Atitudes do colaborador
             </p>
           </div>
@@ -207,186 +209,217 @@ export default function NewEvaluationPage() {
           <button
             onClick={() => handleSubmit('save')}
             disabled={loading}
-            className="btn-secondary"
+            className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-4 w-4" />
             Salvar Rascunho
           </button>
           <button
             onClick={() => handleSubmit('submit')}
             disabled={loading}
-            className="btn-primary"
+            className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
           >
-            <Send className="h-4 w-4 mr-2" />
+            <Send className="h-4 w-4" />
             Enviar Avaliação
           </button>
         </div>
       </div>
 
-      {/* Basic Info */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-neutral-200 mb-6">Informações Básicas</h2>
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Conhecimento</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {calculateCategoryAverage('conhecimento')}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação média</p>
+            </div>
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Brain className="w-6 h-6 text-purple-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-blue-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Habilidade</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {calculateCategoryAverage('habilidade')}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação média</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6 text-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-pink-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Atitude</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {calculateCategoryAverage('atitude')}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação média</p>
+            </div>
+            <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
+              <Heart className="w-6 h-6 text-pink-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Nota Geral</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {calculateOverallScore()}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação final</p>
+            </div>
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
+              <Star className="w-6 h-6 text-[#778DA9]" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Informações Básicas */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+        <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6">Informações Básicas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-2">
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
               <User className="h-4 w-4 inline mr-2" />
               Colaborador
             </label>
             <select
               value={employee}
               onChange={(e) => setEmployee(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none cursor-pointer hover:bg-neutral-800 transition-colors"
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors"
             >
-              <option value="" className="bg-neutral-900">Selecione o colaborador</option>
-              <option value="1" className="bg-neutral-900">João Silva</option>
-              <option value="2" className="bg-neutral-900">Maria Santos</option>
-              <option value="3" className="bg-neutral-900">Pedro Costa</option>
+              <option value="">Selecione o colaborador</option>
+              <option value="1">João Silva</option>
+              <option value="2">Maria Santos</option>
+              <option value="3">Pedro Costa</option>
+              <option value="4">Ana Oliveira</option>
+              <option value="5">Carlos Mendes</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-2">
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
               <Calendar className="h-4 w-4 inline mr-2" />
               Ciclo de Avaliação
             </label>
             <select
               value={evaluationCycle}
               onChange={(e) => setEvaluationCycle(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none cursor-pointer hover:bg-neutral-800 transition-colors"
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors"
             >
-              <option value="" className="bg-neutral-900">Selecione o ciclo</option>
-              <option value="2024-Q1" className="bg-neutral-900">2024 - Q1</option>
-              <option value="2024-Q2" className="bg-neutral-900">2024 - Q2</option>
-              <option value="2024-Q3" className="bg-neutral-900">2024 - Q3</option>
-              <option value="2024-Q4" className="bg-neutral-900">2024 - Q4</option>
+              <option value="">Selecione o ciclo</option>
+              <option value="2024-Q1">2024 - Q1</option>
+              <option value="2024-Q2">2024 - Q2</option>
+              <option value="2024-Q3">2024 - Q3</option>
+              <option value="2024-Q4">2024 - Q4</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Score Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-400">Conhecimento</span>
-            <Brain className="h-4 w-4 text-purple-500" />
-          </div>
-          <p className="text-2xl font-semibold text-neutral-50">
-            {calculateCategoryAverage('conhecimento')}
-          </p>
-        </div>
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-400">Habilidade</span>
-            <Zap className="h-4 w-4 text-blue-500" />
-          </div>
-          <p className="text-2xl font-semibold text-neutral-50">
-            {calculateCategoryAverage('habilidade')}
-          </p>
-        </div>
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-400">Atitude</span>
-            <Heart className="h-4 w-4 text-pink-500" />
-          </div>
-          <p className="text-2xl font-semibold text-neutral-50">
-            {calculateCategoryAverage('atitude')}
-          </p>
-        </div>
-        <div className="card p-6 bg-primary-500/10 border-primary-500/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-primary-400">Nota Geral</span>
-            <Star className="h-4 w-4 text-primary-500" />
-          </div>
-          <p className="text-2xl font-semibold text-primary-500">
-            {calculateOverallScore()}
-          </p>
-        </div>
-      </div>
-
-      {/* Skills Evaluation */}
+      {/* Avaliação CHA */}
       {['conhecimento', 'habilidade', 'atitude'].map((category) => {
         const Icon = getCategoryIcon(category)
         const categorySkills = skills.filter(s => s.category === category)
+        const categoryAverage = calculateCategoryAverage(category)
         
         return (
-          <div key={category} className="card">
-            <div className="p-6 border-b border-neutral-800">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${getCategoryColor(category)}`}>
-                  <Icon className="h-5 w-5" />
+          <div key={category} className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
+            <div className="p-6 border-b border-platinum-200 bg-gradient-to-r from-platinum-50 to-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-xl ${getCategoryColor(category)}`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-roboto font-medium text-rich-black-900 capitalize">
+                      {category}
+                    </h2>
+                    <p className="text-sm font-roboto font-light text-oxford-blue-600">
+                      Avalie cada competência de 0 a 10
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-neutral-200 capitalize">
-                    {category}
-                  </h2>
-                  <p className="text-sm text-neutral-400">
-                    Avalie cada competência de 0 a 10
-                  </p>
+                <div className="text-right">
+                  <p className="text-sm font-roboto font-medium text-oxford-blue-500">Média da Categoria</p>
+                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">{categoryAverage}</p>
                 </div>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-8">
               {categorySkills.map((skill) => (
                 <div key={skill.id} className="space-y-4">
-                  <div>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-neutral-200">{skill.name}</h3>
-                        <p className="text-sm text-neutral-400 mt-1">{skill.description}</p>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-roboto font-medium text-rich-black-900 mb-2">{skill.name}</h3>
+                      <p className="text-sm font-roboto font-light text-oxford-blue-600 mb-4">{skill.description}</p>
+                    </div>
+                    <div className="text-right ml-6">
+                      <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Pontuação</p>
+                      <p className="text-3xl font-roboto font-semibold text-rich-black-900">{skill.score}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Score Controls */}
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => updateSkillScore(skill.id, skill.score - 1)}
+                      className="p-3 hover:bg-platinum-100 rounded-xl transition-colors border border-platinum-300"
+                    >
+                      <Minus className="h-5 w-5 text-oxford-blue-600" />
+                    </button>
+                    
+                    <div className="flex-1">
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={skill.score}
+                        onChange={(e) => updateSkillScore(skill.id, parseInt(e.target.value))}
+                        className="w-full h-3 bg-platinum-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, #415A77 0%, #415A77 ${skill.score * 10}%, #E0E1DD ${skill.score * 10}%, #E0E1DD 100%)`
+                        }}
+                      />
+                      <div className="flex justify-between text-xs font-roboto font-light text-oxford-blue-500 mt-2">
+                        <span>0</span>
+                        <span>5</span>
+                        <span>10</span>
                       </div>
-                      <span className="text-2xl font-semibold text-neutral-50 ml-4">
-                        {skill.score}
-                      </span>
                     </div>
                     
-                    {/* Score Controls */}
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => updateSkillScore(skill.id, skill.score - 1)}
-                        className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
-                      >
-                        <Minus className="h-4 w-4 text-neutral-400" />
-                      </button>
-                      
-                      <div className="flex-1">
-                        <input
-                          type="range"
-                          min="0"
-                          max="10"
-                          value={skill.score}
-                          onChange={(e) => updateSkillScore(skill.id, parseInt(e.target.value))}
-                          className="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer slider"
-                          style={{
-                            background: `linear-gradient(to right, rgb(var(--primary)) 0%, rgb(var(--primary)) ${skill.score * 10}%, rgb(38, 38, 38) ${skill.score * 10}%, rgb(38, 38, 38) 100%)`
-                          }}
-                        />
-                        <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                          <span>0</span>
-                          <span>5</span>
-                          <span>10</span>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => updateSkillScore(skill.id, skill.score + 1)}
-                        className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
-                      >
-                        <Plus className="h-4 w-4 text-neutral-400" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => updateSkillScore(skill.id, skill.score + 1)}
+                      className="p-3 hover:bg-platinum-100 rounded-xl transition-colors border border-platinum-300"
+                    >
+                      <Plus className="h-5 w-5 text-oxford-blue-600" />
+                    </button>
                   </div>
                   
                   {/* Comments */}
                   <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-2">
+                    <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       Observações (opcional)
                     </label>
                     <textarea
                       value={skill.comments}
                       onChange={(e) => updateSkillComments(skill.id, e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                      rows={2}
+                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+                      rows={3}
                       placeholder="Adicione comentários sobre esta competência..."
                     />
                   </div>
