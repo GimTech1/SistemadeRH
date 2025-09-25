@@ -14,6 +14,8 @@ import {
   ArrowDownRight,
   Activity,
   Clock,
+  ClipboardCheck,
+  BarChart3,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -135,88 +137,88 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-50">
+        <h1 className="text-4xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>
           Dashboard
         </h1>
-        <p className="text-sm text-neutral-400 mt-1">
+        <p className="text-lg text-slate-500 mt-3 font-roboto font-light tracking-wide">
           Bem-vindo, {userProfile?.full_name || userProfile?.email || 'Usuário'}
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {statsCards.map((stat) => (
-          <div key={stat.title} className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-10 w-10 bg-neutral-800 rounded-lg flex items-center justify-center">
-                <stat.icon className="h-5 w-5 text-neutral-400" />
+          <div key={stat.title} className="card-elegant p-10">
+            <div className="flex items-center justify-between mb-8">
+              <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+                <stat.icon className="h-8 w-8 text-blue-600" />
               </div>
-              <span className={`text-xs font-medium flex items-center gap-1 ${
-                stat.positive ? 'text-success-500' : 'text-danger-500'
+              <span className={`text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm ${
+                stat.positive ? 'text-green-700 bg-green-50/80 border border-green-200/50' : 'text-red-700 bg-red-50/80 border border-red-200/50'
               }`}>
                 {stat.positive ? (
-                  <ArrowUpRight className="h-3 w-3" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3" />
+                  <ArrowDownRight className="h-3.5 w-3.5" />
                 )}
-                {stat.changeValue}%
+                <span className="tracking-wide">{stat.changeValue}%</span>
               </span>
             </div>
             <div>
-              <p className="text-2xl font-semibold text-neutral-50">{stat.value}</p>
-              <p className="text-sm text-neutral-400 mt-1">{stat.title}</p>
+              <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>{stat.value}</p>
+              <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">{stat.title}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Recent Evaluations */}
-        <div className="lg:col-span-2 card">
-          <div className="p-6 border-b border-neutral-800">
+        <div className="lg:col-span-2 card-elegant">
+          <div className="p-10 border-b border-slate-100/60">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Avaliações Recentes</h2>
-              <Link href="/evaluations" className="text-sm text-primary-500 hover:text-primary-400">
+              <h2 className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 300 }}>Avaliações Recentes</h2>
+              <Link href="/evaluations" className="text-sm font-light text-blue-600 hover:text-blue-700 tracking-wide">
                 Ver todas
               </Link>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-10">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    <th className="pb-3">Colaborador</th>
-                    <th className="pb-3">Departamento</th>
-                    <th className="pb-3">Data</th>
-                    <th className="pb-3 text-right">Nota</th>
-                    <th className="pb-3 text-right">Variação</th>
+                  <tr className="text-left text-xs font-light text-slate-500 uppercase tracking-widest">
+                    <th className="pb-6 font-light">Colaborador</th>
+                    <th className="pb-6 font-light">Departamento</th>
+                    <th className="pb-6 font-light">Data</th>
+                    <th className="pb-6 text-right font-light">Nota</th>
+                    <th className="pb-6 text-right font-light">Variação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800">
+                <tbody className="divide-y divide-slate-50">
                   {data.recentEvaluations.map((evaluation) => (
-                    <tr key={evaluation.id} className="text-sm">
-                      <td className="py-3">
+                    <tr key={evaluation.id} className="text-sm hover:bg-slate-50/50 transition-all duration-300">
+                      <td className="py-6">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-medium text-neutral-300">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200/50 flex items-center justify-center text-xs font-light text-blue-700 shadow-sm">
                             {evaluation.employee.split(' ').map((n: string) => n[0]).join('')}
                           </div>
-                          <span className="ml-3 text-neutral-200">{evaluation.employee}</span>
+                          <span className="ml-5 font-light text-slate-900 tracking-wide">{evaluation.employee}</span>
                         </div>
                       </td>
-                      <td className="py-3 text-neutral-400">{evaluation.department}</td>
-                      <td className="py-3 text-neutral-400">{evaluation.date}</td>
-                      <td className="py-3 text-right">
-                        <span className="font-medium text-neutral-200">{evaluation.score}</span>
+                      <td className="py-6 text-slate-600 font-light tracking-wide">{evaluation.department}</td>
+                      <td className="py-6 text-slate-600 font-light tracking-wide">{evaluation.date}</td>
+                      <td className="py-6 text-right">
+                        <span className="font-light text-slate-900 text-base">{evaluation.score}</span>
                       </td>
-                      <td className="py-3 text-right">
-                        <span className={`inline-flex items-center text-xs font-medium ${
-                          evaluation.change >= 0 ? 'text-success-500' : 'text-danger-500'
+                      <td className="py-6 text-right">
+                        <span className={`inline-flex items-center text-xs font-light px-3 py-1.5 rounded-full backdrop-blur-sm ${
+                          evaluation.change >= 0 ? 'text-green-700 bg-green-50/80 border border-green-200/50' : 'text-red-700 bg-red-50/80 border border-red-200/50'
                         }`}>
-                          {evaluation.change >= 0 ? '+' : ''}{evaluation.change}
+                          <span className="tracking-wide">{evaluation.change >= 0 ? '+' : ''}{evaluation.change}</span>
                         </span>
                       </td>
                     </tr>
@@ -228,40 +230,42 @@ export default function DashboardPage() {
         </div>
 
         {/* Upcoming Deadlines */}
-        <div className="card">
-          <div className="p-6 border-b border-neutral-800">
+        <div className="card-elegant">
+          <div className="p-10 border-b border-slate-100/60">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Próximos Prazos</h2>
-              <button className="text-neutral-500 hover:text-neutral-300">
-                <MoreVertical className="h-4 w-4" />
+              <h2 className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 300 }}>Próximos Prazos</h2>
+              <button className="text-slate-400 hover:text-slate-600 transition-colors duration-300">
+                <MoreVertical className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-10">
+            <div className="space-y-8">
               {data.upcomingDeadlines.map((deadline) => (
-                <div key={deadline.id} className="flex items-start space-x-3">
+                <div key={deadline.id} className="flex items-start space-x-6 group hover:bg-slate-50/50 -mx-4 px-4 py-4 rounded-2xl transition-all duration-300">
                   <div className="flex-shrink-0">
-                    <div className="h-8 w-8 bg-neutral-800 rounded-lg flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-neutral-400" />
+                    <div className="h-14 w-14 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-3xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                      <Clock className="h-7 w-7 text-amber-600" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-200">
+                    <p className="text-base font-light text-slate-900 tracking-wide">
                       {deadline.title}
                     </p>
-                    <p className="text-xs text-neutral-500 mt-1">
+                    <p className="text-sm text-slate-500 mt-2 font-light tracking-wide">
                       {deadline.date}
                     </p>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    deadline.type === 'evaluation' ? 'badge-primary' :
-                    deadline.type === 'goal' ? 'badge-success' :
-                    'badge-warning'
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-light backdrop-blur-sm border ${
+                    deadline.type === 'evaluation' ? 'bg-blue-50/80 text-blue-700 border-blue-200/50' :
+                    deadline.type === 'goal' ? 'bg-green-50/80 text-green-700 border-green-200/50' :
+                    'bg-amber-50/80 text-amber-700 border-amber-200/50'
                   }`}>
-                    {deadline.type === 'evaluation' ? 'Avaliação' :
-                     deadline.type === 'goal' ? 'Meta' :
-                     'Feedback'}
+                    <span className="tracking-wide">
+                      {deadline.type === 'evaluation' ? 'Avaliação' :
+                       deadline.type === 'goal' ? 'Meta' :
+                       'Feedback'}
+                    </span>
                   </span>
                 </div>
               ))}
@@ -271,49 +275,83 @@ export default function DashboardPage() {
       </div>
 
       {/* Performance Trend */}
-      <div className="card">
-        <div className="p-6 border-b border-neutral-800">
+      <div className="card-elegant">
+        <div className="p-10 border-b border-slate-100/60">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Tendência de Desempenho</h2>
-              <p className="text-sm text-neutral-400 mt-1">Últimos 12 meses</p>
+              <h2 className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 300 }}>Tendência de Desempenho</h2>
+              <p className="text-sm text-slate-500 mt-3 font-light tracking-wide">Últimos 12 meses</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-semibold text-neutral-50">
+            <div className="flex items-center space-x-4">
+              <span className="text-4xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>
                 {data.performanceTrend > 0 ? '+' : ''}{data.performanceTrend}%
               </span>
               {data.performanceTrend > 0 ? (
-                <TrendingUp className="h-5 w-5 text-success-500" />
+                <div className="h-16 w-16 bg-gradient-to-br from-green-50 to-green-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+                  <TrendingUp className="h-8 w-8 text-green-600" />
+                </div>
               ) : (
-                <TrendingDown className="h-5 w-5 text-danger-500" />
+                <div className="h-16 w-16 bg-gradient-to-br from-red-50 to-red-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+                  <TrendingDown className="h-8 w-8 text-red-600" />
+                </div>
               )}
             </div>
           </div>
         </div>
-        <div className="p-6">
-          <div className="h-64 flex items-center justify-center text-neutral-600">
+        <div className="p-10">
+          <div className="h-96 flex items-center justify-center bg-gradient-to-br from-slate-50/50 to-slate-100/30 rounded-3xl border border-slate-100/60">
             {/* Placeholder para gráfico */}
-            <p className="text-sm">Gráfico de tendências</p>
+            <div className="text-center">
+              <div className="h-20 w-20 bg-gradient-to-br from-slate-100 to-slate-200/50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <BarChart3 className="h-10 w-10 text-slate-400" />
+              </div>
+              <p className="text-base font-light text-slate-600 tracking-wide">Gráfico de tendências</p>
+              <p className="text-sm text-slate-400 mt-2 font-light tracking-wide">Em breve</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/evaluations/new">
-          <button className="w-full btn-secondary">
-            Nova Avaliação
-          </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Link href="/evaluations/new" className="group">
+          <div className="card-elegant p-8 group-hover:border-blue-200/80">
+            <div className="flex items-center space-x-6">
+              <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center group-hover:from-blue-100 group-hover:to-blue-200/60 transition-all duration-500 shadow-sm group-hover:shadow-md">
+                <ClipboardCheck className="h-8 w-8 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-roboto font-light text-slate-900 text-lg tracking-wide">Nova Avaliação</h3>
+                <p className="text-sm text-slate-500 font-roboto font-light tracking-wide mt-1">Criar nova avaliação</p>
+              </div>
+            </div>
+          </div>
         </Link>
-        <Link href="/goals/new">
-          <button className="w-full btn-secondary">
-            Criar Meta
-          </button>
+        <Link href="/goals/new" className="group">
+          <div className="card-elegant p-8 group-hover:border-green-200/80">
+            <div className="flex items-center space-x-6">
+              <div className="h-16 w-16 bg-gradient-to-br from-green-50 to-green-100/50 rounded-3xl flex items-center justify-center group-hover:from-green-100 group-hover:to-green-200/60 transition-all duration-500 shadow-sm group-hover:shadow-md">
+                <Target className="h-8 w-8 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-roboto font-light text-slate-900 text-lg tracking-wide">Criar Meta</h3>
+                <p className="text-sm text-slate-500 font-roboto font-light tracking-wide mt-1">Definir nova meta</p>
+              </div>
+            </div>
+          </div>
         </Link>
-        <Link href="/reports">
-          <button className="w-full btn-secondary">
-            Gerar Relatório
-          </button>
+        <Link href="/reports" className="group">
+          <div className="card-elegant p-8 group-hover:border-purple-200/80">
+            <div className="flex items-center space-x-6">
+              <div className="h-16 w-16 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-3xl flex items-center justify-center group-hover:from-purple-100 group-hover:to-purple-200/60 transition-all duration-500 shadow-sm group-hover:shadow-md">
+                <BarChart3 className="h-8 w-8 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-roboto font-light text-slate-900 text-lg tracking-wide">Gerar Relatório</h3>
+                <p className="text-sm text-slate-500 font-roboto font-light tracking-wide mt-1">Criar relatório</p>
+              </div>
+            </div>
+          </div>
         </Link>
       </div>
     </div>

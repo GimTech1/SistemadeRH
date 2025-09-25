@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -23,6 +24,7 @@ import {
   UserCircle,
   ChevronLeft,
   ChevronRight,
+  Home,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -39,9 +41,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isProfileHovered, setIsProfileHovered] = useState(false)
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
@@ -123,39 +122,28 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
     }
   }
 
+  const toggleSidebar = () => {
+    const next = !isCollapsed
+    setIsCollapsed(next)
+    onCollapseChange?.(next)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', String(next))
+    }
+  }
+
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
 
   useEffect(() => {
-    if (isCollapsed) {
-      setIsProfileOpen(false)
-    }
-  }, [isCollapsed])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout)
+    if (typeof window !== 'undefined') {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      if (savedState === 'true') {
+        setIsCollapsed(true)
+        onCollapseChange?.(true)
       }
     }
-  }, [hoverTimeout])
-
-  // Fechar dropdown quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isProfileOpen) {
-        const target = event.target as Element
-        if (!target.closest('[data-profile-dropdown]')) {
-          setIsProfileOpen(false)
-        }
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isProfileOpen])
+  }, [onCollapseChange])
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -200,9 +188,9 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-dark-900/90 backdrop-blur-md border border-dark-800"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-lg text-slate-700 hover:text-slate-900 hover:bg-white transition-all duration-300"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {/* Overlay for mobile */}
@@ -216,205 +204,127 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full bg-dark-900/95 backdrop-blur-md border-r border-dark-800 z-40",
-          "transform transition-all duration-300 ease-in-out",
-          "lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-          isCollapsed ? "w-16" : "w-64"
+          "fixed left-0 top-0 flex-col bg-slate-50/95 backdrop-blur-md border-r border-slate-200 z-40 shadow-lg transition-all duration-300 h-screen",
+          "lg:flex",
+          isOpen ? "flex" : "hidden",
+          isCollapsed ? "w-[70px]" : "w-64"
         )}
       >
-        <div className="flex flex-col h-full">
-          {/* Header with Logo and Toggle */}
-          <div className="p-6 border-b border-dark-800 flex items-center justify-between">
-            {!isCollapsed && (
-              <img 
-                src="/logo-full-horizontal-branco.png" 
-                alt="Logo da Empresa" 
-                className="h-24 w-auto object-contain mx-auto"
-                style={{ maxWidth: '95%' }}
+        {/* Header com logo */}
+        <div className={cn(
+          "border-b border-slate-200 flex items-center justify-between flex-shrink-0",
+          isCollapsed ? "p-3" : "p-4"
+        )}>
+          {!isCollapsed && (
+            <div className="flex items-center">
+              <Image 
+                src="/logo-full-horizontal-preto.png" 
+                alt="Logo" 
+                width={500} 
+                height={500} 
+                className="mr-3"
               />
+            </div>
+          )}
+          
+          <button 
+            onClick={toggleSidebar}
+            className={cn(
+              "p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300",
+              isCollapsed ? "mx-auto" : ""
             )}
-            {isCollapsed && (
-              <img 
-                src="/logo-brasão-branco.png" 
-                alt="Logo da Empresa" 
-                className="h-12 w-12 object-contain mx-auto"
-              />
-            )}
-            <button
-              onClick={() => {
-                const newCollapsed = !isCollapsed
-                setIsCollapsed(newCollapsed)
-                onCollapseChange?.(newCollapsed)
-              }}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-dark-800/50 hover:bg-dark-800 transition-colors"
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-              ) : (
-                <ChevronLeft className="h-4 w-4 text-gray-400" />
-              )}
-            </button>
-          </div>
+            title={isCollapsed ? "Expandir menu" : "Colapsar menu"}
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4">
-            <ul className="space-y-1 px-3">
-              {filteredMenuItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                        "hover:bg-dark-800/50",
-                        isActive && "bg-primary-600/20 text-primary-400 border-l-4 border-primary-500",
-                        isCollapsed && "justify-center px-2"
-                      )}
-                      title={isCollapsed ? item.title : undefined}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && (
-                        <span className="font-medium truncate">{item.title}</span>
-                      )}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
+        {/* Menu principal */}
+        <nav className="flex-1 p-2 flex flex-col justify-between">
+          <ul className="space-y-1">
+            {filteredMenuItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
+                      isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3",
+                      isActive 
+                        ? "bg-blue-100 text-blue-800 shadow-sm" 
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    )}
+                    title={isCollapsed ? item.title : undefined}
+                  >
+                    <Icon className={cn(
+                      "flex-shrink-0",
+                      isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                    )} />
+                    {!isCollapsed && <span className="tracking-wide">{item.title}</span>}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
 
-          {/* User Profile Section */}
-          <div className="border-t border-dark-800 p-4">
-            <div className="relative" data-profile-dropdown>
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                onMouseEnter={() => {
-                  if (isCollapsed) {
-                    if (hoverTimeout) {
-                      clearTimeout(hoverTimeout)
-                      setHoverTimeout(null)
-                    }
-                    setIsProfileHovered(true)
-                  }
-                }}
-                onMouseLeave={() => {
-                  if (isCollapsed) {
-                    const timeout = setTimeout(() => {
-                      setIsProfileHovered(false)
-                    }, 200)
-                    setHoverTimeout(timeout)
-                  }
-                }}
+          {/* Footer com perfil do usuário e ações */}
+          <div className="border-t border-slate-200 pt-2 mt-2">
+            {/* Botões de ação */}
+            <div className="mb-2 space-y-1">
+              <Link
+                href="/"
                 className={cn(
-                  "flex items-center gap-3 w-full p-3 rounded-lg hover:bg-dark-800/50 transition-colors",
-                  isCollapsed && "justify-center px-2"
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-300",
+                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
                 )}
-                title={isCollapsed ? userName : undefined}
+                title="Início"
               >
-                <div className="h-10 w-10 rounded-full bg-primary-600/20 flex items-center justify-center flex-shrink-0">
-                  <UserCircle className="h-6 w-6 text-primary-400" />
+                <Home className={cn(
+                  "flex-shrink-0",
+                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                )} />
+                {!isCollapsed && <span className="tracking-wide">Início</span>}
+              </Link>
+              
+              <button
+                onClick={handleLogout}
+                className={cn(
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-slate-700 hover:bg-red-50 hover:text-red-700 transition-all duration-300",
+                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
+                )}
+                title="Sair"
+              >
+                <LogOut className={cn(
+                  "flex-shrink-0",
+                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                )} />
+                {!isCollapsed && <span className="tracking-wide">Sair</span>}
+              </button>
+            </div>
+            
+            {/* Perfil do usuário */}
+            {userName && (
+              <div className={cn(
+                "p-3 rounded-xl bg-blue-50/50 border border-blue-100/50",
+                isCollapsed ? "flex justify-center" : "flex items-center space-x-3"
+              )}>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50 flex-shrink-0">
+                  <UserCircle className="w-6 h-6 text-white" />
                 </div>
                 {!isCollapsed && (
-                  <>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium text-gray-200 truncate" title={userName}>{userName}</p>
-                      <p className="text-xs text-gray-500 truncate" title={userPosition || userRole}>
-                        {userPosition || userRole}
-                      </p>
-                    </div>
-                    <ChevronDown className={cn(
-                      "h-4 w-4 transition-transform",
-                      isProfileOpen && "rotate-180"
-                    )} />
-                  </>
-                )}
-              </button>
-
-              {isProfileOpen && !isCollapsed && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden z-[9999]">
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
-                  >
-                    <UserCircle className="h-4 w-4" />
-                    <span className="text-sm">Meu Perfil</span>
-                  </Link>
-                  <Link
-                    href="/notifications"
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
-                  >
-                    <Bell className="h-4 w-4" />
-                    <span className="text-sm">Notificações</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 w-full hover:bg-dark-700 transition-colors text-red-400"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="text-sm">Sair</span>
-                  </button>
-                </div>
-              )}
-
-              {isCollapsed && (isProfileOpen || isProfileHovered) && (
-                <div 
-                  className="absolute left-full ml-2 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden shadow-lg z-[9999] animate-in slide-in-from-left-2 duration-200"
-                  style={{ 
-                    top: 'auto',
-                    bottom: '100%',
-                    marginBottom: '8px',
-                    minWidth: '200px',
-                    maxHeight: '300px',
-                    overflowY: 'auto'
-                  }}
-                  onMouseEnter={() => {
-                    if (hoverTimeout) {
-                      clearTimeout(hoverTimeout)
-                      setHoverTimeout(null)
-                    }
-                    setIsProfileHovered(true)
-                  }}
-                  onMouseLeave={() => {
-                    const timeout = setTimeout(() => {
-                      setIsProfileHovered(false)
-                    }, 200)
-                    setHoverTimeout(timeout)
-                  }}
-                >
-                  <div className="p-3 border-b border-dark-700">
-                    <p className="text-sm font-medium text-gray-200">{userName}</p>
-                    <p className="text-xs text-gray-500">{userPosition || userRole}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-slate-900 text-sm font-roboto font-medium truncate tracking-wide">{userName}</p>
+                    <p className="text-slate-600 text-xs font-roboto font-light truncate tracking-wide">{userPosition || userRole}</p>
+                    <div className="flex items-center mt-1"></div>
                   </div>
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
-                  >
-                    <UserCircle className="h-4 w-4" />
-                    <span className="text-sm">Meu Perfil</span>
-                  </Link>
-                  <Link
-                    href="/notifications"
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors"
-                  >
-                    <Bell className="h-4 w-4" />
-                    <span className="text-sm">Notificações</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 w-full hover:bg-dark-700 transition-colors text-red-400"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="text-sm">Sair</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        </nav>
       </aside>
     </>
   )

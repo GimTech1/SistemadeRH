@@ -62,19 +62,19 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a1929] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a1929]">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-right" />
       <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
       <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Header com logo mobile */}
-        <header className="lg:hidden bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 p-4">
+        <header className="lg:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 p-4 shadow-sm">
           <img 
             src="/logo-full-horizontal-branco.png" 
             alt="Logo" 
@@ -82,7 +82,7 @@ export default function DashboardLayout({
             style={{ maxWidth: '250px' }}
           />
         </header>
-        <div className="p-4 lg:p-8">
+        <div className="min-h-screen">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

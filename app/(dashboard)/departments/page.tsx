@@ -163,9 +163,9 @@ export default function DepartmentsPage() {
   }
 
   const getTrendIcon = (trend: string) => {
-    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-green-500" />
-    if (trend === 'down') return <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />
-    return <Activity className="h-4 w-4 text-neutral-500" />
+    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-green-600" />
+    if (trend === 'down') return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+    return <Activity className="h-4 w-4 text-slate-400" />
   }
 
   const filteredDepartments = departments.filter(dept =>
@@ -176,171 +176,211 @@ export default function DepartmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-neutral-400">Carregando...</div>
+      <div className="flex items-center justify-center min-h-[60vh] p-8">
+        <div className="text-center">
+          <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <Building className="h-8 w-8 text-blue-600 animate-pulse" />
+          </div>
+          <p className="text-slate-600 font-roboto font-light tracking-wide">Carregando departamentos...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-50">Departamentos</h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <h1 className="text-4xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>
+            Departamentos
+          </h1>
+          <p className="text-lg text-slate-500 mt-3 font-roboto font-light tracking-wide">
             Gerencie e acompanhe o desempenho de cada departamento
           </p>
         </div>
         <button 
           onClick={() => setShowNewDepartment(true)}
-          className="btn-primary"
+          className="btn-primary flex items-center gap-3"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-5 w-5" />
           Novo Departamento
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-400">Total de Departamentos</p>
-              <p className="text-2xl font-semibold text-neutral-50">{departments.length}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="card-elegant p-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+              <Building className="h-8 w-8 text-blue-600" />
             </div>
-            <Building className="h-8 w-8 text-primary-500" />
+            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-blue-700 bg-blue-50/80 border border-blue-200/50">
+              <span className="tracking-wide">Ativo</span>
+            </span>
+          </div>
+          <div>
+            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>{departments.length}</p>
+            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Total de Departamentos</p>
           </div>
         </div>
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-400">Total de Colaboradores</p>
-              <p className="text-2xl font-semibold text-neutral-50">
-                {departments.reduce((acc, dept) => acc + dept.employeeCount, 0)}
-              </p>
+        
+        <div className="card-elegant p-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-16 w-16 bg-gradient-to-br from-green-50 to-green-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+              <Users className="h-8 w-8 text-green-600" />
             </div>
-            <Users className="h-8 w-8 text-blue-500" />
+            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-green-700 bg-green-50/80 border border-green-200/50">
+              <span className="tracking-wide">Crescendo</span>
+            </span>
+          </div>
+          <div>
+            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
+              {departments.reduce((acc, dept) => acc + dept.employeeCount, 0)}
+            </p>
+            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Total de Colaboradores</p>
           </div>
         </div>
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-400">Média Geral</p>
-              <p className="text-2xl font-semibold text-neutral-50">
-                {(departments.reduce((acc, dept) => acc + dept.averageScore, 0) / departments.length).toFixed(1)}
-              </p>
+        
+        <div className="card-elegant p-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-16 w-16 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+              <Star className="h-8 w-8 text-amber-600" />
             </div>
-            <Star className="h-8 w-8 text-yellow-500" />
+            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-amber-700 bg-amber-50/80 border border-amber-200/50">
+              <span className="tracking-wide">Excelente</span>
+            </span>
+          </div>
+          <div>
+            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
+              {(departments.reduce((acc, dept) => acc + dept.averageScore, 0) / departments.length).toFixed(1)}
+            </p>
+            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Média Geral</p>
           </div>
         </div>
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-400">Taxa de Metas</p>
-              <p className="text-2xl font-semibold text-neutral-50">
-                {Math.round(
-                  (departments.reduce((acc, dept) => acc + dept.completedGoals, 0) /
-                  departments.reduce((acc, dept) => acc + dept.goals, 0)) * 100
-                )}%
-              </p>
+        
+        <div className="card-elegant p-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-16 w-16 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-3xl flex items-center justify-center shadow-sm">
+              <Target className="h-8 w-8 text-purple-600" />
             </div>
-            <Target className="h-8 w-8 text-green-500" />
+            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-purple-700 bg-purple-50/80 border border-purple-200/50">
+              <span className="tracking-wide">Meta</span>
+            </span>
+          </div>
+          <div>
+            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
+              {Math.round(
+                (departments.reduce((acc, dept) => acc + dept.completedGoals, 0) /
+                departments.reduce((acc, dept) => acc + dept.goals, 0)) * 100
+              )}%
+            </p>
+            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Taxa de Metas</p>
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="card p-4">
+      <div className="card-elegant p-8">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 placeholder-neutral-500"
-            placeholder="Buscar departamentos..."
+            className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl text-slate-900 placeholder-slate-400 font-roboto font-light tracking-wide focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-100/40 focus:bg-white hover:bg-white hover:border-slate-300/60 transition-all duration-300 shadow-[0_1px_3px_0_rgb(0_0_0_/_0.02)]"
+            placeholder="Buscar departamentos por nome, gerente ou descrição..."
           />
         </div>
       </div>
 
       {/* Departments Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {filteredDepartments.map((dept) => (
-          <div key={dept.id} className="card hover:bg-neutral-800/50 transition-all group">
-            <div className="p-6">
+          <div key={dept.id} className="card-elegant group">
+            <div className="p-10">
               {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="h-12 w-12 rounded-lg bg-primary-500/10 flex items-center justify-center">
-                    <Building className="h-6 w-6 text-primary-500" />
+              <div className="flex items-start justify-between mb-8">
+                <div className="flex items-center space-x-4">
+                  <div className="h-16 w-16 rounded-3xl bg-gradient-to-br from-blue-50 to-blue-100/50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-500">
+                    <Building className="h-8 w-8 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-200 text-lg">{dept.name}</h3>
-                    <p className="text-sm text-neutral-500">Gerente: {dept.manager}</p>
+                    <h3 className="font-roboto font-light text-slate-900 text-xl tracking-wide">{dept.name}</h3>
+                    <p className="text-sm text-slate-600 font-roboto font-light tracking-wide mt-1">
+                      <Briefcase className="h-4 w-4 inline mr-2" />
+                      {dept.manager}
+                    </p>
                   </div>
                 </div>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-200">
-                  <MoreVertical className="h-4 w-4" />
+                <button className="opacity-0 group-hover:opacity-100 transition-all duration-300 text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100">
+                  <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Description */}
-              <p className="text-sm text-neutral-400 mb-4">{dept.description}</p>
+              <p className="text-sm text-slate-600 font-roboto font-light tracking-wide mb-8 leading-relaxed">{dept.description}</p>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-neutral-900 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-neutral-500">Colaboradores</span>
-                    <Users className="h-3 w-3 text-neutral-500" />
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-slate-50/50 to-slate-100/30 rounded-2xl p-6 border border-slate-100/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase">Colaboradores</span>
+                    <Users className="h-4 w-4 text-slate-400" />
                   </div>
-                  <p className="text-lg font-semibold text-neutral-200">{dept.employeeCount}</p>
+                  <p className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>{dept.employeeCount}</p>
                 </div>
-                <div className="bg-neutral-900 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-neutral-500">Média</span>
-                    {getTrendIcon(dept.trend)}
+                <div className="bg-gradient-to-br from-slate-50/50 to-slate-100/30 rounded-2xl p-6 border border-slate-100/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase">Média</span>
+                    <div className="flex items-center gap-1">
+                      {getTrendIcon(dept.trend)}
+                    </div>
                   </div>
-                  <p className="text-lg font-semibold text-neutral-200">{dept.averageScore}</p>
+                  <p className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>{dept.averageScore}</p>
                 </div>
               </div>
 
               {/* Goals Progress */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-neutral-500">Metas</span>
-                  <span className="text-neutral-300">{dept.completedGoals}/{dept.goals}</span>
+              <div className="mb-8">
+                <div className="flex items-center justify-between text-sm mb-4">
+                  <span className="text-slate-600 font-roboto font-light tracking-wide">Progresso das Metas</span>
+                  <span className="text-slate-900 font-roboto font-medium">{dept.completedGoals}/{dept.goals}</span>
                 </div>
-                <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+                <div className="h-3 bg-gradient-to-r from-slate-100 to-slate-200/50 rounded-full overflow-hidden border border-slate-200/50">
                   <div 
-                    className="h-full bg-gradient-to-r from-primary-500 to-primary-400 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500 rounded-full"
                     style={{ width: `${(dept.completedGoals / dept.goals) * 100}%` }}
                   />
                 </div>
+                <p className="text-xs text-slate-500 font-roboto font-light tracking-wide mt-2">
+                  {Math.round((dept.completedGoals / dept.goals) * 100)}% concluído
+                </p>
               </div>
 
               {/* Top Performers */}
-              <div className="border-t border-neutral-800 pt-4">
-                <p className="text-xs text-neutral-500 mb-3">Top Performers</p>
-                <div className="flex -space-x-2">
-                  {dept.topPerformers.map((performer, index) => (
-                    <div
-                      key={performer.id}
-                      className="relative group/avatar"
-                      style={{ zIndex: dept.topPerformers.length - index }}
-                    >
-                      <div className="h-8 w-8 rounded-full bg-neutral-800 border-2 border-neutral-900 flex items-center justify-center text-xs font-medium text-neutral-300">
-                        {performer.avatar}
+              <div className="border-t border-slate-100/60 pt-8">
+                <p className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase mb-6">Melhores Desempenhos</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex -space-x-3">
+                    {dept.topPerformers.map((performer, index) => (
+                      <div
+                        key={performer.id}
+                        className="relative group/avatar"
+                        style={{ zIndex: dept.topPerformers.length - index }}
+                      >
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200/50 border-3 border-white flex items-center justify-center text-xs font-roboto font-medium text-blue-700 shadow-sm group-hover/avatar:shadow-md transition-all duration-300">
+                          {performer.avatar}
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-slate-800 text-white rounded-xl text-xs font-roboto font-light opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 whitespace-nowrap shadow-lg">
+                          {performer.name} - {performer.score}
+                        </div>
                       </div>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-800 rounded text-xs text-neutral-200 opacity-0 group-hover/avatar:opacity-100 transition-opacity whitespace-nowrap">
-                        {performer.name} - {performer.score}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                   <Link href={`/departments/${dept.id}`}>
-                    <button className="h-8 w-8 rounded-full bg-neutral-800 border-2 border-neutral-900 flex items-center justify-center text-xs text-neutral-400 hover:text-primary-500 hover:border-primary-500/50 transition-colors">
-                      <ChevronRight className="h-4 w-4" />
+                    <button className="h-12 w-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200/50 border border-slate-200/60 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:from-blue-50 hover:to-blue-100/50 hover:border-blue-200/60 transition-all duration-300 shadow-sm hover:shadow-md">
+                      <ChevronRight className="h-5 w-5" />
                     </button>
                   </Link>
                 </div>
@@ -352,12 +392,21 @@ export default function DepartmentsPage() {
 
       {/* Empty State */}
       {filteredDepartments.length === 0 && (
-        <div className="card p-12 text-center">
-          <Building className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-neutral-300 mb-2">Nenhum departamento encontrado</h3>
-          <p className="text-sm text-neutral-500">
-            Tente ajustar sua busca ou crie um novo departamento
+        <div className="card-elegant p-16 text-center">
+          <div className="h-20 w-20 bg-gradient-to-br from-slate-100 to-slate-200/50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+            <Building className="h-10 w-10 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-roboto font-light text-slate-900 mb-4 tracking-wide">Nenhum departamento encontrado</h3>
+          <p className="text-sm text-slate-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
+            Tente ajustar sua busca ou crie um novo departamento para começar a gerenciar sua equipe
           </p>
+          <button 
+            onClick={() => setShowNewDepartment(true)}
+            className="btn-primary mt-8"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Criar Primeiro Departamento
+          </button>
         </div>
       )}
     </div>
