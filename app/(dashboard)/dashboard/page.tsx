@@ -238,17 +238,17 @@ export default function DashboardPage() {
           </div>
           <div className="p-6">
             <div className="mb-6">
-              <div className="flex items-baseline gap-4">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Performance Atual</span>
-                <span className="text-3xl font-roboto font-semibold text-rich-black-900">87.5%</span>
+                <span className="text-2xl font-roboto font-semibold text-rich-black-900">87.5%</span>
               </div>
-              <div className="flex items-baseline gap-4 mt-2">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Meta</span>
-                <span className="text-2xl font-roboto font-medium text-oxford-blue-600">85.0%</span>
+                <span className="text-xl font-roboto font-medium text-oxford-blue-600">85.0%</span>
               </div>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-roboto font-medium text-emerald-600">Meta</span>
-                <span className="text-lg font-roboto font-semibold text-emerald-600">103%</span>
+                <span className="text-xl font-roboto font-semibold text-emerald-600">103%</span>
               </div>
             </div>
             
