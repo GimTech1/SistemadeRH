@@ -113,7 +113,7 @@ export default function DashboardLayout({
         />
 
         <div className="min-h-screen pt-10">
-          <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </div>
