@@ -117,12 +117,12 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e visualize o desempenho de todos os colaboradores</h1>
         </div>
-        <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
           <UserPlus className="h-4 w-4" />
-          Novo Colaborador
-        </button>
-      </div>
-
+              Novo Colaborador
+            </button>
+                </div>
+                
       {/* Cards de métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
@@ -131,27 +131,27 @@ export default function EmployeesPage() {
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Total de Colaboradores</p>
               <p className="text-3xl font-roboto font-semibold text-rich-black-900">{employees.length}</p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">funcionários ativos</p>
-            </div>
+                </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6 text-[#778DA9]" />
-            </div>
-          </div>
-        </div>
+                        </div>
+                      </div>
+                    </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
-          <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Média de Performance</p>
               <p className="text-3xl font-roboto font-semibold text-rich-black-900">
                 {(employees.reduce((acc, e) => acc + e.score, 0) / employees.length || 0).toFixed(1)}
               </p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação geral</p>
-            </div>
+                      </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
               <Award className="w-6 h-6 text-[#778DA9]" />
-            </div>
-          </div>
-        </div>
+                            </div>
+                          </div>
+                        </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
@@ -205,30 +205,30 @@ export default function EmployeesPage() {
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-roboto font-medium text-rich-black-900">Ver por:</label>
-              <select 
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
+          <select
+            value={selectedDepartment}
+            onChange={(e) => setSelectedDepartment(e.target.value)}
                 className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-              >
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>
-                    {dept === 'all' ? 'Todos os Departamentos' : dept}
-                  </option>
-                ))}
-              </select>
+          >
+            {departments.map(dept => (
+              <option key={dept} value={dept}>
+                {dept === 'all' ? 'Todos os Departamentos' : dept}
+              </option>
+            ))}
+          </select>
             </div>
             
             <div className="flex items-center gap-2">
               <label className="text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
-              <select 
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
                 className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
               >
                 <option value="name">Nome</option>
                 <option value="score">Pontuação</option>
                 <option value="department">Departamento</option>
-              </select>
+          </select>
             </div>
 
             <div className="flex items-center gap-2">
@@ -266,8 +266,8 @@ export default function EmployeesPage() {
       {/* Visualização de funcionários */}
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full">
               <thead className="bg-platinum-50 border-b border-platinum-200">
                 <tr className="text-left text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Colaborador</th>
@@ -275,54 +275,54 @@ export default function EmployeesPage() {
                   <th className="px-6 py-4">Departamento</th>
                   <th className="px-6 py-4 text-center">Performance</th>
                   <th className="px-6 py-4 text-center">Ações</th>
-                </tr>
-              </thead>
+              </tr>
+            </thead>
               <tbody className="divide-y divide-platinum-200">
-                {filteredEmployees.map((employee) => (
+              {filteredEmployees.map((employee) => (
                   <tr key={employee.id} className="hover:bg-platinum-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
-                          {employee.avatar}
-                        </div>
-                        <div className="ml-3">
+                        {employee.avatar}
+                      </div>
+                      <div className="ml-3">
                           <p className="font-roboto font-medium text-rich-black-900">{employee.name}</p>
                           <p className="text-sm font-roboto font-light text-oxford-blue-600">{employee.email}</p>
-                        </div>
                       </div>
-                    </td>
+                    </div>
+                  </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-roboto font-medium text-rich-black-900">{employee.position}</span>
-                    </td>
+                  </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-roboto font-medium bg-platinum-100 text-oxford-blue-700">
-                        {employee.department}
+                    {employee.department}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center space-x-1">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         <span className="font-roboto font-semibold text-rich-black-900">{employee.score}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Link href={`/employees/${employee.id}`}>
+                    <Link href={`/employees/${employee.id}`}>
                           <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                             <Eye className="h-4 w-4" />
-                          </button>
-                        </Link>
+                      </button>
+                    </Link>
                         <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                           <Edit className="h-4 w-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (

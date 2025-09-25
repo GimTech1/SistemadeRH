@@ -287,7 +287,7 @@ export default function GoalsPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Plano de Desenvolvimento Individual e metas de performance </h1>
         </div>
-        <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
           <Plus className="h-4 w-4" />
           Nova Meta
         </button>

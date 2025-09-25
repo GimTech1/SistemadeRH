@@ -178,10 +178,10 @@ export default function DepartmentsPage() {
 
   const filteredDepartments = departments
     .filter(dept =>
-      dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dept.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dept.description.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    dept.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    dept.description.toLowerCase().includes(searchTerm.toLowerCase())
+  )
     .sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name)
       if (sortBy === 'score') return b.averageScore - a.averageScore
@@ -204,7 +204,7 @@ export default function DepartmentsPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e acompanhe o desempenho de cada departamento</h1>
         </div>
-        <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
           <Plus className="h-4 w-4" />
           Novo Departamento
         </button>
@@ -279,18 +279,18 @@ export default function DepartmentsPage() {
         <div className="flex flex-col gap-4">
           {/* Barra de busca */}
           <div className="flex-1">
-            <div className="relative">
+        <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
                 placeholder="Buscar departamentos por nome, gerente ou descrição..."
-              />
-            </div>
-          </div>
-          
+          />
+        </div>
+      </div>
+
           {/* Controles */}
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
@@ -423,7 +423,7 @@ export default function DepartmentsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDepartments.map((dept) => (
+        {filteredDepartments.map((dept) => (
             <div key={dept.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 hover:shadow-md transition-all duration-200">
               {/* Header do card */}
               <div className="flex items-start justify-between mb-6">
@@ -444,7 +444,7 @@ export default function DepartmentsPage() {
                   </Link>
                   <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                     <Edit className="h-4 w-4" />
-                  </button>
+                </button>
                 </div>
               </div>
 
@@ -464,8 +464,8 @@ export default function DepartmentsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">Performance</span>
                     <div className="flex items-center gap-1">
-                      {getTrendIcon(dept.trend)}
-                    </div>
+                    {getTrendIcon(dept.trend)}
+                  </div>
                   </div>
                   <p className="text-2xl font-roboto font-semibold text-rich-black-900">{dept.averageScore}</p>
                 </div>
@@ -492,32 +492,32 @@ export default function DepartmentsPage() {
               <div className="border-t border-platinum-200 pt-4">
                 <p className="text-xs text-oxford-blue-500 font-roboto font-medium uppercase tracking-wider mb-4">Melhores Desempenhos</p>
                 <div className="flex items-center justify-between">
-                  <div className="flex -space-x-2">
+                <div className="flex -space-x-2">
                     {dept.topPerformers.slice(0, 3).map((performer, index) => (
-                      <div
-                        key={performer.id}
-                        className="relative group/avatar"
-                        style={{ zIndex: dept.topPerformers.length - index }}
-                      >
+                    <div
+                      key={performer.id}
+                      className="relative group/avatar"
+                      style={{ zIndex: dept.topPerformers.length - index }}
+                    >
                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-platinum-100 to-platinum-200 border-2 border-white flex items-center justify-center text-xs font-roboto font-semibold text-oxford-blue-700 shadow-sm">
-                          {performer.avatar}
-                        </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rich-black-900 text-white rounded-lg text-xs font-roboto font-light opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 whitespace-nowrap">
-                          {performer.name} - {performer.score}
-                        </div>
+                        {performer.avatar}
                       </div>
-                    ))}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rich-black-900 text-white rounded-lg text-xs font-roboto font-light opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 whitespace-nowrap">
+                        {performer.name} - {performer.score}
+                      </div>
+                    </div>
+                  ))}
                   </div>
                   <Link href={`/departments/${dept.id}`}>
                     <button className="h-8 w-8 rounded-full bg-gradient-to-br from-platinum-100 to-platinum-200 border border-platinum-200 flex items-center justify-center text-oxford-blue-600 hover:text-yinmn-blue-600 hover:from-yinmn-blue-50 hover:to-yinmn-blue-100 hover:border-yinmn-blue-200 transition-all duration-300">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </Link>
-                </div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
       )}
 
       {/* Empty State */}
