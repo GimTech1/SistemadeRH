@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   TrendingUp,
+  TrendingDown,
   Award,
   Target,
   Edit,
@@ -16,6 +17,12 @@ import {
   Star,
   Activity,
   Briefcase,
+  Eye,
+  Trash2,
+  Grid3X3,
+  List,
+  Mail,
+  Phone,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -42,7 +49,8 @@ interface Department {
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [showNewDepartment, setShowNewDepartment] = useState(false)
+  const [sortBy, setSortBy] = useState('name')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -163,248 +171,367 @@ export default function DepartmentsPage() {
   }
 
   const getTrendIcon = (trend: string) => {
-    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-green-600" />
-    if (trend === 'down') return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
-    return <Activity className="h-4 w-4 text-slate-400" />
+    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-emerald-500" />
+    if (trend === 'down') return <TrendingDown className="h-4 w-4 text-red-500" />
+    return <Activity className="h-4 w-4 text-oxford-blue-400" />
   }
 
-  const filteredDepartments = departments.filter(dept =>
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.description.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredDepartments = departments
+    .filter(dept =>
+      dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dept.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dept.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name)
+      if (sortBy === 'score') return b.averageScore - a.averageScore
+      if (sortBy === 'employees') return b.employeeCount - a.employeeCount
+      return 0
+    })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-8">
-        <div className="text-center">
-          <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <Building className="h-8 w-8 text-blue-600 animate-pulse" />
-          </div>
-          <p className="text-slate-600 font-roboto font-light tracking-wide">Carregando departamentos...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-oxford-blue-600 font-roboto font-light">Carregando departamentos...</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>
-            Departamentos
-          </h1>
-          <p className="text-lg text-slate-500 mt-3 font-roboto font-light tracking-wide">
-            Gerencie e acompanhe o desempenho de cada departamento
-          </p>
+          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e acompanhe o desempenho de cada departamento</h1>
         </div>
-        <button 
-          onClick={() => setShowNewDepartment(true)}
-          className="btn-primary flex items-center gap-3"
-        >
-          <Plus className="h-5 w-5" />
+        <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+          <Plus className="h-4 w-4" />
           Novo Departamento
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div className="card-elegant p-10">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-16 w-16 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-3xl flex items-center justify-center shadow-sm">
-              <Building className="h-8 w-8 text-blue-600" />
+      {/* Cards de métricas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Total de Departamentos</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{departments.length}</p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">áreas organizacionais</p>
             </div>
-            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-blue-700 bg-blue-50/80 border border-blue-200/50">
-              <span className="tracking-wide">Ativo</span>
-            </span>
-          </div>
-          <div>
-            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>{departments.length}</p>
-            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Total de Departamentos</p>
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
+              <Building className="w-6 h-6 text-[#778DA9]" />
+            </div>
           </div>
         </div>
-        
-        <div className="card-elegant p-10">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-16 w-16 bg-gradient-to-br from-green-50 to-green-100/50 rounded-3xl flex items-center justify-center shadow-sm">
-              <Users className="h-8 w-8 text-green-600" />
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Departamentos em Alta</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {departments.filter(dept => dept.trend === 'up').length}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">crescimento positivo</p>
             </div>
-            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-green-700 bg-green-50/80 border border-green-200/50">
-              <span className="tracking-wide">Crescendo</span>
-            </span>
-          </div>
-          <div>
-            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
-              {departments.reduce((acc, dept) => acc + dept.employeeCount, 0)}
-            </p>
-            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Total de Colaboradores</p>
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-[#778DA9]" />
+            </div>
           </div>
         </div>
-        
-        <div className="card-elegant p-10">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-16 w-16 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-3xl flex items-center justify-center shadow-sm">
-              <Star className="h-8 w-8 text-amber-600" />
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Média Geral</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {(departments.reduce((acc, dept) => acc + dept.averageScore, 0) / departments.length).toFixed(1)}
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">performance geral</p>
             </div>
-            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-amber-700 bg-amber-50/80 border border-amber-200/50">
-              <span className="tracking-wide">Excelente</span>
-            </span>
-          </div>
-          <div>
-            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
-              {(departments.reduce((acc, dept) => acc + dept.averageScore, 0) / departments.length).toFixed(1)}
-            </p>
-            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Média Geral</p>
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
+              <Award className="w-6 h-6 text-[#778DA9]" />
+            </div>
           </div>
         </div>
-        
-        <div className="card-elegant p-10">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-16 w-16 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-3xl flex items-center justify-center shadow-sm">
-              <Target className="h-8 w-8 text-purple-600" />
+
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Taxa de Metas</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {Math.round(
+                  (departments.reduce((acc, dept) => acc + dept.completedGoals, 0) /
+                  departments.reduce((acc, dept) => acc + dept.goals, 0)) * 100
+                )}%
+              </p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">objetivos concluídos</p>
             </div>
-            <span className="text-xs font-light flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur-sm text-purple-700 bg-purple-50/80 border border-purple-200/50">
-              <span className="tracking-wide">Meta</span>
-            </span>
-          </div>
-          <div>
-            <p className="text-4xl font-roboto text-slate-900 mb-3 tracking-tight" style={{ fontWeight: 100 }}>
-              {Math.round(
-                (departments.reduce((acc, dept) => acc + dept.completedGoals, 0) /
-                departments.reduce((acc, dept) => acc + dept.goals, 0)) * 100
-              )}%
-            </p>
-            <p className="text-sm font-roboto font-light text-slate-500 tracking-wide">Taxa de Metas</p>
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
+              <Target className="w-6 h-6 text-[#778DA9]" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="card-elegant p-8">
-        <div className="relative">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl text-slate-900 placeholder-slate-400 font-roboto font-light tracking-wide focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-100/40 focus:bg-white hover:bg-white hover:border-slate-300/60 transition-all duration-300 shadow-[0_1px_3px_0_rgb(0_0_0_/_0.02)]"
-            placeholder="Buscar departamentos por nome, gerente ou descrição..."
-          />
-        </div>
-      </div>
+      {/* Filtros e busca */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+        <div className="flex flex-col gap-4">
+          {/* Barra de busca */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                placeholder="Buscar departamentos por nome, gerente ou descrição..."
+              />
+            </div>
+          </div>
+          
+          {/* Controles */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+              >
+                <option value="name">Nome</option>
+                <option value="score">Performance</option>
+                <option value="employees">Colaboradores</option>
+              </select>
+            </div>
 
-      {/* Departments Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {filteredDepartments.map((dept) => (
-          <div key={dept.id} className="card-elegant group">
-            <div className="p-10">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-8">
-                <div className="flex items-center space-x-4">
-                  <div className="h-16 w-16 rounded-3xl bg-gradient-to-br from-blue-50 to-blue-100/50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-500">
-                    <Building className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-roboto font-light text-slate-900 text-xl tracking-wide">{dept.name}</h3>
-                    <p className="text-sm text-slate-600 font-roboto font-light tracking-wide mt-1">
-                      <Briefcase className="h-4 w-4 inline mr-2" />
-                      {dept.manager}
-                    </p>
-                  </div>
-                </div>
-                <button className="opacity-0 group-hover:opacity-100 transition-all duration-300 text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100">
-                  <MoreVertical className="h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-roboto font-medium text-rich-black-900">Visualizar:</label>
+              <div className="flex bg-platinum-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    viewMode === 'table' 
+                      ? 'bg-white text-yinmn-blue-600 shadow-sm' 
+                      : 'text-oxford-blue-600 hover:text-yinmn-blue-600'
+                  }`}
+                  title="Visualização em tabela"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    viewMode === 'cards' 
+                      ? 'bg-white text-yinmn-blue-600 shadow-sm' 
+                      : 'text-oxford-blue-600 hover:text-yinmn-blue-600'
+                  }`}
+                  title="Visualização em cards"
+                >
+                  <Grid3X3 className="h-4 w-4" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {/* Description */}
-              <p className="text-sm text-slate-600 font-roboto font-light tracking-wide mb-8 leading-relaxed">{dept.description}</p>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-slate-50/50 to-slate-100/30 rounded-2xl p-6 border border-slate-100/60">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase">Colaboradores</span>
-                    <Users className="h-4 w-4 text-slate-400" />
+      {/* Visualização de departamentos */}
+      {viewMode === 'table' ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-platinum-50 border-b border-platinum-200">
+                <tr className="text-left text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">
+                  <th className="px-6 py-4">Departamento</th>
+                  <th className="px-6 py-4">Gerente</th>
+                  <th className="px-6 py-4 text-center">Colaboradores</th>
+                  <th className="px-6 py-4 text-center">Performance</th>
+                  <th className="px-6 py-4 text-center">Tendência</th>
+                  <th className="px-6 py-4 text-center">Metas</th>
+                  <th className="px-6 py-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-platinum-200">
+                {filteredDepartments.map((dept) => (
+                  <tr key={dept.id} className="hover:bg-platinum-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
+                          <Building className="w-5 h-5" />
+                        </div>
+                        <div className="ml-3">
+                          <p className="font-roboto font-medium text-rich-black-900">{dept.name}</p>
+                          <p className="text-sm font-roboto font-light text-oxford-blue-600">{dept.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-platinum-400 to-platinum-500 flex items-center justify-center text-xs font-roboto font-semibold text-white">
+                          {dept.manager.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <span className="ml-2 text-sm font-roboto font-medium text-rich-black-900">{dept.manager}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm font-roboto font-medium text-rich-black-900">{dept.employeeCount}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span className="font-roboto font-semibold text-rich-black-900">{dept.averageScore}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {getTrendIcon(dept.trend)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm font-roboto font-medium text-rich-black-900">
+                          {dept.completedGoals}/{dept.goals}
+                        </span>
+                        <div className="w-16 h-2 bg-platinum-200 rounded-full mt-1">
+                          <div 
+                            className="h-full bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600 rounded-full"
+                            style={{ width: `${(dept.completedGoals / dept.goals) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Link href={`/departments/${dept.id}`}>
+                          <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </Link>
+                        <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDepartments.map((dept) => (
+            <div key={dept.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 hover:shadow-md transition-all duration-200">
+              {/* Header do card */}
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
+                    <Building className="w-6 h-6" />
                   </div>
-                  <p className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>{dept.employeeCount}</p>
+                  <div>
+                    <h3 className="font-roboto font-medium text-rich-black-900 text-lg">{dept.name}</h3>
+                    <p className="text-sm font-roboto font-light text-oxford-blue-600">{dept.manager}</p>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-slate-50/50 to-slate-100/30 rounded-2xl p-6 border border-slate-100/60">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase">Média</span>
+                <div className="flex items-center gap-2">
+                  <Link href={`/departments/${dept.id}`}>
+                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Link>
+                  <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                    <Edit className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              <p className="text-sm font-roboto font-light text-oxford-blue-600 mb-6 leading-relaxed">{dept.description}</p>
+
+              {/* Estatísticas */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-platinum-50 to-platinum-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">Colaboradores</span>
+                    <Users className="h-4 w-4 text-oxford-blue-400" />
+                  </div>
+                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">{dept.employeeCount}</p>
+                </div>
+                <div className="bg-gradient-to-br from-platinum-50 to-platinum-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">Performance</span>
                     <div className="flex items-center gap-1">
                       {getTrendIcon(dept.trend)}
                     </div>
                   </div>
-                  <p className="text-2xl font-roboto text-slate-900 tracking-tight" style={{ fontWeight: 100 }}>{dept.averageScore}</p>
+                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">{dept.averageScore}</p>
                 </div>
               </div>
 
-              {/* Goals Progress */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between text-sm mb-4">
-                  <span className="text-slate-600 font-roboto font-light tracking-wide">Progresso das Metas</span>
-                  <span className="text-slate-900 font-roboto font-medium">{dept.completedGoals}/{dept.goals}</span>
+              {/* Progresso das Metas */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between text-sm mb-3">
+                  <span className="text-oxford-blue-600 font-roboto font-medium">Progresso das Metas</span>
+                  <span className="text-rich-black-900 font-roboto font-semibold">{dept.completedGoals}/{dept.goals}</span>
                 </div>
-                <div className="h-3 bg-gradient-to-r from-slate-100 to-slate-200/50 rounded-full overflow-hidden border border-slate-200/50">
+                <div className="w-full bg-platinum-200 rounded-full h-3">
                   <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500 rounded-full"
+                    className="bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${(dept.completedGoals / dept.goals) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs text-slate-500 font-roboto font-light tracking-wide mt-2">
+                <p className="text-xs text-oxford-blue-500 font-roboto font-light mt-2">
                   {Math.round((dept.completedGoals / dept.goals) * 100)}% concluído
                 </p>
               </div>
 
               {/* Top Performers */}
-              <div className="border-t border-slate-100/60 pt-8">
-                <p className="text-xs text-slate-500 font-roboto font-light tracking-widest uppercase mb-6">Melhores Desempenhos</p>
+              <div className="border-t border-platinum-200 pt-4">
+                <p className="text-xs text-oxford-blue-500 font-roboto font-medium uppercase tracking-wider mb-4">Melhores Desempenhos</p>
                 <div className="flex items-center justify-between">
-                  <div className="flex -space-x-3">
-                    {dept.topPerformers.map((performer, index) => (
+                  <div className="flex -space-x-2">
+                    {dept.topPerformers.slice(0, 3).map((performer, index) => (
                       <div
                         key={performer.id}
                         className="relative group/avatar"
                         style={{ zIndex: dept.topPerformers.length - index }}
                       >
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200/50 border-3 border-white flex items-center justify-center text-xs font-roboto font-medium text-blue-700 shadow-sm group-hover/avatar:shadow-md transition-all duration-300">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-platinum-100 to-platinum-200 border-2 border-white flex items-center justify-center text-xs font-roboto font-semibold text-oxford-blue-700 shadow-sm">
                           {performer.avatar}
                         </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-slate-800 text-white rounded-xl text-xs font-roboto font-light opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 whitespace-nowrap shadow-lg">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rich-black-900 text-white rounded-lg text-xs font-roboto font-light opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 whitespace-nowrap">
                           {performer.name} - {performer.score}
                         </div>
                       </div>
                     ))}
                   </div>
                   <Link href={`/departments/${dept.id}`}>
-                    <button className="h-12 w-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200/50 border border-slate-200/60 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:from-blue-50 hover:to-blue-100/50 hover:border-blue-200/60 transition-all duration-300 shadow-sm hover:shadow-md">
-                      <ChevronRight className="h-5 w-5" />
+                    <button className="h-8 w-8 rounded-full bg-gradient-to-br from-platinum-100 to-platinum-200 border border-platinum-200 flex items-center justify-center text-oxford-blue-600 hover:text-yinmn-blue-600 hover:from-yinmn-blue-50 hover:to-yinmn-blue-100 hover:border-yinmn-blue-200 transition-all duration-300">
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </Link>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
       {filteredDepartments.length === 0 && (
-        <div className="card-elegant p-16 text-center">
-          <div className="h-20 w-20 bg-gradient-to-br from-slate-100 to-slate-200/50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-            <Building className="h-10 w-10 text-slate-400" />
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-16 text-center">
+          <div className="h-20 w-20 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+            <Building className="h-10 w-10 text-oxford-blue-400" />
           </div>
-          <h3 className="text-xl font-roboto font-light text-slate-900 mb-4 tracking-wide">Nenhum departamento encontrado</h3>
-          <p className="text-sm text-slate-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
+          <h3 className="text-xl font-roboto font-light text-rich-black-900 mb-4 tracking-wide">Nenhum departamento encontrado</h3>
+          <p className="text-sm text-oxford-blue-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
             Tente ajustar sua busca ou crie um novo departamento para começar a gerenciar sua equipe
           </p>
-          <button 
-            onClick={() => setShowNewDepartment(true)}
-            className="btn-primary mt-8"
-          >
-            <Plus className="h-5 w-5 mr-2" />
+          <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 mx-auto mt-8">
+            <Plus className="h-4 w-4" />
             Criar Primeiro Departamento
           </button>
         </div>
@@ -412,9 +539,3 @@ export default function DepartmentsPage() {
     </div>
   )
 }
-
-
-
-
-
-
