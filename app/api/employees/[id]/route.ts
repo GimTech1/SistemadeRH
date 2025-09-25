@@ -4,9 +4,10 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params
     const body = await request.json() as {
       name: string
       email?: string
@@ -39,7 +40,7 @@ export async function PUT(
     }
 
     const supabase = await createServerClient()
-    const { data, error } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<Database>)
+    const { data, error } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
       .from('employees')
       .update({
         full_name: name,
@@ -66,7 +67,7 @@ export async function PUT(
         bank: body.bank || null,
         notes: body.notes || null,
       } as any)
-      .eq('id', params.id)
+      .eq('id', id)
       .select('*')
       .single()
 
