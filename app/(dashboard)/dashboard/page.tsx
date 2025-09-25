@@ -138,17 +138,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 p-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-roboto text-rich-black-900 tracking-tight" style={{ fontWeight: 100 }}>
-          Dashboard
-        </h1>
-        <p className="text-lg text-oxford-blue-500 mt-3 font-roboto font-light tracking-wide">
-          Bem-vindo, {userProfile?.full_name || userProfile?.email || 'Usuário'}
-        </p>
-      </div>
-
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {statsCards.map((stat) => (
           <div key={stat.title} className="card-elegant p-10">

@@ -103,7 +103,6 @@ export default function EvaluationsPage() {
         },
       ])
     } catch (error) {
-      console.error('Erro ao carregar avaliações:', error)
     } finally {
       setLoading(false)
     }

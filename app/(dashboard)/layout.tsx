@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Toaster } from 'react-hot-toast'
@@ -18,6 +19,9 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
+  const [userName, setUserName] = useState('')
+  const [userPosition, setUserPosition] = useState('')
+  const pathname = usePathname()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,12 +36,18 @@ export default function DashboardLayout({
         // Buscar o perfil do usuário
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, full_name, position')
           .eq('id', user.id)
-          .single<{ role: Database['public']['Tables']['profiles']['Row']['role'] }>()
+          .single<{ role: Database['public']['Tables']['profiles']['Row']['role']; full_name: string | null; position: string | null }>()
 
         if (profile) {
           setUserRole(profile.role as 'admin' | 'manager' | 'employee')
+          setUserName(profile.full_name || user.user_metadata?.full_name || user.email || 'Usuário')
+          setUserPosition(profile.position || user.user_metadata?.position || '')
+        } else {
+          // Fallback somente com o auth
+          setUserName(user.user_metadata?.full_name || user.email || 'Usuário')
+          setUserPosition(user.user_metadata?.position || '')
         }
       } catch (error) {
         router.push('/login')
@@ -62,28 +72,48 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-platinum-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yinmn-blue-600"></div>
       </div>
     )
   }
 
+  const getPageTitle = () => {
+    const map: Record<string, string> = {
+      '/dashboard': 'Dashboard',
+      '/employees': 'Colaboradores',
+      '/departments': 'Departamentos',
+      '/evaluations': 'Avaliações',
+      '/evaluations/new': 'Nova Avaliação',
+      '/goals': 'Metas',
+      '/feedback': 'Feedbacks',
+      '/feedback/internal': 'Avaliar Colegas',
+      '/feedback/external': 'Feedback Externo',
+      '/reports': 'Relatórios',
+    }
+    // tenta match exato, senão usa segmento base
+    if (map[pathname]) return map[pathname]
+    const base = '/' + pathname.split('/').filter(Boolean)[0]
+    return map[base] || 'Página'
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-platinum-900">
       <Toaster position="top-right" />
       <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
       <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        {/* Header com logo mobile */}
-        <header className="lg:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 p-4 shadow-sm">
-          <img 
-            src="/logo-full-horizontal-branco.png" 
-            alt="Logo" 
-            className="h-16 w-auto object-contain mx-auto"
-            style={{ maxWidth: '250px' }}
-          />
-        </header>
+        <DashboardHeader
+          title={getPageTitle()}
+          onOpenMenu={() => {}}
+          onNotificationClick={() => {}}
+          hasUnread
+          unreadCount={2}
+          userName={userName}
+          userPosition={userPosition}
+        />
+
         <div className="min-h-screen">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto px-6 py-6">
             {children}
           </div>
         </div>

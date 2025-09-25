@@ -270,9 +270,8 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
             })}
           </ul>
 
-          {/* Footer com perfil do usuário e ações */}
+          {/* Footer - ações rápidas (sem bloco de perfil) */}
           <div className="border-t border-platinum-200 pt-2 mt-2">
-            {/* Botões de ação */}
             <div className="mb-2 space-y-1">
               <Link
                 href="/"
@@ -288,7 +287,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
                 )} />
                 {!isCollapsed && <span className="tracking-wide">Início</span>}
               </Link>
-              
+
               <button
                 onClick={handleLogout}
                 className={cn(
@@ -304,25 +303,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
                 {!isCollapsed && <span className="tracking-wide">Sair</span>}
               </button>
             </div>
-            
-            {/* Perfil do usuário */}
-            {userName && (
-              <div className={cn(
-                "p-3 rounded-xl bg-yinmn-blue-50/50 border border-yinmn-blue-100/50",
-                isCollapsed ? "flex justify-center" : "flex items-center space-x-3"
-              )}>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50 flex-shrink-0">
-                  <UserCircle className="w-6 h-6 text-white" />
-                </div>
-                {!isCollapsed && (
-                  <div className="min-w-0 flex-1">
-                    <p className="text-rich-black-900 text-sm font-roboto font-medium truncate tracking-wide">{userName}</p>
-                    <p className="text-oxford-blue-600 text-xs font-roboto font-light truncate tracking-wide">{userPosition || userRole}</p>
-                    <div className="flex items-center mt-1"></div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </nav>
       </aside>
