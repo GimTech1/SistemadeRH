@@ -175,33 +175,62 @@ CREATE TABLE IF NOT EXISTS public.employees (
   email TEXT,
   position TEXT,
   department TEXT,
-  -- pessoais
+  -- dados pessoais
   cpf TEXT,
   rg TEXT,
   birth_date DATE,
   gender TEXT,
   marital_status TEXT,
   nationality TEXT,
-  contacts JSONB,
-  address JSONB,
-  -- profissionais
+  -- contatos
+  phone TEXT,
+  emergency_contact TEXT,
+  emergency_phone TEXT,
+  -- endereço
+  address TEXT,
+  city TEXT,
+  state TEXT,
+  zip_code TEXT,
+  -- dados profissionais
   employee_code TEXT,
   admission_date DATE,
   contract_type TEXT,
   work_schedule TEXT,
   salary NUMERIC(12,2),
-  -- documentos/benefícios
-  documents JSONB,
-  benefits JSONB,
-  -- família/dependentes
-  dependents JSONB,
-  -- formação
-  education JSONB,
-  -- bancário
-  bank JSONB,
+  -- documentos (fotos)
+  rg_photo TEXT,
+  cpf_photo TEXT,
+  ctps_photo TEXT,
+  diploma_photo TEXT,
+  -- benefícios
+  vale_refeicao NUMERIC(10,2),
+  vale_transporte NUMERIC(10,2),
+  plano_saude BOOLEAN DEFAULT false,
+  plano_dental BOOLEAN DEFAULT false,
+  -- dependentes
+  dependent_name_1 TEXT,
+  dependent_relationship_1 TEXT,
+  dependent_birth_date_1 DATE,
+  dependent_name_2 TEXT,
+  dependent_relationship_2 TEXT,
+  dependent_birth_date_2 DATE,
+  dependent_name_3 TEXT,
+  dependent_relationship_3 TEXT,
+  dependent_birth_date_3 DATE,
+  -- educação
+  education_level TEXT,
+  course_name TEXT,
+  institution_name TEXT,
+  graduation_year INTEGER,
+  -- dados bancários
+  bank_name TEXT,
+  bank_agency TEXT,
+  bank_account TEXT,
+  account_type TEXT,
   -- observações
   notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
@@ -217,6 +246,17 @@ CREATE POLICY "Employees update by authenticated users" ON public.employees
   FOR UPDATE USING (auth.role() = 'authenticated');
 
 CREATE INDEX IF NOT EXISTS idx_employees_name ON public.employees(full_name);
+CREATE INDEX IF NOT EXISTS idx_employees_email ON public.employees(email);
+CREATE INDEX IF NOT EXISTS idx_employees_department ON public.employees(department);
+CREATE INDEX IF NOT EXISTS idx_employees_position ON public.employees(position);
+CREATE INDEX IF NOT EXISTS idx_employees_cpf ON public.employees(cpf);
+CREATE INDEX IF NOT EXISTS idx_employees_birth_date ON public.employees(birth_date);
+CREATE INDEX IF NOT EXISTS idx_employees_admission_date ON public.employees(admission_date);
+CREATE INDEX IF NOT EXISTS idx_employees_phone ON public.employees(phone);
+CREATE INDEX IF NOT EXISTS idx_employees_city ON public.employees(city);
+CREATE INDEX IF NOT EXISTS idx_employees_state ON public.employees(state);
+CREATE INDEX IF NOT EXISTS idx_employees_contract_type ON public.employees(contract_type);
+CREATE INDEX IF NOT EXISTS idx_employees_education_level ON public.employees(education_level);
 
 -- Policies for profiles
 CREATE POLICY "Profiles are viewable by authenticated users" ON public.profiles
@@ -277,4 +317,7 @@ CREATE TRIGGER update_evaluations_updated_at BEFORE UPDATE ON public.evaluations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER update_goals_updated_at BEFORE UPDATE ON public.goals
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_employees_updated_at BEFORE UPDATE ON public.employees
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

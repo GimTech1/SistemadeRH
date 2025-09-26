@@ -255,11 +255,6 @@ export default function InternalFeedbackPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center space-x-4">
-          <Link href="/feedback">
-            <button className="p-2 hover:bg-platinum-100 rounded-lg transition-colors">
-              <ArrowLeft className="h-5 w-5 text-oxford-blue-600" />
-            </button>
-          </Link>
           <div>
             <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Avalie seus colegas de trabalho e ajude no desenvolvimento da equipe</h1>
           </div>

@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id } = await context.params
     const body = await request.json() as {
-      name: string
+      name?: string
       email?: string
       position?: string
       department?: string
@@ -35,15 +35,12 @@ export async function PUT(
     }
 
     const { name } = body
-    if (!name) {
-      return NextResponse.json({ message: 'Nome é obrigatório' }, { status: 400 })
-    }
 
     const supabase = await createServerClient()
     const { data, error } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
       .from('employees')
       .update({
-        full_name: name,
+        ...(name ? { full_name: name } : {}),
         email: body.email || null,
         position: body.position || null,
         department: body.department || null,
@@ -53,18 +50,14 @@ export async function PUT(
         gender: body.gender || null,
         marital_status: body.marital_status || null,
         nationality: body.nationality || null,
-        contacts: body.contacts || null,
-        address: body.address || null,
+        // deixe nulos apenas para colunas que existem. Removendo objetos JSON antigos:
+        // contatos/endereço normalizados já chegam como colunas específicas via frontend
         employee_code: body.employee_code || null,
         admission_date: body.admission_date || null,
         contract_type: body.contract_type || null,
         work_schedule: body.work_schedule || null,
         salary: body.salary || null,
-        documents: body.documents || null,
-        benefits: body.benefits || null,
-        dependents: body.dependents || null,
-        education: body.education || null,
-        bank: body.bank || null,
+        // campos normalizados já tratados no frontend; evitar sobrescrever com null objetos antigos
         notes: body.notes || null,
       } as any)
       .eq('id', id)

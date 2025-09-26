@@ -235,14 +235,8 @@ export default function FeedbackPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Avalie seus colegas e promova o desenvolvimento contínuo da equipe</h1>
+          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Veja os feedbacks recebidos e enviados</h1>
         </div>
-        <Link href="/feedback/internal">
-          <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
-            <Users className="h-4 w-4" />
-            Avaliar Colegas
-          </button>
-        </Link>
       </div>
 
       {/* Cards de métricas */}

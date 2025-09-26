@@ -117,10 +117,12 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e visualize o desempenho de todos os colaboradores</h1>
         </div>
-        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
-          <UserPlus className="h-4 w-4" />
-              Novo Colaborador
-            </button>
+        <Link href="/employees/new">
+          <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
+            <UserPlus className="h-4 w-4" />
+            Novo Colaborador
+          </button>
+        </Link>
                 </div>
                 
       {/* Cards de métricas */}

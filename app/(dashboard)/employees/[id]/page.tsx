@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -43,6 +43,8 @@ import toast from 'react-hot-toast'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface EmployeeProfile {
   // Informações Pessoais
@@ -63,11 +65,11 @@ interface EmployeeProfile {
   emergency_contact: string
   emergency_phone: string
   
-  // Endereço
+  // Endereço (normalizado)
   address: string
-  number: string
-  complement: string
-  neighborhood: string
+  number?: string
+  complement?: string
+  neighborhood?: string
   city: string
   state: string
   zip_code: string
@@ -81,30 +83,28 @@ interface EmployeeProfile {
   work_schedule: string
   salary: number
   
-  // Documentação
-  ctps: string
-  pis_pasep: string
-  voter_registration: string
-  driver_license: string
-  military_certificate: string
-  
-  // Benefícios
-  health_plan: string
-  dental_plan: string
-  life_insurance: boolean
+  // Documentos (fotos URLs)
+  rg_photo?: string | null
+  cpf_photo?: string | null
+  ctps_photo?: string | null
+  diploma_photo?: string | null
+
+  // Benefícios (normalizados)
   meal_voucher: number
-  transport_voucher: boolean
+  transport_voucher: number
+  health_plan: boolean
+  dental_plan: boolean
   
-  // Família
+  // Família (até 3 dependentes agregados para exibição)
   children_count: number
   dependents: Array<{
     name: string
     relationship: string
     birth_date: string
-    cpf: string
+    cpf?: string
   }>
   
-  // Educação
+  // Educação (normalizado)
   education_level: string
   institution: string
   course: string
@@ -112,12 +112,12 @@ interface EmployeeProfile {
   certifications: string[]
   languages: string[]
   
-  // Banco
+  // Banco (normalizado)
   bank: string
   agency: string
   account: string
   account_type: string
-  pix_key: string
+  pix_key?: string
   
   // Performance
   overall_score: number
@@ -135,6 +135,7 @@ interface EmployeeProfile {
   avatar_url: string
   status: 'active' | 'vacation' | 'leave' | 'inactive'
   notes: string
+  updated_at?: string
 }
 
 export default function EmployeeProfilePage() {
@@ -145,6 +146,12 @@ export default function EmployeeProfilePage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editTab, setEditTab] = useState('pessoal')
   const [saving, setSaving] = useState(false)
+  const [docFiles, setDocFiles] = useState<{ rg?: File; cpf?: File; ctps?: File; diploma?: File }>({})
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [editData, setEditData] = useState({
     // Básico
     name: '',
@@ -171,7 +178,7 @@ export default function EmployeeProfilePage() {
     // Benefícios
     benefits: { health_plan: '', dental_plan: '', life_insurance: '', meal_voucher: '', transport_voucher: '' },
     // Dependentes
-    dependents: [] as Array<{ name: string; relationship: string; birth_date: string; cpf: string }>,
+    dependents: [] as Array<{ name: string; relationship: string; birth_date: string; cpf?: string }>,
     // Formação
     education: { level: '', institution: '', course: '', graduation_year: '', certifications: '', languages: '' },
     // Bancário
@@ -203,14 +210,70 @@ export default function EmployeeProfilePage() {
         return
       }
 
-      // Parse JSON fields
-      const contacts = (data as any).contacts || {}
-      const address = (data as any).address || {}
-      const documents = (data as any).documents || {}
-      const benefits = (data as any).benefits || {}
-      const dependents = (data as any).dependents || []
-      const education = (data as any).education || {}
-      const bank = (data as any).bank || {}
+  
+      // Montar dependentes a partir dos campos normalizados (até 3)
+      const deps: Array<{ name: string; relationship: string; birth_date: string; cpf?: string }> = []
+      const d1 = {
+        name: (data as any).dependent_name_1,
+        relationship: (data as any).dependent_relationship_1,
+        birth_date: (data as any).dependent_birth_date_1,
+      }
+      const d2 = {
+        name: (data as any).dependent_name_2,
+        relationship: (data as any).dependent_relationship_2,
+        birth_date: (data as any).dependent_birth_date_2,
+      }
+      const d3 = {
+        name: (data as any).dependent_name_3,
+        relationship: (data as any).dependent_relationship_3,
+        birth_date: (data as any).dependent_birth_date_3,
+      }
+      ;[d1, d2, d3].forEach((d) => {
+        if (d.name) deps.push({ name: d.name, relationship: d.relationship, birth_date: d.birth_date })
+      })
+
+      // Estruturas compatíveis com o formulário de edição existente
+      const contacts = {
+        personal_email: (data as any).personal_email || '',
+        phone: (data as any).phone || '',
+        cellphone: (data as any).mobile || '',
+        emergency_contact: (data as any).emergency_contact || '',
+        emergency_phone: (data as any).emergency_phone || '',
+      }
+      const address = {
+        street: (data as any).address || '',
+        neighborhood: (data as any).neighborhood || '',
+        city: (data as any).city || '',
+        zip: (data as any).zip_code || '',
+        state: (data as any).state || '',
+      }
+      const documents = {
+        rg_photo: (data as any).rg_photo || null,
+        cpf_photo: (data as any).cpf_photo || null,
+        ctps_photo: (data as any).ctps_photo || null,
+        diploma_photo: (data as any).diploma_photo || null,
+      }
+      const benefits = {
+        meal_voucher: (data as any).vale_refeicao || 0,
+        transport_voucher: (data as any).vale_transporte || 0,
+        health_plan: (data as any).plano_saude || false,
+        dental_plan: (data as any).plano_dental || false,
+      }
+      const education = {
+        level: (data as any).education_level || '',
+        institution: (data as any).institution_name || '',
+        course: (data as any).course_name || '',
+        graduation_year: (data as any).graduation_year || '',
+        certifications: '',
+        languages: '',
+      }
+      const bank = {
+        bank_name: (data as any).bank_name || '',
+        agency: (data as any).bank_agency || '',
+        account: (data as any).bank_account || '',
+        account_type: (data as any).account_type || '',
+        pix_key: (data as any).pix_key || '',
+      }
 
       setEmployee({
         id: (data as any).id,
@@ -223,19 +286,19 @@ export default function EmployeeProfilePage() {
         nationality: (data as any).nationality || '',
         
         email: (data as any).email || '',
-        personal_email: contacts.personal_email || '',
-        phone: contacts.phone || '',
-        mobile: contacts.cellphone || '',
-        emergency_contact: contacts.emergency_contact || '',
-        emergency_phone: contacts.emergency_phone || '',
-        
-        address: address.street || '',
-        number: address.number || '',
-        complement: address.complement || '',
-        neighborhood: address.neighborhood || '',
-        city: address.city || '',
-        state: address.state || '',
-        zip_code: address.zip || '',
+        personal_email: contacts.personal_email,
+        phone: contacts.phone,
+        mobile: contacts.cellphone,
+        emergency_contact: contacts.emergency_contact,
+        emergency_phone: contacts.emergency_phone,
+
+        address: address.street,
+        number: undefined,
+        complement: undefined,
+        neighborhood: address.neighborhood,
+        city: address.city,
+        state: address.state,
+        zip_code: address.zip,
         
         employee_id: (data as any).employee_code || '',
         position: (data as any).position || '',
@@ -245,33 +308,31 @@ export default function EmployeeProfilePage() {
         work_schedule: (data as any).work_schedule || '',
         salary: (data as any).salary || 0,
         
-        ctps: documents.ctps || '',
-        pis_pasep: documents.pis || '',
-        voter_registration: documents.voter_id || '',
-        driver_license: documents.driver_license || '',
-        military_certificate: documents.military_cert || '',
+        rg_photo: (data as any).rg_photo || null,
+        cpf_photo: (data as any).cpf_photo || null,
+        ctps_photo: (data as any).ctps_photo || null,
+        diploma_photo: (data as any).diploma_photo || null,
         
-        health_plan: benefits.health_plan || '',
-        dental_plan: benefits.dental_plan || '',
-        life_insurance: benefits.life_insurance === 'Sim',
-        meal_voucher: parseFloat(benefits.meal_voucher?.replace('R$ ', '').replace(',', '.') || '0'),
-        transport_voucher: benefits.transport_voucher === 'Sim',
+        health_plan: !!(data as any).plano_saude,
+        dental_plan: !!(data as any).plano_dental,
+        meal_voucher: Number((data as any).vale_refeicao) || 0,
+        transport_voucher: Number((data as any).vale_transporte) || 0,
         
-        children_count: dependents.length,
-        dependents: dependents,
+        children_count: deps.length,
+        dependents: deps as any,
         
-        education_level: education.level || '',
-        institution: education.institution || '',
-        course: education.course || '',
-        graduation_year: education.graduation_year || '',
-        certifications: education.certifications ? education.certifications.split(',').map((c: string) => c.trim()) : [],
-        languages: education.languages ? education.languages.split(',').map((l: string) => l.trim()) : [],
+        education_level: education.level,
+        institution: education.institution,
+        course: education.course,
+        graduation_year: education.graduation_year,
+        certifications: [],
+        languages: [],
         
-        bank: bank.bank_name || '',
-        agency: bank.agency || '',
-        account: bank.account || '',
-        account_type: bank.account_type || '',
-        pix_key: bank.pix_key || '',
+        bank: (data as any).bank_name || '',
+        agency: (data as any).bank_agency || '',
+        account: (data as any).bank_account || '',
+        account_type: (data as any).account_type || '',
+        pix_key: '',
         
         overall_score: 8.7, // Placeholder - calcular baseado em avaliações
         total_evaluations: 0, // Placeholder
@@ -302,54 +363,18 @@ export default function EmployeeProfilePage() {
         gender: dataAny.gender || '',
         marital_status: dataAny.marital_status || '',
         nationality: dataAny.nationality || '',
-        contacts: {
-          personal_email: contacts.personal_email || '',
-          phone: contacts.phone || '',
-          cellphone: contacts.cellphone || '',
-          emergency_contact: contacts.emergency_contact || '',
-        },
-        address: {
-          street: address.street || '',
-          neighborhood: address.neighborhood || '',
-          city: address.city || '',
-          zip: address.zip || '',
-          state: address.state || '',
-        },
+        contacts: contacts,
+        address: address,
         employee_code: dataAny.employee_code || '',
         admission_date: dataAny.admission_date || '',
         contract_type: dataAny.contract_type || '',
         work_schedule: dataAny.work_schedule || '',
         salary: dataAny.salary?.toString() || '',
-        documents: {
-          ctps: documents.ctps || '',
-          pis: documents.pis || '',
-          voter_id: documents.voter_id || '',
-          driver_license: documents.driver_license || '',
-          military_cert: documents.military_cert || '',
-        },
-        benefits: {
-          health_plan: benefits.health_plan || '',
-          dental_plan: benefits.dental_plan || '',
-          life_insurance: benefits.life_insurance || '',
-          meal_voucher: benefits.meal_voucher || '',
-          transport_voucher: benefits.transport_voucher || '',
-        },
-        dependents: dependents,
-        education: {
-          level: education.level || '',
-          institution: education.institution || '',
-          course: education.course || '',
-          graduation_year: education.graduation_year || '',
-          certifications: education.certifications || '',
-          languages: education.languages || '',
-        },
-        bank: {
-          bank_name: bank.bank_name || '',
-          agency: bank.agency || '',
-          account: bank.account || '',
-          account_type: bank.account_type || '',
-          pix_key: bank.pix_key || '',
-        },
+        documents: documents as any,
+        benefits: benefits as any,
+        dependents: deps,
+        education: education as any,
+        bank: bank as any,
         notes: dataAny.notes || '',
       })
     } catch (error) {
@@ -357,6 +382,83 @@ export default function EmployeeProfilePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const uploadAvatarAndSave = async (blobOrFile: Blob | File) => {
+    const file = blobOrFile instanceof File ? blobOrFile : new File([blobOrFile], `avatar-${Date.now()}.png`, { type: 'image/png' })
+    const filename = `avatar-${employee?.id}-${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('employee-documents').upload(filename, file, { upsert: true })
+    if (error) throw error
+    const { data } = supabase.storage.from('employee-documents').getPublicUrl(filename)
+    const publicUrl = data.publicUrl
+    // usar fetch na API para evitar tipos rígidos do client tipado
+    await fetch(`/api/employees/${employee?.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar_url: publicUrl }),
+    })
+    setEmployee(prev => prev ? { ...prev, avatar_url: publicUrl } : prev)
+    toast.success('Foto de perfil atualizada')
+  }
+
+  const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    try {
+      await uploadAvatarAndSave(f)
+    } catch (err: any) {
+      toast.error(err.message || 'Falha ao enviar foto')
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      // Para iOS/Safari e notebooks, use a camera frontal quando possível
+      const constraints: MediaStreamConstraints = { video: { facingMode: 'user' } }
+      // Se já houver stream aberto, encerra antes de abrir outro
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop())
+        videoRef.current.srcObject = null
+      }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream as any
+        // Alguns browsers exigem atributos no elemento (autoPlay/playsInline/muted)
+        await videoRef.current.play().catch(() => {})
+      }
+      setShowCamera(true)
+    } catch {
+      toast.error('Não foi possível acessar a câmera')
+    }
+  }
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+      tracks.forEach(t => t.stop())
+      videoRef.current.srcObject = null
+    }
+    setShowCamera(false)
+  }
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob(async (blob: Blob | null) => {
+      if (!blob) return
+      try {
+        await uploadAvatarAndSave(blob)
+        stopCamera()
+      } catch (err: any) {
+        toast.error(err.message || 'Falha ao salvar foto')
+      }
+    }, 'image/png')
   }
 
   const getCHAIcon = (type: string) => {
@@ -378,13 +480,98 @@ export default function EmployeeProfilePage() {
     }
   }
 
+  const withVersion = (url?: string | null, version?: string | number) => {
+    if (!url) return ''
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}v=${version ?? Date.now()}`
+  }
+
+  const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div>
+      <p className="text-sm tracking-wide text-slate-700">{label}</p>
+      <p className="text-slate-950 font-semibold mt-0.5">{value || '-'}</p>
+    </div>
+  )
+
+  const Badge = ({ children, color = 'blue' }: { children: React.ReactNode; color?: 'blue'|'green'|'red'|'gray' }) => {
+    const map: Record<string, string> = {
+      blue: 'bg-blue-100 text-blue-800 border border-blue-300',
+      green: 'bg-green-100 text-green-800 border border-green-300',
+      red: 'bg-red-100 text-red-800 border border-red-300',
+      gray: 'bg-slate-100 text-slate-800 border border-slate-300',
+    }
+    return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${map[color]}`}>{children}</span>
+  }
+
   const handleSaveEdit = async () => {
     try {
       setSaving(true)
+      // Upload de documentos se o usuário tiver selecionado
+      const uploaded: Record<string, string | undefined> = {}
+      const uploadFile = async (file: File, prefix: string) => {
+        const filename = `${prefix}-${params.id}-${Date.now()}-${file.name}`
+        const { error } = await supabase.storage.from('employee-documents').upload(filename, file, { upsert: true })
+        if (error) throw error
+        const { data: urlData } = supabase.storage.from('employee-documents').getPublicUrl(filename)
+        return urlData.publicUrl
+      }
+
+      if (avatarFile) uploaded.avatar_url = await uploadFile(avatarFile, 'avatar')
+      if (docFiles.rg) uploaded.rg_photo = await uploadFile(docFiles.rg, 'rg')
+      if (docFiles.cpf) uploaded.cpf_photo = await uploadFile(docFiles.cpf, 'cpf')
+      if (docFiles.ctps) uploaded.ctps_photo = await uploadFile(docFiles.ctps, 'ctps')
+      if (docFiles.diploma) uploaded.diploma_photo = await uploadFile(docFiles.diploma, 'diploma')
+
+      // Monta payload compatível com colunas normalizadas (evita objetos como 'bank')
+      const payload: Record<string, any> = {
+        // só atualiza nome se informado; evita erro de obrigatoriedade
+        ...(editData.name && editData.name.trim() ? { full_name: editData.name.trim() } : {}),
+        email: editData.email,
+        position: editData.position,
+        department: editData.department,
+        cpf: editData.cpf,
+        rg: editData.rg,
+        birth_date: editData.birth_date || null,
+        gender: editData.gender || null,
+        marital_status: editData.marital_status || null,
+        nationality: editData.nationality || null,
+        // contatos
+        phone: editData.contacts?.phone || null,
+        emergency_contact: editData.contacts?.emergency_contact || null,
+        // endereço
+        address: editData.address?.street || null,
+        city: editData.address?.city || null,
+        state: editData.address?.state || null,
+        zip_code: editData.address?.zip || null,
+        // profissional
+        employee_code: editData.employee_code || null,
+        admission_date: editData.admission_date || null,
+        contract_type: editData.contract_type || null,
+        work_schedule: editData.work_schedule || null,
+        salary: editData.salary ? Number(editData.salary) : null,
+        // educação
+        education_level: (editData as any).education?.level || null,
+        course_name: (editData as any).education?.course || null,
+        institution_name: (editData as any).education?.institution || null,
+        graduation_year: (editData as any).education?.graduation_year || null,
+        // bancário
+        bank_name: (editData as any).bank?.bank_name || null,
+        bank_agency: (editData as any).bank?.agency || null,
+        bank_account: (editData as any).bank?.account || null,
+        account_type: (editData as any).bank?.account_type || null,
+        // benefícios
+        vale_refeicao: (editData as any).benefits?.meal_voucher ?? null,
+        vale_transporte: (editData as any).benefits?.transport_voucher ?? null,
+        plano_saude: (editData as any).benefits?.health_plan ?? null,
+        plano_dental: (editData as any).benefits?.dental_plan ?? null,
+        // uploads feitos agora
+        ...uploaded,
+      }
+
       const res = await fetch(`/api/employees/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -393,7 +580,7 @@ export default function EmployeeProfilePage() {
 
       toast.success('Colaborador atualizado com sucesso')
       setIsEditOpen(false)
-      loadEmployeeData() // Recarregar dados
+      await loadEmployeeData() // Recarregar dados (para atualizar URLs)
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar colaborador')
     } finally {
@@ -420,15 +607,19 @@ export default function EmployeeProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card p-6">
+      <Card className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
-            <div className="h-24 w-24 rounded-full bg-neutral-800 flex items-center justify-center text-3xl font-medium text-neutral-300">
-              {employee.full_name.split(' ').map(n => n[0]).join('')}
+            <div className="h-24 w-24 rounded-full bg-neutral-200 overflow-hidden flex items-center justify-center text-3xl font-medium text-white/90">
+              {employee.avatar_url ? (
+                <img src={employee.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-slate-500">{employee.full_name.split(' ').map(n => n[0]).join('')}</span>
+              )}
             </div>
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-semibold text-neutral-50">{employee.full_name}</h1>
+                <h1 className="text-3xl font-semibold text-slate-900">{employee.full_name}</h1>
                 <span className={`px-2 py-1 rounded-full text-xs text-white ${getStatusColor(employee.status)}`}>
                   {employee.status === 'active' && 'Ativo'}
                   {employee.status === 'vacation' && 'Férias'}
@@ -436,8 +627,8 @@ export default function EmployeeProfilePage() {
                   {employee.status === 'inactive' && 'Inativo'}
                 </span>
               </div>
-              <p className="text-neutral-400 mt-1">{employee.position}</p>
-              <div className="flex items-center space-x-4 mt-3 text-sm text-neutral-500">
+              <p className="text-slate-600 mt-1">{employee.position}</p>
+              <div className="flex items-center space-x-4 mt-3 text-sm text-slate-600">
                 <span className="flex items-center">
                   <Building className="h-4 w-4 mr-1" />
                   {employee.department}
@@ -454,61 +645,24 @@ export default function EmployeeProfilePage() {
             </div>
           </div>
           <div className="flex space-x-2">
-            <button className="btn-secondary p-2">
+            <Button variant="secondary" size="sm">
               <Download className="h-4 w-4" />
-            </button>
-            <button className="btn-secondary p-2">
+            </Button>
+            <Button variant="secondary" size="sm">
               <Printer className="h-4 w-4" />
-            </button>
-            <button className="btn-secondary p-2">
+            </Button>
+            <Button variant="secondary" size="sm">
               <Share2 className="h-4 w-4" />
-            </button>
-            <button 
-              className="btn-primary"
-              onClick={() => setIsEditOpen(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </button>
+            </Button>
+            <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90" onClick={() => setIsEditOpen(true)}>
+              <span className="flex items-center"><Edit className="h-4 w-4 mr-2" />Editar</span>
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* Score Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-400">Pontuação Geral</span>
-            <Star className="h-4 w-4 text-yellow-500" />
-          </div>
-          <p className="text-3xl font-semibold text-neutral-50">{employee.overall_score}</p>
-          <p className="text-xs text-green-500 mt-1">+0.2 vs. último período</p>
-        </div>
-
-        {Object.entries(employee.cha_scores).map(([key, value]) => {
-          const Icon = getCHAIcon(key)
-          return (
-            <div key={key} className="card p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-neutral-400 capitalize">{key}</span>
-                <Icon className="h-4 w-4 text-primary-500" />
-              </div>
-              <p className="text-3xl font-semibold text-neutral-50">{value}</p>
-              <div className="mt-2">
-                <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary-500 rounded-full"
-                    style={{ width: `${(value / 10) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      </Card>
 
       {/* Tabs */}
-      <div className="border-b border-neutral-800">
+      <div className="border-b border-neutral-200">
         <nav className="flex space-x-8 overflow-x-auto">
           {[
             { id: 'personal', label: 'Dados Pessoais', icon: User },
@@ -527,8 +681,8 @@ export default function EmployeeProfilePage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`pb-3 px-1 border-b-2 text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-500'
-                    : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -545,246 +699,166 @@ export default function EmployeeProfilePage() {
           <>
             <div className="lg:col-span-2 space-y-6">
               {/* Informações Pessoais */}
-              <div className="card">
-                <div className="p-6 border-b border-neutral-800">
-                  <h2 className="text-lg font-semibold">Informações Pessoais</h2>
-                </div>
-                <div className="p-6 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-neutral-500">Nome Completo</p>
-                    <p className="text-neutral-200">{employee.full_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">CPF</p>
-                    <p className="text-neutral-200">{employee.cpf}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">RG</p>
-                    <p className="text-neutral-200">{employee.rg}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Data de Nascimento</p>
-                    <p className="text-neutral-200">{employee.birth_date}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Gênero</p>
-                    <p className="text-neutral-200">{employee.gender}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Estado Civil</p>
-                    <p className="text-neutral-200">{employee.marital_status}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Nacionalidade</p>
-                    <p className="text-neutral-200">{employee.nationality}</p>
-                  </div>
-                </div>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Pessoais</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-6">
+                  <Field label="Nome Completo" value={employee.full_name} />
+                  <Field label="CPF" value={employee.cpf} />
+                  <Field label="RG" value={employee.rg} />
+                  <Field label="Data de Nascimento" value={employee.birth_date} />
+                  <Field label="Gênero" value={employee.gender} />
+                  <Field label="Estado Civil" value={employee.marital_status} />
+                  <Field label="Nacionalidade" value={employee.nationality} />
+                </CardContent>
+              </Card>
 
               {/* Endereço */}
-              <div className="card">
-                <div className="p-6 border-b border-neutral-800">
-                  <h2 className="text-lg font-semibold flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Endereço
-                  </h2>
-                </div>
-                <div className="p-6 grid grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center"><MapPin className="h-4 w-4 mr-2" />Endereço</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-6">
                   <div className="col-span-2">
-                    <p className="text-sm text-neutral-500">Logradouro</p>
-                    <p className="text-neutral-200">{employee.address}, {employee.number} {employee.complement}</p>
+                    <Field label="Logradouro" value={<>{employee.address}{employee.number ? `, ${employee.number}` : ''} {employee.complement}</>} />
                   </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Bairro</p>
-                    <p className="text-neutral-200">{employee.neighborhood}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">CEP</p>
-                    <p className="text-neutral-200">{employee.zip_code}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Cidade</p>
-                    <p className="text-neutral-200">{employee.city}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">Estado</p>
-                    <p className="text-neutral-200">{employee.state}</p>
-                  </div>
-                </div>
-              </div>
+                  <Field label="Bairro" value={employee.neighborhood} />
+                  <Field label="CEP" value={employee.zip_code} />
+                  <Field label="Cidade" value={employee.city} />
+                  <Field label="Estado" value={employee.state} />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Contatos */}
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Contatos</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Contatos</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <Field label="E-mail Corporativo" value={employee.email} />
+                  <Field label="E-mail Pessoal" value={employee.personal_email} />
+                  <Field label="Telefone" value={employee.phone} />
+                  <Field label="Celular" value={employee.mobile} />
               </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <p className="text-sm text-neutral-500">E-mail Corporativo</p>
-                  <p className="text-neutral-200">{employee.email}</p>
+                <div className="pt-4 border-t border-neutral-200 grid grid-cols-2 gap-6">
+                  <Field label="Contato de Emergência" value={employee.emergency_contact} />
+                  <Field label="Telefone de Emergência" value={employee.emergency_phone} />
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-500">E-mail Pessoal</p>
-                  <p className="text-neutral-200">{employee.personal_email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Telefone</p>
-                  <p className="text-neutral-200">{employee.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Celular</p>
-                  <p className="text-neutral-200">{employee.mobile}</p>
-                </div>
-                <div className="pt-4 border-t border-neutral-800">
-                  <p className="text-sm text-neutral-500">Contato de Emergência</p>
-                  <p className="text-neutral-200">{employee.emergency_contact}</p>
-                  <p className="text-sm text-neutral-400">{employee.emergency_phone}</p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </>
         )}
 
         {activeTab === 'professional' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Informações Profissionais</h2>
-              </div>
-              <div className="p-6 grid grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Profissionais</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-6">
+                <Field label="Matrícula" value={employee.employee_id} />
+                <Field label="Cargo" value={employee.position} />
+                <Field label="Departamento" value={employee.department} />
+                <Field label="Data de Admissão" value={employee.admission_date} />
+                <Field label="Tipo de Contrato" value={employee.contract_type} />
+                <Field label="Jornada de Trabalho" value={employee.work_schedule} />
                 <div>
-                  <p className="text-sm text-neutral-500">Matrícula</p>
-                  <p className="text-neutral-200 font-medium">{employee.employee_id}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Salário Base</p>
+                  <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Cargo</p>
-                  <p className="text-neutral-200">{employee.position}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Departamento</p>
-                  <p className="text-neutral-200">{employee.department}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Data de Admissão</p>
-                  <p className="text-neutral-200">{employee.admission_date}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Tipo de Contrato</p>
-                  <p className="text-neutral-200">{employee.contract_type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Jornada de Trabalho</p>
-                  <p className="text-neutral-200">{employee.work_schedule}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Salário Base</p>
-                  <p className="text-neutral-200 font-medium text-green-400">
-                    R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === 'documents' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Documentação</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Documentação</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[{label:'RG', url: employee.rg_photo},{label:'CPF', url: employee.cpf_photo},{label:'CTPS', url: employee.ctps_photo},{label:'Diploma', url: employee.diploma_photo}].map((doc) => (
+                  <div key={doc.label}>
+                  <p className="text-sm text-slate-700 mb-2">{doc.label}</p>
+                    {doc.url ? (
+                      <a href={withVersion(doc.url as string, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                        <img src={withVersion(doc.url as string, employee.updated_at)} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                      </a>
+                    ) : (
+                      <p className="text-slate-700">Não enviado</p>
+                    )}
               </div>
-              <div className="p-6 grid grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-neutral-500">CTPS</p>
-                  <p className="text-neutral-200">{employee.ctps}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">PIS/PASEP</p>
-                  <p className="text-neutral-200">{employee.pis_pasep}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Título de Eleitor</p>
-                  <p className="text-neutral-200">{employee.voter_registration}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">CNH</p>
-                  <p className="text-neutral-200">{employee.driver_license}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Certificado Militar</p>
-                  <p className="text-neutral-200">{employee.military_certificate}</p>
-                </div>
-              </div>
-            </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === 'benefits' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Benefícios</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Benefícios</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-6">
+                <div className="flex items-center gap-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Plano de Saúde</p>
+                  <Badge color={employee.health_plan ? 'green' : 'red'}>{employee.health_plan ? 'Ativo' : 'Inativo'}</Badge>
               </div>
-              <div className="p-6 grid grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-neutral-500">Plano de Saúde</p>
-                  <p className="text-neutral-200">{employee.health_plan}</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Plano Odontológico</p>
+                  <Badge color={employee.dental_plan ? 'green' : 'red'}>{employee.dental_plan ? 'Ativo' : 'Inativo'}</Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Plano Odontológico</p>
-                  <p className="text-neutral-200">{employee.dental_plan}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Vale Refeição</p>
+                  <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.meal_voucher.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Seguro de Vida</p>
-                  <p className="text-neutral-200">{employee.life_insurance ? 'Sim' : 'Não'}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Vale Transporte</p>
+                  <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.transport_voucher.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Vale Refeição</p>
-                  <p className="text-neutral-200">R$ {employee.meal_voucher.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Vale Transporte</p>
-                  <p className="text-neutral-200">{employee.transport_voucher ? 'Sim' : 'Não'}</p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === 'family' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Dependentes</h2>
-              </div>
-              <div className="p-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dependentes</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   {employee.dependents.map((dep, index) => (
-                    <div key={index} className="p-4 bg-neutral-900 rounded-lg">
+                     <div key={index} className="p-4 bg-white rounded-lg border border-slate-200">
                       <div className="grid grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-neutral-500">Nome</p>
-                          <p className="text-neutral-200">{dep.name}</p>
+                          <p className="text-sm text-slate-700">Nome</p>
+                          <p className="text-slate-950 font-semibold">{dep.name}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-500">Parentesco</p>
-                          <p className="text-neutral-200">{dep.relationship}</p>
+                          <p className="text-sm text-slate-700">Parentesco</p>
+                          <p className="text-slate-950 font-semibold">{dep.relationship}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-500">Data de Nascimento</p>
-                          <p className="text-neutral-200">{dep.birth_date}</p>
+                          <p className="text-sm text-slate-700">Data de Nascimento</p>
+                          <p className="text-slate-950 font-semibold">{dep.birth_date}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-500">CPF</p>
-                          <p className="text-neutral-200">{dep.cpf}</p>
+                          <p className="text-sm text-slate-700">CPF</p>
+                          <p className="text-slate-950 font-semibold">{dep.cpf}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -797,20 +871,20 @@ export default function EmployeeProfilePage() {
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <p className="text-sm text-neutral-500">Nível de Escolaridade</p>
-                    <p className="text-neutral-200">{employee.education_level}</p>
+                    <p className="text-sm text-slate-500">Nível de Escolaridade</p>
+                    <p className="text-slate-900">{employee.education_level}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-500">Instituição</p>
-                    <p className="text-neutral-200">{employee.institution}</p>
+                    <p className="text-sm text-slate-500">Instituição</p>
+                    <p className="text-slate-900">{employee.institution}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-500">Curso</p>
-                    <p className="text-neutral-200">{employee.course}</p>
+                    <p className="text-sm text-slate-500">Curso</p>
+                    <p className="text-slate-900">{employee.course}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-500">Ano de Conclusão</p>
-                    <p className="text-neutral-200">{employee.graduation_year}</p>
+                    <p className="text-sm text-slate-500">Ano de Conclusão</p>
+                    <p className="text-slate-900">{employee.graduation_year}</p>
                   </div>
                 </div>
               </div>
@@ -824,7 +898,7 @@ export default function EmployeeProfilePage() {
                     <p className="text-sm text-neutral-500 mb-2">Certificações</p>
                     <div className="space-y-1">
                       {employee.certifications.map((cert, index) => (
-                        <p key={index} className="text-neutral-200 flex items-center">
+                        <p key={index} className="text-slate-950 font-semibold flex items-center">
                           <Award className="h-3 w-3 mr-2 text-primary-500" />
                           {cert}
                         </p>
@@ -835,7 +909,7 @@ export default function EmployeeProfilePage() {
                     <p className="text-sm text-neutral-500 mb-2">Idiomas</p>
                     <div className="space-y-1">
                       {employee.languages.map((lang, index) => (
-                        <p key={index} className="text-neutral-200">{lang}</p>
+                        <p key={index} className="text-slate-950 font-semibold">{lang}</p>
                       ))}
                     </div>
                   </div>
@@ -853,24 +927,24 @@ export default function EmployeeProfilePage() {
               </div>
               <div className="p-6 grid grid-cols-3 gap-6">
                 <div>
-                  <p className="text-sm text-neutral-500">Banco</p>
-                  <p className="text-neutral-200">{employee.bank}</p>
+                  <p className="text-sm text-slate-500">Banco</p>
+                  <p className="text-slate-900">{employee.bank}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Agência</p>
-                  <p className="text-neutral-200">{employee.agency}</p>
+                  <p className="text-sm text-slate-500">Agência</p>
+                  <p className="text-slate-900">{employee.agency}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Conta</p>
-                  <p className="text-neutral-200">{employee.account}</p>
+                  <p className="text-sm text-slate-500">Conta</p>
+                  <p className="text-slate-900">{employee.account}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Tipo de Conta</p>
-                  <p className="text-neutral-200">{employee.account_type}</p>
+                  <p className="text-sm text-slate-500">Tipo de Conta</p>
+                  <p className="text-slate-900">{employee.account_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500">Chave PIX</p>
-                  <p className="text-neutral-200">{employee.pix_key}</p>
+                  <p className="text-sm text-slate-500">Chave PIX</p>
+                  <p className="text-slate-900">{employee.pix_key}</p>
                 </div>
               </div>
             </div>
@@ -879,59 +953,64 @@ export default function EmployeeProfilePage() {
 
         {activeTab === 'performance' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6">
+            <Card>
+              <CardContent>
                 <h2 className="text-lg font-semibold mb-4">Feedbacks Recentes</h2>
                 <div className="space-y-4">
                   {employee.recent_feedbacks.map((feedback) => (
                     <div key={feedback.id} className="border-b border-neutral-800 pb-4 last:border-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-medium text-neutral-200">{feedback.from}</p>
-                          <p className="text-sm text-neutral-500">{feedback.role} • {feedback.date}</p>
+                          <p className="font-semibold text-slate-950">{feedback.from}</p>
+                          <p className="text-sm text-slate-700">{feedback.role} • {feedback.date}</p>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                           <span className="font-medium">{feedback.score}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-neutral-400">{feedback.comment}</p>
+                      <p className="text-sm text-slate-800">{feedback.comment}</p>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
 
       {/* Notes */}
       {employee.notes && (
-        <div className="card">
-          <div className="p-6 border-b border-neutral-800">
-            <h2 className="text-lg font-semibold">Observações</h2>
-          </div>
-          <div className="p-6">
-            <p className="text-neutral-300">{employee.notes}</p>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Observações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-800">{employee.notes}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Edit Modal */}
       <Dialog.Root open={isEditOpen} onOpenChange={setIsEditOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-          <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl max-h-[90vh] card overflow-hidden">
-              <div className="p-6 border-b border-neutral-800">
-                <Dialog.Title className="text-lg font-semibold text-neutral-200">Editar colaborador</Dialog.Title>
-                <Dialog.Description className="text-sm text-neutral-400 mt-1">
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsEditOpen(false)} />
+          <Dialog.Content
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onPointerDownOutside={() => setIsEditOpen(false)}
+            onInteractOutside={() => setIsEditOpen(false)}
+            onEscapeKeyDown={() => setIsEditOpen(false)}
+          >
+            <div className="w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200 bg-white">
+                <Dialog.Title className="text-lg font-semibold text-slate-900">Editar colaborador</Dialog.Title>
+                <Dialog.Description className="text-sm text-slate-600 mt-1">
                   Edite as informações do colaborador.
                 </Dialog.Description>
               </div>
               
               {/* Tabs */}
-              <div className="border-b border-neutral-800">
+              <div className="border-b border-slate-200 bg-white">
                 <nav className="flex space-x-8 px-6">
                   {[
                     { id: 'pessoal', label: 'Pessoal' },
@@ -947,8 +1026,8 @@ export default function EmployeeProfilePage() {
                       onClick={() => setEditTab(tab.id)}
                       className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                         editTab === tab.id
-                          ? 'border-primary-500 text-primary-400'
-                          : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                          ? 'border-blue-600 text-blue-600'
+                          : 'border-transparent text-slate-600 hover:text-slate-800'
                       }`}
                     >
                       {tab.label}
@@ -958,12 +1037,44 @@ export default function EmployeeProfilePage() {
               </div>
 
               {/* Tab Content */}
-              <div className="p-6 max-h-96 overflow-y-auto">
+              <div className="p-6 max-h-[60vh] overflow-y-auto bg-white">
                 {editTab === 'pessoal' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-6">
+                    {/* Avatar upload */}
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-20 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                        {avatarPreview || (employee as any).avatar_url ? (
+                          <img src={avatarPreview || (employee as any).avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-slate-500 text-sm">Sem foto</span>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Foto de Perfil</Label>
+                        <input type="file" accept="image/*" className="block mt-2 text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" onChange={(e) => {
+                          const f = e.target.files?.[0] || null
+                          setAvatarFile(f)
+                          if (f) setAvatarPreview(URL.createObjectURL(f))
+                        }} />
+                        <div className="mt-3 flex items-center gap-2">
+                          <Button variant="secondary" size="sm" onClick={startCamera}>Usar câmera</Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}>Limpar</Button>
+                        </div>
+                        {showCamera && (
+                          <div className="mt-4 flex items-center gap-4">
+                            <video ref={videoRef} className="rounded-xl border border-slate-200" autoPlay playsInline muted />
+                            <div className="flex flex-col gap-2">
+                              <Button variant="primary" className="!bg-[#1B263B]" onClick={capturePhoto}>Capturar</Button>
+                              <Button variant="ghost" onClick={stopCamera}>Fechar</Button>
+                            </div>
+                            <canvas ref={canvasRef} className="hidden" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-name">Nome completo *</Label>
+                        <Label htmlFor="edit-name">Nome completo</Label>
                         <Input
                           id="edit-name"
                           placeholder="João Silva"
@@ -982,7 +1093,7 @@ export default function EmployeeProfilePage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="edit-cpf">CPF</Label>
                         <Input
@@ -1011,14 +1122,14 @@ export default function EmployeeProfilePage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="edit-gender">Gênero</Label>
                         <select
                           id="edit-gender"
                           value={editData.gender}
                           onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
-                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none"
                         >
                           <option value="">Selecione</option>
                           <option value="Masculino">Masculino</option>
@@ -1032,7 +1143,7 @@ export default function EmployeeProfilePage() {
                           id="edit-marital"
                           value={editData.marital_status}
                           onChange={(e) => setEditData({ ...editData, marital_status: e.target.value })}
-                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none"
                         >
                           <option value="">Selecione</option>
                           <option value="Solteiro">Solteiro</option>
@@ -1052,7 +1163,7 @@ export default function EmployeeProfilePage() {
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-neutral-300">Contatos</h4>
+                      <h4 className="text-sm font-medium text-slate-800">Contatos</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-personal-email">Email Pessoal</Label>
@@ -1106,7 +1217,7 @@ export default function EmployeeProfilePage() {
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-neutral-300">Endereço</h4>
+                      <h4 className="text-sm font-medium text-slate-800">Endereço</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-street">Logradouro</Label>
@@ -1215,19 +1326,21 @@ export default function EmployeeProfilePage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="edit-contract">Tipo de Contrato</Label>
                         <select
                           id="edit-contract"
                           value={editData.contract_type}
                           onChange={(e) => setEditData({ ...editData, contract_type: e.target.value })}
-                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-50"
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none"
                         >
                           <option value="">Selecione</option>
-                          <option value="CLT">CLT</option>
-                          <option value="PJ">PJ</option>
+                          <option value="CLT">CLT (Regime CLT)</option>
+                          <option value="PJ">PJ (Pessoa Jurídica)</option>
                           <option value="Estagiário">Estagiário</option>
+                          <option value="Temporário">Temporário</option>
+                          <option value="Aprendiz">Aprendiz</option>
                           <option value="Terceirizado">Terceirizado</option>
                         </select>
                       </div>
@@ -1254,20 +1367,126 @@ export default function EmployeeProfilePage() {
                   </div>
                 )}
 
-                {/* Outras abas podem ser adicionadas aqui seguindo o mesmo padrão */}
+                {editTab === 'documentos' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label>Foto do RG</Label>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, rg: e.target.files?.[0] }))} />
+              </div>
+                      <div className="space-y-2">
+                        <Label>Foto do CPF</Label>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, cpf: e.target.files?.[0] }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Foto da CTPS</Label>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, ctps: e.target.files?.[0] }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Foto do Diploma</Label>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, diploma: e.target.files?.[0] }))} />
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">Selecione os arquivos. Eles serão enviados ao salvar.</p>
+                  </div>
+                )}
+
+                {editTab === 'beneficios' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label>Plano de Saúde</Label>
+                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).benefits?.health_plan || ''} onChange={() => {}}>
+                          <option value="">Selecione</option>
+                          <option value="true">Ativo</option>
+                          <option value="false">Inativo</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Plano Odontológico</Label>
+                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).benefits?.dental_plan || ''} onChange={() => {}}>
+                          <option value="">Selecione</option>
+                          <option value="true">Ativo</option>
+                          <option value="false">Inativo</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Vale Refeição (R$)</Label>
+                        <Input placeholder="0,00" value={(editData as any).benefits?.meal_voucher || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Vale Transporte (R$)</Label>
+                        <Input placeholder="0,00" value={(editData as any).benefits?.transport_voucher || ''} onChange={() => {}} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === 'dependentes' && (
+                  <div className="space-y-6">
+                    <p className="text-sm text-slate-600">Edição detalhada de dependentes será adicionada posteriormente.</p>
+                  </div>
+                )}
+
+                {editTab === 'formacao' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label>Nível</Label>
+                        <Input placeholder="Ensino Superior" value={(editData as any).education?.level || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Curso</Label>
+                        <Input placeholder="Administração" value={(editData as any).education?.course || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Instituição</Label>
+                        <Input placeholder="Universidade" value={(editData as any).education?.institution || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ano de Conclusão</Label>
+                        <Input placeholder="2022" value={(editData as any).education?.graduation_year || ''} onChange={() => {}} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === 'bancario' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label>Banco</Label>
+                        <Input placeholder="Banco" value={(editData as any).bank?.bank_name || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Agência</Label>
+                        <Input placeholder="0001" value={(editData as any).bank?.agency || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Conta</Label>
+                        <Input placeholder="123456-7" value={(editData as any).bank?.account || ''} onChange={() => {}} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tipo de Conta</Label>
+                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).bank?.account_type || ''} onChange={() => {}}>
+                          <option value="">Selecione</option>
+                          <option value="Corrente">Corrente</option>
+                          <option value="Poupança">Poupança</option>
+                          <option value="Salário">Salário</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div className="p-6 border-t border-neutral-800 flex items-center justify-end gap-2">
+              <div className="p-6 border-t border-slate-200 bg-white flex items-center justify-end gap-2">
                 <Dialog.Close asChild>
-                  <button className="btn-ghost">Cancelar</button>
+                  <Button variant="ghost">Cancelar</Button>
                 </Dialog.Close>
-                <button
-                  className="btn-primary"
-                  disabled={saving}
-                  onClick={handleSaveEdit}
-                >
+                <Button variant="primary" className="!bg-[#1B263B]" disabled={saving} onClick={handleSaveEdit} type="button">
                   {saving ? 'Salvando...' : 'Salvar'}
-                </button>
+                </Button>
               </div>
             </div>
           </Dialog.Content>
