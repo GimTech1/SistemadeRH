@@ -55,13 +55,11 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Error updating department:', error)
       return NextResponse.json({ message: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ department: data }, { status: 200 })
   } catch (error: any) {
-    console.error('Unexpected error:', error)
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -93,7 +91,6 @@ export async function DELETE(
       .eq('id', id)
 
     if (deleteError) {
-      console.error('Erro ao excluir departamento:', deleteError)
       return NextResponse.json(
         { error: 'Erro ao excluir departamento' },
         { status: 500 }
@@ -102,7 +99,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Departamento excluído com sucesso' }, { status: 200 })
   } catch (error) {
-    console.error('Erro no endpoint DELETE department:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

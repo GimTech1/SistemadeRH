@@ -143,13 +143,11 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Error updating employee:', error)
       return NextResponse.json({ message: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ employee: data }, { status: 200 })
   } catch (error: any) {
-    console.error('Unexpected error:', error)
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -206,7 +204,6 @@ export async function DELETE(
       .eq('id', id)
 
     if (deleteError) {
-      console.error('Erro ao excluir colaborador:', deleteError)
       return NextResponse.json(
         { error: 'Erro ao excluir colaborador' },
         { status: 500 }
@@ -218,7 +215,6 @@ export async function DELETE(
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erro no endpoint DELETE:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

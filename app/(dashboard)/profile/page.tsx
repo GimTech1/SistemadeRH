@@ -62,7 +62,6 @@ export default function ProfilePage() {
         admission_date: (data as any).admission_date || '',
       })
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error)
       toast.error('Erro ao carregar perfil')
     } finally {
       setLoading(false)
@@ -79,7 +78,6 @@ export default function ProfilePage() {
       if (error) throw error
       setDepartments(data || [])
     } catch (error) {
-      console.error('Erro ao carregar departamentos:', error)
     }
   }
 
@@ -106,7 +104,6 @@ export default function ProfilePage() {
       toast.success('Perfil atualizado com sucesso!')
       await loadProfile() // Recarregar dados
     } catch (error) {
-      console.error('Erro ao salvar perfil:', error)
       toast.error('Erro ao salvar perfil')
     } finally {
       setSaving(false)

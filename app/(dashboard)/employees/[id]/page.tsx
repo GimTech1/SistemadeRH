@@ -665,11 +665,9 @@ export default function EmployeeProfilePage() {
       if (response.ok) {
         setDepartments(data.departments || [])
       } else {
-        console.error('Erro ao buscar departamentos:', data.error)
         toast.error('Erro ao carregar departamentos')
       }
     } catch (error) {
-      console.error('Erro ao buscar departamentos:', error)
       toast.error('Erro ao carregar departamentos')
     } finally {
       setLoadingDepartments(false)
@@ -960,7 +958,6 @@ export default function EmployeeProfilePage() {
       
       toast.success('PDF baixado com sucesso')
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error)
       toast.error('Erro ao gerar PDF')
     }
   }
@@ -1152,7 +1149,6 @@ export default function EmployeeProfilePage() {
       // Redirecionar para a lista de colaboradores
       window.location.href = '/employees'
     } catch (error: any) {
-      console.error('Erro ao excluir colaborador:', error)
       toast.error('Erro ao excluir colaborador: ' + (error.message || 'Erro inesperado'))
     } finally {
       setDeleting(false)

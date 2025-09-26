@@ -52,7 +52,6 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
           parent_department_id: dep.parent_department_id,
         })
       } catch (e: any) {
-        console.error(e)
         toast.error(e.message || 'Erro ao carregar')
       } finally {
         setLoading(false)

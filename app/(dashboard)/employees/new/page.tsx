@@ -300,11 +300,9 @@ export default function NewEmployeePage() {
       if (response.ok) {
         setDepartments(data.departments || [])
       } else {
-        console.error('Erro ao buscar departamentos:', data.error)
         toast.error('Erro ao carregar departamentos')
       }
     } catch (error) {
-      console.error('Erro ao buscar departamentos:', error)
       toast.error('Erro ao carregar departamentos')
     } finally {
       setLoadingDepartments(false)
@@ -408,7 +406,6 @@ export default function NewEmployeePage() {
       if (avatarFile) {
         const fileName = `avatar-${Date.now()}-${avatarFile.name}`
         avatarUrl = await uploadFile(avatarFile, fileName)
-        console.log('Avatar URL:', avatarUrl)
       }
 
       // Upload das fotos selecionadas usando refs
@@ -416,25 +413,21 @@ export default function NewEmployeePage() {
         const file = rgPhotoRef.current.files[0]
         const fileName = `rg-${Date.now()}-${file.name}`
         rgPhotoUrl = await uploadFile(file, fileName)
-        console.log('RG Photo URL:', rgPhotoUrl)
       }
       if (cpfPhotoRef.current?.files?.[0]) {
         const file = cpfPhotoRef.current.files[0]
         const fileName = `cpf-${Date.now()}-${file.name}`
         cpfPhotoUrl = await uploadFile(file, fileName)
-        console.log('CPF Photo URL:', cpfPhotoUrl)
       }
       if (ctpsPhotoRef.current?.files?.[0]) {
         const file = ctpsPhotoRef.current.files[0]
         const fileName = `ctps-${Date.now()}-${file.name}`
         ctpsPhotoUrl = await uploadFile(file, fileName)
-        console.log('CTPS Photo URL:', ctpsPhotoUrl)
       }
       if (diplomaPhotoRef.current?.files?.[0]) {
         const file = diplomaPhotoRef.current.files[0]
         const fileName = `diploma-${Date.now()}-${file.name}`
         diplomaPhotoUrl = await uploadFile(file, fileName)
-        console.log('Diploma Photo URL:', diplomaPhotoUrl)
       }
 
       const { data, error } = await (supabase as any)
