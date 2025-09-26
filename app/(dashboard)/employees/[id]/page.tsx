@@ -39,6 +39,7 @@ import {
   Download,
   Printer,
   Share2,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -47,6 +48,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { validateCPF, formatCPF, validateRG, formatRG, searchAddressByCEP, formatCEP } from '@/lib/validations'
 
 interface EmployeeProfile {
   // Informações Pessoais
@@ -149,6 +151,8 @@ export default function EmployeeProfilePage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editTab, setEditTab] = useState('pessoal')
   const [saving, setSaving] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [docFiles, setDocFiles] = useState<{ rg?: File; cpf?: File; ctps?: File; diploma?: File }>({})
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -157,6 +161,15 @@ export default function EmployeeProfilePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
   const [capturing, setCapturing] = useState(false)
+  
+  // Estados para validações no modal de edição
+  const [validationErrors, setValidationErrors] = useState<{
+    cpf?: string;
+    rg?: string;
+    cep?: string;
+  }>({})
+  const [isValidatingCEP, setIsValidatingCEP] = useState(false)
+  
   const [editData, setEditData] = useState({
     // Básico
     name: '',
@@ -529,6 +542,113 @@ export default function EmployeeProfilePage() {
       gray: 'bg-slate-100 text-slate-800 border border-slate-300',
     }
     return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${map[color]}`}>{children}</span>
+  }
+
+  // Função para validar CPF no modal de edição
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatCPF(value)
+    
+    setEditData(prev => ({
+      ...prev,
+      cpf: formattedValue
+    }))
+
+    // Validar CPF se tiver 11 dígitos
+    if (value.replace(/\D/g, '').length === 11) {
+      const validation = validateCPF(value)
+      setValidationErrors(prev => ({
+        ...prev,
+        cpf: validation.isValid ? undefined : validation.error
+      }))
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        cpf: undefined
+      }))
+    }
+  }
+
+  // Função para validar RG no modal de edição
+  const handleRGChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatRG(value)
+    
+    setEditData(prev => ({
+      ...prev,
+      rg: formattedValue
+    }))
+
+    // Validar RG se tiver pelo menos 7 caracteres
+    if (value.replace(/[^\dA-Za-z]/g, '').length >= 7) {
+      const validation = validateRG(value)
+      setValidationErrors(prev => ({
+        ...prev,
+        rg: validation.isValid ? undefined : validation.error
+      }))
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        rg: undefined
+      }))
+    }
+  }
+
+  // Função para buscar endereço por CEP no modal de edição
+  const handleCEPChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatCEP(value)
+    
+    setEditData(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        zip: formattedValue
+      }
+    }))
+
+    // Buscar endereço se CEP tiver 8 dígitos
+    if (value.replace(/\D/g, '').length === 8) {
+      setIsValidatingCEP(true)
+      setValidationErrors(prev => ({
+        ...prev,
+        cep: undefined
+      }))
+
+      try {
+        const result = await searchAddressByCEP(value)
+        
+        if (result.success && result.data) {
+          setEditData(prev => ({
+            ...prev,
+            address: {
+              ...prev.address,
+              street: result.data!.logradouro,
+              neighborhood: result.data!.bairro,
+              city: result.data!.localidade,
+              state: result.data!.uf
+            }
+          }))
+        } else {
+          setValidationErrors(prev => ({
+            ...prev,
+            cep: result.error
+          }))
+        }
+      } catch (error) {
+        setValidationErrors(prev => ({
+          ...prev,
+          cep: 'Erro ao buscar CEP'
+        }))
+      } finally {
+        setIsValidatingCEP(false)
+      }
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        cep: undefined
+      }))
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -980,6 +1100,33 @@ export default function EmployeeProfilePage() {
     }
   }
 
+  const handleDeleteEmployee = async () => {
+    if (!employee) return
+    
+    setDeleting(true)
+    
+    try {
+      const response = await fetch(`/api/employees/${employee.id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao excluir colaborador')
+      }
+      
+      toast.success('Colaborador excluído com sucesso')
+      setIsDeleteOpen(false)
+      
+      // Redirecionar para a lista de colaboradores
+      window.location.href = '/employees'
+    } catch (error: any) {
+      console.error('Erro ao excluir colaborador:', error)
+      toast.error('Erro ao excluir colaborador: ' + (error.message || 'Erro inesperado'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -1045,6 +1192,9 @@ export default function EmployeeProfilePage() {
              </Button>
              <Button variant="secondary" size="sm" onClick={handleShare} title="Compartilhar">
                <Share2 className="h-4 w-4" />
+             </Button>
+             <Button variant="secondary" size="sm" onClick={() => setIsDeleteOpen(true)} title="Excluir colaborador" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+               <Trash2 className="h-4 w-4" />
              </Button>
              <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90" onClick={() => setIsEditOpen(true)}>
                <span className="flex items-center"><Edit className="h-4 w-4 mr-2" />Editar</span>
@@ -1526,8 +1676,13 @@ export default function EmployeeProfilePage() {
                           id="edit-cpf"
                           placeholder="123.456.789-00"
                           value={editData.cpf}
-                          onChange={(e) => setEditData({ ...editData, cpf: e.target.value })}
+                          onChange={handleCPFChange}
+                          maxLength={14}
+                          className={validationErrors.cpf ? 'border-red-500' : ''}
                         />
+                        {validationErrors.cpf && (
+                          <p className="text-red-500 text-sm">{validationErrors.cpf}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-rg">RG</Label>
@@ -1535,8 +1690,13 @@ export default function EmployeeProfilePage() {
                           id="edit-rg"
                           placeholder="12.345.678-9"
                           value={editData.rg}
-                          onChange={(e) => setEditData({ ...editData, rg: e.target.value })}
+                          onChange={handleRGChange}
+                          maxLength={12}
+                          className={validationErrors.rg ? 'border-red-500' : ''}
                         />
+                        {validationErrors.rg && (
+                          <p className="text-red-500 text-sm">{validationErrors.rg}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-birth">Data de Nascimento</Label>
@@ -1646,6 +1806,39 @@ export default function EmployeeProfilePage() {
                       <h4 className="text-sm font-medium text-slate-800">Endereço</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
+                          <Label htmlFor="edit-zip">CEP</Label>
+                          <div className="relative">
+                            <Input
+                              id="edit-zip"
+                              placeholder="01234-567"
+                              value={editData.address.zip}
+                              onChange={handleCEPChange}
+                              maxLength={9}
+                              className={validationErrors.cep ? 'border-red-500' : ''}
+                            />
+                            {isValidatingCEP && (
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                          {validationErrors.cep && (
+                            <p className="text-red-500 text-sm">{validationErrors.cep}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-state">Estado</Label>
+                          <Input
+                            id="edit-state"
+                            placeholder="SP"
+                            value={editData.address.state}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              address: { ...editData.address, state: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="edit-street">Logradouro</Label>
                           <Input
                             id="edit-street"
@@ -1678,30 +1871,6 @@ export default function EmployeeProfilePage() {
                             onChange={(e) => setEditData({ 
                               ...editData, 
                               address: { ...editData.address, city: e.target.value }
-                            })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-zip">CEP</Label>
-                          <Input
-                            id="edit-zip"
-                            placeholder="01234-567"
-                            value={editData.address.zip}
-                            onChange={(e) => setEditData({ 
-                              ...editData, 
-                              address: { ...editData.address, zip: e.target.value }
-                            })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-state">Estado</Label>
-                          <Input
-                            id="edit-state"
-                            placeholder="SP"
-                            value={editData.address.state}
-                            onChange={(e) => setEditData({ 
-                              ...editData, 
-                              address: { ...editData.address, state: e.target.value }
                             })}
                           />
                         </div>
@@ -1822,7 +1991,17 @@ export default function EmployeeProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label>Plano de Saúde</Label>
-                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).benefits?.health_plan || ''} onChange={() => {}}>
+                        <select 
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" 
+                          value={(editData as any).benefits?.health_plan || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            benefits: {
+                              ...(editData as any).benefits,
+                              health_plan: e.target.value === 'true'
+                            }
+                          })}
+                        >
                           <option value="">Selecione</option>
                           <option value="true">Ativo</option>
                           <option value="false">Inativo</option>
@@ -1830,7 +2009,17 @@ export default function EmployeeProfilePage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Plano Odontológico</Label>
-                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).benefits?.dental_plan || ''} onChange={() => {}}>
+                        <select 
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" 
+                          value={(editData as any).benefits?.dental_plan || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            benefits: {
+                              ...(editData as any).benefits,
+                              dental_plan: e.target.value === 'true'
+                            }
+                          })}
+                        >
                           <option value="">Selecione</option>
                           <option value="true">Ativo</option>
                           <option value="false">Inativo</option>
@@ -1838,11 +2027,31 @@ export default function EmployeeProfilePage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Vale Refeição (R$)</Label>
-                        <Input placeholder="0,00" value={(editData as any).benefits?.meal_voucher || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="0,00" 
+                          value={(editData as any).benefits?.meal_voucher || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            benefits: {
+                              ...(editData as any).benefits,
+                              meal_voucher: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Vale Transporte (R$)</Label>
-                        <Input placeholder="0,00" value={(editData as any).benefits?.transport_voucher || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="0,00" 
+                          value={(editData as any).benefits?.transport_voucher || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            benefits: {
+                              ...(editData as any).benefits,
+                              transport_voucher: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1936,19 +2145,59 @@ export default function EmployeeProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label>Nível</Label>
-                        <Input placeholder="Ensino Superior" value={(editData as any).education?.level || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="Ensino Superior" 
+                          value={(editData as any).education?.level || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              level: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Curso</Label>
-                        <Input placeholder="Administração" value={(editData as any).education?.course || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="Administração" 
+                          value={(editData as any).education?.course || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              course: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Instituição</Label>
-                        <Input placeholder="Universidade" value={(editData as any).education?.institution || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="Universidade" 
+                          value={(editData as any).education?.institution || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              institution: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Ano de Conclusão</Label>
-                        <Input placeholder="2022" value={(editData as any).education?.graduation_year || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="2022" 
+                          value={(editData as any).education?.graduation_year || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              graduation_year: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1959,24 +2208,78 @@ export default function EmployeeProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label>Banco</Label>
-                        <Input placeholder="Banco" value={(editData as any).bank?.bank_name || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="Banco" 
+                          value={(editData as any).bank?.bank_name || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            bank: {
+                              ...(editData as any).bank,
+                              bank_name: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Agência</Label>
-                        <Input placeholder="0001" value={(editData as any).bank?.agency || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="0001" 
+                          value={(editData as any).bank?.agency || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            bank: {
+                              ...(editData as any).bank,
+                              agency: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Conta</Label>
-                        <Input placeholder="123456-7" value={(editData as any).bank?.account || ''} onChange={() => {}} />
+                        <Input 
+                          placeholder="123456-7" 
+                          value={(editData as any).bank?.account || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            bank: {
+                              ...(editData as any).bank,
+                              account: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Tipo de Conta</Label>
-                        <select className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" value={(editData as any).bank?.account_type || ''} onChange={() => {}}>
+                        <select 
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none" 
+                          value={(editData as any).bank?.account_type || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            bank: {
+                              ...(editData as any).bank,
+                              account_type: e.target.value
+                            }
+                          })}
+                        >
                           <option value="">Selecione</option>
                           <option value="Corrente">Corrente</option>
                           <option value="Poupança">Poupança</option>
                           <option value="Salário">Salário</option>
                         </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Chave PIX</Label>
+                        <Input 
+                          placeholder="CPF, e-mail, telefone ou chave aleatória" 
+                          value={(editData as any).bank?.pix_key || ''} 
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            bank: {
+                              ...(editData as any).bank,
+                              pix_key: e.target.value
+                            }
+                          })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1989,6 +2292,79 @@ export default function EmployeeProfilePage() {
                 </Dialog.Close>
                 <Button variant="primary" className="!bg-[#1B263B]" disabled={saving} onClick={handleSaveEdit} type="button">
                   {saving ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog.Root open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none">
+            <div className="w-[min(100vw-2rem,28rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200 bg-white">
+                <Dialog.Title className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                  Excluir Colaborador
+                </Dialog.Title>
+                <Dialog.Description className="text-sm text-slate-600 mt-1">
+                  Esta ação não pode ser desfeita.
+                </Dialog.Description>
+              </div>
+              
+              <div className="p-6 bg-white">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-slate-900 font-medium">
+                      Tem certeza que deseja excluir o colaborador?
+                    </p>
+                    <p className="text-sm text-slate-600 mt-1">
+                      <strong>{employee?.full_name}</strong> será permanentemente removido do sistema.
+                    </p>
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-800">
+                        <strong>Atenção:</strong> Todos os dados relacionados a este colaborador serão perdidos, incluindo:
+                      </p>
+                      <ul className="text-sm text-red-700 mt-2 ml-4 list-disc">
+                        <li>Informações pessoais e profissionais</li>
+                        <li>Documentos e fotos</li>
+                        <li>Histórico de avaliações</li>
+                        <li>Feedbacks e comentários</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-slate-200 bg-white flex items-center justify-end gap-3">
+                <Dialog.Close asChild>
+                  <Button variant="ghost" disabled={deleting}>
+                    Cancelar
+                  </Button>
+                </Dialog.Close>
+                <Button 
+                  variant="destructive" 
+                  disabled={deleting} 
+                  onClick={handleDeleteEmployee}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir Colaborador
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

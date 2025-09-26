@@ -21,10 +21,10 @@ export async function PUT(
       nationality?: string
       // campos normalizados vindos do frontend
       phone?: string | null
-      mobile?: string | null
       emergency_contact?: string | null
       emergency_phone?: string | null
       address?: string | null
+      neighborhood?: string | null
       city?: string | null
       state?: string | null
       zip_code?: string | null
@@ -85,10 +85,10 @@ export async function PUT(
       nationality: body.nationality || null,
       // Contatos e Endereço
       phone: body.phone ?? null,
-      mobile: body.mobile ?? null,
       emergency_contact: body.emergency_contact ?? null,
       emergency_phone: body.emergency_phone ?? null,
       address: body.address ?? null,
+      neighborhood: body.neighborhood ?? null,
       city: body.city ?? null,
       state: body.state ?? null,
       zip_code: body.zip_code ?? null,
@@ -174,5 +174,54 @@ export async function GET(
     return NextResponse.json({ employee: data }, { status: 200 })
   } catch (error: any) {
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+    const supabase = createServerClient()
+
+    // Verificar se o colaborador existe
+    const { data: employee, error: fetchError } = await supabase
+      .from('employees')
+      .select('id, full_name')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !employee) {
+      return NextResponse.json(
+        { error: 'Colaborador não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Excluir o colaborador
+    const { error: deleteError } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Erro ao excluir colaborador:', deleteError)
+      return NextResponse.json(
+        { error: 'Erro ao excluir colaborador' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      { message: 'Colaborador excluído com sucesso' },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Erro no endpoint DELETE:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
   }
 }

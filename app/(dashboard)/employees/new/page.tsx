@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { validateCPF, formatCPF, validateRG, formatRG, searchAddressByCEP, formatCEP } from '@/lib/validations'
 import {
   User,
   Mail,
@@ -41,6 +43,7 @@ interface FormData {
   
   // Endereço
   address: string
+  neighborhood: string
   city: string
   state: string
   zip_code: string
@@ -86,6 +89,7 @@ interface FormData {
   bank_agency: string
   bank_account: string
   account_type: string
+  pix_key: string
   
   // Observações
   notes: string
@@ -96,6 +100,23 @@ export default function NewEmployeePage() {
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const supabase = createClient()
+
+  // Estados para avatar
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
+  const [capturing, setCapturing] = useState(false)
+
+  // Estados para validações
+  const [validationErrors, setValidationErrors] = useState<{
+    cpf?: string;
+    rg?: string;
+    cep?: string;
+  }>({})
+  const [isValidatingCEP, setIsValidatingCEP] = useState(false)
 
   // Refs para os campos de arquivo
   const rgPhotoRef = useRef<HTMLInputElement>(null)
@@ -118,6 +139,7 @@ export default function NewEmployeePage() {
     emergency_contact: '',
     emergency_phone: '',
     address: '',
+    neighborhood: '',
     city: '',
     state: '',
     zip_code: '',
@@ -151,6 +173,7 @@ export default function NewEmployeePage() {
     bank_agency: '',
     bank_account: '',
     account_type: '',
+    pix_key: '',
     notes: '',
   })
 
@@ -160,6 +183,107 @@ export default function NewEmployeePage() {
       ...prev,
       [name]: value
     }))
+  }
+
+  // Função para validar CPF
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatCPF(value)
+    
+    setFormData(prev => ({
+      ...prev,
+      cpf: formattedValue
+    }))
+
+    // Validar CPF se tiver 11 dígitos
+    if (value.replace(/\D/g, '').length === 11) {
+      const validation = validateCPF(value)
+      setValidationErrors(prev => ({
+        ...prev,
+        cpf: validation.isValid ? undefined : validation.error
+      }))
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        cpf: undefined
+      }))
+    }
+  }
+
+  // Função para validar RG
+  const handleRGChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatRG(value)
+    
+    setFormData(prev => ({
+      ...prev,
+      rg: formattedValue
+    }))
+
+    // Validar RG se tiver pelo menos 7 caracteres
+    if (value.replace(/[^\dA-Za-z]/g, '').length >= 7) {
+      const validation = validateRG(value)
+      setValidationErrors(prev => ({
+        ...prev,
+        rg: validation.isValid ? undefined : validation.error
+      }))
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        rg: undefined
+      }))
+    }
+  }
+
+  // Função para buscar endereço por CEP
+  const handleCEPChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const formattedValue = formatCEP(value)
+    
+    setFormData(prev => ({
+      ...prev,
+      zip_code: formattedValue
+    }))
+
+    // Buscar endereço se CEP tiver 8 dígitos
+    if (value.replace(/\D/g, '').length === 8) {
+      setIsValidatingCEP(true)
+      setValidationErrors(prev => ({
+        ...prev,
+        cep: undefined
+      }))
+
+      try {
+        const result = await searchAddressByCEP(value)
+        
+        if (result.success && result.data) {
+          setFormData(prev => ({
+            ...prev,
+            address: result.data!.logradouro,
+            neighborhood: result.data!.bairro,
+            city: result.data!.localidade,
+            state: result.data!.uf
+          }))
+        } else {
+          setValidationErrors(prev => ({
+            ...prev,
+            cep: result.error
+          }))
+        }
+      } catch (error) {
+        setValidationErrors(prev => ({
+          ...prev,
+          cep: 'Erro ao buscar CEP'
+        }))
+      } finally {
+        setIsValidatingCEP(false)
+      }
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        cep: undefined
+      }))
+    }
   }
 
   const uploadFile = async (file: File, path: string) => {
@@ -178,8 +302,62 @@ export default function NewEmployeePage() {
     return publicUrl
   }
 
+  const startCamera = async () => {
+    try {
+      setShowCamera(true)
+      await new Promise(resolve => requestAnimationFrame(() => resolve(null)))
+      const constraints: MediaStreamConstraints = { video: { facingMode: 'user' }, audio: false }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      setMediaStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (error) {
+      toast.error('Erro ao acessar a câmera')
+      setShowCamera(false)
+    }
+  }
+
+  const stopCamera = () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop())
+      setMediaStream(null)
+    }
+    setShowCamera(false)
+  }
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return
+    
+    setCapturing(true)
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const context = canvas.getContext('2d')
+    
+    if (!context) return
+    
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    context.drawImage(video, 0, 0)
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `avatar-${Date.now()}.png`, { type: 'image/png' })
+        setAvatarFile(file)
+        setAvatarPreview(URL.createObjectURL(blob))
+        stopCamera()
+      }
+      setCapturing(false)
+    }, 'image/png')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Só permite submit se estiver no último passo
+    if (currentStep < steps.length) {
+      return
+    }
     
     if (!formData.name) {
       toast.error('Nome é obrigatório')
@@ -190,10 +368,18 @@ export default function NewEmployeePage() {
 
     try {
       // Upload das fotos se existirem
+      let avatarUrl = null
       let rgPhotoUrl = null
       let cpfPhotoUrl = null
       let ctpsPhotoUrl = null
       let diplomaPhotoUrl = null
+
+      // Upload do avatar se existir
+      if (avatarFile) {
+        const fileName = `avatar-${Date.now()}-${avatarFile.name}`
+        avatarUrl = await uploadFile(avatarFile, fileName)
+        console.log('Avatar URL:', avatarUrl)
+      }
 
       // Upload das fotos selecionadas usando refs
       if (rgPhotoRef.current?.files?.[0]) {
@@ -228,6 +414,7 @@ export default function NewEmployeePage() {
           email: formData.email || null,
           position: formData.position || null,
           department: formData.department || null,
+          avatar_url: avatarUrl,
           cpf: formData.cpf || null,
           rg: formData.rg || null,
           birth_date: formData.birth_date || null,
@@ -238,6 +425,7 @@ export default function NewEmployeePage() {
           emergency_contact: formData.emergency_contact || null,
           emergency_phone: formData.emergency_phone || null,
           address: formData.address || null,
+          neighborhood: formData.neighborhood || null,
           city: formData.city || null,
           state: formData.state || null,
           zip_code: formData.zip_code || null,
@@ -271,6 +459,7 @@ export default function NewEmployeePage() {
           bank_agency: formData.bank_agency || null,
           bank_account: formData.bank_account || null,
           account_type: formData.account_type || null,
+          pix_key: formData.pix_key || null,
           notes: formData.notes || null,
         })
         .select('*')
@@ -296,13 +485,21 @@ export default function NewEmployeePage() {
     { id: 4, title: 'Documentos e Benefícios', icon: FileText },
   ]
 
-  const nextStep = () => {
+  const nextStep = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1)
     }
   }
 
-  const prevStep = () => {
+  const prevStep = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
@@ -382,6 +579,72 @@ export default function NewEmployeePage() {
               <User className="h-5 w-5" />
               Informações Básicas
             </h2>
+            
+            {/* Avatar Upload */}
+            <div className="mb-6 p-4 bg-platinum-50 rounded-lg border border-platinum-200">
+              <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-3">
+                Foto de Perfil
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden border border-platinum-300 bg-platinum-100 flex items-center justify-center">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar Preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-platinum-500 text-sm">Sem foto</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="block mb-2 text-sm text-rich-black-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-yinmn-blue-500 file:text-white hover:file:bg-yinmn-blue-600"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null
+                      setAvatarFile(f)
+                      if (f) setAvatarPreview(URL.createObjectURL(f))
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="px-3 py-1 text-xs bg-white border border-platinum-300 rounded-lg text-rich-black-900 hover:bg-platinum-50 transition-colors"
+                    >
+                      Usar câmera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}
+                      className="px-3 py-1 text-xs bg-white border border-platinum-300 rounded-lg text-rich-black-900 hover:bg-platinum-50 transition-colors"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  {showCamera && (
+                    <div className="mt-4 flex items-center gap-4">
+                      <video
+                        ref={videoRef}
+                        className="rounded-xl border border-slate-200 w-64 h-48 bg-black"
+                        autoPlay
+                        playsInline
+                        muted
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button variant="primary" className="!bg-[#1B263B] flex items-center justify-center gap-2" onClick={capturePhoto} disabled={capturing}>
+                          {capturing && (
+                            <span className="inline-block h-4 w-4 rounded-full border-2 border-white/50 border-t-white animate-spin" />
+                          )}
+                          {capturing ? 'Capturando...' : 'Capturar'}
+                        </Button>
+                        <Button variant="ghost" onClick={stopCamera}>Fechar</Button>
+                      </div>
+                      <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -450,10 +713,16 @@ export default function NewEmployeePage() {
                   type="text"
                   name="cpf"
                   value={formData.cpf}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                  onChange={handleCPFChange}
+                  maxLength={14}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent ${
+                    validationErrors.cpf ? 'border-red-500' : 'border-platinum-300'
+                  }`}
                   placeholder="000.000.000-00"
                 />
+                {validationErrors.cpf && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.cpf}</p>
+                )}
               </div>
 
               <div>
@@ -464,10 +733,16 @@ export default function NewEmployeePage() {
                   type="text"
                   name="rg"
                   value={formData.rg}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                  onChange={handleRGChange}
+                  maxLength={12}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent ${
+                    validationErrors.rg ? 'border-red-500' : 'border-platinum-300'
+                  }`}
                   placeholder="00.000.000-0"
                 />
+                {validationErrors.rg && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.rg}</p>
+                )}
               </div>
 
               <div>
@@ -597,32 +872,31 @@ export default function NewEmployeePage() {
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Endereço</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
-                      Endereço Completo
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                      placeholder="Rua, número, bairro"
-                    />
-                  </div>
-
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
-                      Cidade
+                      CEP
                     </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                      placeholder="Nome da cidade"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="zip_code"
+                        value={formData.zip_code}
+                        onChange={handleCEPChange}
+                        maxLength={9}
+                        className={`w-full px-4 py-3 bg-white border rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent ${
+                          validationErrors.cep ? 'border-red-500' : 'border-platinum-300'
+                        }`}
+                        placeholder="00000-000"
+                      />
+                      {isValidatingCEP && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-yinmn-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                    {validationErrors.cep && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.cep}</p>
+                    )}
                   </div>
 
                   <div>
@@ -639,17 +913,45 @@ export default function NewEmployeePage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
-                      CEP
+                      Endereço Completo
                     </label>
                     <input
                       type="text"
-                      name="zip_code"
-                      value={formData.zip_code}
+                      name="address"
+                      value={formData.address}
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                      placeholder="00000-000"
+                      placeholder="Rua, número"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                      Bairro
+                    </label>
+                    <input
+                      type="text"
+                      name="neighborhood"
+                      value={formData.neighborhood}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                      placeholder="Nome do bairro"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                      Cidade
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                      placeholder="Nome da cidade"
                     />
                   </div>
                 </div>
@@ -1184,6 +1486,20 @@ export default function NewEmployeePage() {
                       <option value="salario">Conta Salário</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                      Chave PIX
+                    </label>
+                    <input
+                      type="text"
+                      name="pix_key"
+                      value={formData.pix_key}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                      placeholder="CPF, e-mail, telefone ou chave aleatória"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1212,7 +1528,8 @@ export default function NewEmployeePage() {
         <div className="flex justify-between px-6 py-8">
           <button
             type="button"
-            onClick={prevStep}
+            onClick={(e) => prevStep(e)}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={currentStep === 1}
             className={`px-6 py-3 rounded-lg font-roboto font-medium transition-all duration-200 ${
               currentStep === 1
@@ -1227,7 +1544,8 @@ export default function NewEmployeePage() {
             {currentStep < steps.length ? (
               <button
                 type="button"
-                onClick={nextStep}
+                onClick={(e) => nextStep(e)}
+                onMouseDown={(e) => e.preventDefault()}
                 className="px-6 py-3 text-white rounded-lg font-roboto font-medium transition-all duration-200 hover:opacity-90"
                 style={{ backgroundColor: '#415A77' }}
               >
