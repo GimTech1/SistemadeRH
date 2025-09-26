@@ -275,6 +275,21 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
           <div className="border-t border-gray-600 pt-2 mt-2">
             <div className="mb-2 space-y-1">
               <Link
+                href="/profile"
+                className={cn(
+                  "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
+                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
+                )}
+                title="Meu Perfil"
+              >
+                <UserCircle className={cn(
+                  "flex-shrink-0",
+                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                )} />
+                {!isCollapsed && <span className="tracking-wide">Meu Perfil</span>}
+              </Link>
+
+              <Link
                 href="/"
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
