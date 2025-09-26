@@ -183,7 +183,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // Verificar se o colaborador existe
     const { data: employee, error: fetchError } = await supabase

@@ -246,6 +246,9 @@ CREATE POLICY "Employees insert by authenticated users" ON public.employees
 CREATE POLICY "Employees update by authenticated users" ON public.employees
   FOR UPDATE USING (auth.role() = 'authenticated');
 
+CREATE POLICY "Employees delete by authenticated users" ON public.employees
+  FOR DELETE USING (auth.role() = 'authenticated');
+
 CREATE INDEX IF NOT EXISTS idx_employees_name ON public.employees(full_name);
 CREATE INDEX IF NOT EXISTS idx_employees_email ON public.employees(email);
 CREATE INDEX IF NOT EXISTS idx_employees_department ON public.employees(department);
