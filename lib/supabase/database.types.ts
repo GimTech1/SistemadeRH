@@ -14,7 +14,7 @@ export type Database = {
           id: string
           email: string
           full_name: string
-          role: 'admin' | 'manager' | 'employee'
+          role: 'admin' | 'gerente' | 'employee'
           department_id: string | null
           position: string | null
           admission_date: string | null
@@ -28,7 +28,7 @@ export type Database = {
           id: string
           email: string
           full_name: string
-          role?: 'admin' | 'manager' | 'employee'
+          role?: 'admin' | 'gerente' | 'employee'
           department_id?: string | null
           position?: string | null
           admission_date?: string | null
@@ -42,7 +42,7 @@ export type Database = {
           id?: string
           email?: string
           full_name?: string
-          role?: 'admin' | 'manager' | 'employee'
+          role?: 'admin' | 'gerente' | 'employee'
           department_id?: string | null
           position?: string | null
           admission_date?: string | null

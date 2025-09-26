@@ -23,9 +23,13 @@ import {
   List,
   Mail,
   Phone,
+  X,
+  Save,
+  ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import * as Dialog from '@radix-ui/react-dialog'
 
 interface Department {
   id: string
@@ -52,11 +56,70 @@ export default function DepartmentsPage() {
   const [sortBy, setSortBy] = useState('name')
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newDepartment, setNewDepartment] = useState({
+    name: '',
+    description: '',
+    manager_id: '',
+    parent_department_id: ''
+  })
+  const [availableManagers, setAvailableManagers] = useState<Array<{id: string, name: string, position: string}>>([])
+  const [loadingManagers, setLoadingManagers] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
     loadDepartments()
+    loadAvailableManagers()
   }, [])
+
+  const loadAvailableManagers = async () => {
+    setLoadingManagers(true)
+    try {
+      console.log('🔍 Buscando gerentes...')
+      
+      // Primeiro, vamos ver todos os profiles
+      const { data: allProfiles, error: allError } = await supabase
+        .from('profiles')
+        .select('id, full_name, position, role, is_active')
+
+      console.log('📊 Todos os profiles:', allProfiles)
+      console.log('❌ Erro ao buscar todos:', allError)
+
+      // Agora buscar apenas admin e gerente
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, position, role, is_active')
+        .in('role', ['admin', 'gerente'])
+        .eq('is_active', true)
+        .order('full_name', { ascending: true })
+
+      console.log('👥 Gerentes encontrados:', data)
+      console.log('❌ Erro ao buscar gerentes:', error)
+
+      if (error) {
+        console.error('Erro ao carregar gerentes:', error)
+        toast.error('Erro ao carregar lista de gerentes')
+        setAvailableManagers([])
+        return
+      }
+
+      const managers = (data || []).map((profile: any) => ({
+        id: profile.id,
+        name: profile.full_name || 'Nome não informado',
+        position: profile.position || 'Cargo não informado'
+      }))
+
+      console.log('✅ Gerentes processados:', managers)
+      setAvailableManagers(managers)
+    } catch (error) {
+      console.error('Erro ao carregar gerentes:', error)
+      toast.error('Erro ao carregar lista de gerentes')
+      setAvailableManagers([])
+    } finally {
+      setLoadingManagers(false)
+    }
+  }
 
   const loadDepartments = async () => {
     try {
@@ -176,6 +239,50 @@ export default function DepartmentsPage() {
     return <Activity className="h-4 w-4 text-oxford-blue-400" />
   }
 
+  const handleCreateDepartment = async () => {
+    if (!newDepartment.name.trim()) {
+      toast.error('Nome do departamento é obrigatório')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const response = await fetch('/api/departments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newDepartment.name.trim(),
+          description: newDepartment.description.trim() || null,
+          manager_id: newDepartment.manager_id || null,
+          parent_department_id: newDepartment.parent_department_id || null
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error(data.error || 'Você não tem permissão para criar departamentos')
+        } else {
+          throw new Error(data.error || 'Erro ao criar departamento')
+        }
+        return
+      }
+
+      toast.success('Departamento criado com sucesso!')
+      setIsModalOpen(false)
+      setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
+      loadDepartments() // Recarregar a lista
+    } catch (error) {
+      console.error('Erro ao criar departamento:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar departamento')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const filteredDepartments = departments
     .filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -204,7 +311,11 @@ export default function DepartmentsPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e acompanhe o desempenho de cada departamento</h1>
         </div>
-        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" 
+          style={{ backgroundColor: '#1B263B' }}
+        >
           <Plus className="h-4 w-4" />
           Novo Departamento
         </button>
@@ -530,12 +641,168 @@ export default function DepartmentsPage() {
           <p className="text-sm text-oxford-blue-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
             Tente ajustar sua busca ou crie um novo departamento para começar a gerenciar sua equipe
           </p>
-          <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 mx-auto mt-8">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 mx-auto mt-8"
+          >
             <Plus className="h-4 w-4" />
             Criar Primeiro Departamento
           </button>
         </div>
       )}
+
+      {/* Modal de Novo Departamento */}
+      <Dialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsModalOpen(false)} />
+          <Dialog.Content
+            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none"
+            onPointerDownOutside={() => setIsModalOpen(false)}
+            onInteractOutside={() => setIsModalOpen(false)}
+            onEscapeKeyDown={() => setIsModalOpen(false)}
+          >
+            <div className="w-[min(100vw-2rem,32rem)] bg-white rounded-2xl shadow-2xl border border-platinum-200 overflow-hidden">
+              {/* Header */}
+              <div className="p-6 border-b border-platinum-200 bg-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Dialog.Title className="text-xl font-roboto font-semibold text-rich-black-900">Novo Departamento</Dialog.Title>
+                    <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
+                      Crie um novo departamento para organizar sua equipe
+                    </Dialog.Description>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="p-2 text-oxford-blue-400 hover:text-oxford-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Form */}
+              <div className="p-6 space-y-6">
+                {/* Nome do Departamento */}
+                <div>
+                  <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                    Nome do Departamento *
+                  </label>
+                  <input
+                    type="text"
+                    value={newDepartment.name}
+                    onChange={(e) => setNewDepartment(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-xl text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto"
+                    placeholder="Ex: Recursos Humanos, Tecnologia, Vendas..."
+                    required
+                  />
+                </div>
+
+                {/* Descrição */}
+                <div>
+                  <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                    Descrição
+                  </label>
+                  <textarea
+                    value={newDepartment.description}
+                    onChange={(e) => setNewDepartment(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-xl text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto resize-none"
+                    placeholder="Descreva as responsabilidades e objetivos do departamento..."
+                  />
+                </div>
+
+                {/* Gerente */}
+                <div>
+                  <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                    Gerente do Departamento
+                  </label>
+                  <div className="relative">
+                  <select
+                    value={newDepartment.manager_id}
+                    onChange={(e) => setNewDepartment(prev => ({ ...prev, manager_id: e.target.value }))}
+                    className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto appearance-none cursor-pointer"
+                    disabled={loadingManagers}
+                  >
+                    <option value="">Selecione um gerente (opcional)</option>
+                    {availableManagers.map((manager) => (
+                      <option key={manager.id} value={manager.id}>
+                        {manager.name} - {manager.position}
+                      </option>
+                    ))}
+                  </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown className="h-5 w-5 text-oxford-blue-400" />
+                    </div>
+                  </div>
+                  {loadingManagers && (
+                    <p className="text-xs text-oxford-blue-500 mt-1 font-roboto">Carregando gerentes...</p>
+                  )}
+                  {!loadingManagers && availableManagers.length === 0 && (
+                    <p className="text-xs text-oxford-blue-500 mt-1 font-roboto">
+                      Nenhum gerente disponível. Crie perfis de usuário com role 'admin' ou 'manager' primeiro.
+                    </p>
+                  )}
+                </div>
+
+                {/* Departamento Pai */}
+                <div>
+                  <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                    Departamento Pai
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={newDepartment.parent_department_id}
+                      onChange={(e) => setNewDepartment(prev => ({ ...prev, parent_department_id: e.target.value }))}
+                      className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto appearance-none cursor-pointer"
+                    >
+                      <option value="">Selecione um departamento pai (opcional)</option>
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown className="h-5 w-5 text-oxford-blue-400" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-oxford-blue-500 mt-1 font-roboto">
+                    Selecione um departamento pai para criar uma hierarquia organizacional
+                  </p>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="p-6 border-t border-platinum-200 bg-platinum-50 flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isCreating}
+                  className="px-6 py-3 text-oxford-blue-600 hover:text-oxford-blue-700 font-roboto font-medium transition-all duration-200 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateDepartment}
+                  disabled={isCreating || !newDepartment.name.trim()}
+                  className="px-6 py-3 bg-yinmn-blue-600 hover:bg-yinmn-blue-700 disabled:bg-oxford-blue-300 text-white rounded-xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 disabled:cursor-not-allowed"
+                >
+                  {isCreating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Criar Departamento
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }
