@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   User,
@@ -140,6 +140,7 @@ interface EmployeeProfile {
 
 export default function EmployeeProfilePage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('personal')
@@ -191,6 +192,13 @@ export default function EmployeeProfilePage() {
   useEffect(() => {
     loadEmployeeData()
   }, [params.id])
+
+  useEffect(() => {
+    // abrir modal se vier com ?edit=1
+    if (searchParams.get('edit')) {
+      setIsEditOpen(true)
+    }
+  }, [searchParams])
 
   const loadEmployeeData = async () => {
     try {
@@ -996,12 +1004,12 @@ export default function EmployeeProfilePage() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsEditOpen(false)} />
           <Dialog.Content
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none"
             onPointerDownOutside={() => setIsEditOpen(false)}
             onInteractOutside={() => setIsEditOpen(false)}
             onEscapeKeyDown={() => setIsEditOpen(false)}
           >
-            <div className="w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="w-[min(100vw-2rem,80rem)] max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200 bg-white">
                 <Dialog.Title className="text-lg font-semibold text-slate-900">Editar colaborador</Dialog.Title>
                 <Dialog.Description className="text-sm text-slate-600 mt-1">

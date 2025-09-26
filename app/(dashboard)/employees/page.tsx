@@ -314,9 +314,11 @@ export default function EmployeesPage() {
                             <Eye className="h-4 w-4" />
                       </button>
                     </Link>
-                        <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                          <Edit className="h-4 w-4" />
-                        </button>
+                        <Link href={`/employees/${employee.id}?edit=1`}>
+                          <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        </Link>
                       </div>
                   </td>
                 </tr>
@@ -346,9 +348,11 @@ export default function EmployeesPage() {
                       <Eye className="h-4 w-4" />
                     </button>
                   </Link>
-                  <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                    <Edit className="h-4 w-4" />
-                  </button>
+                  <Link href={`/employees/${employee.id}?edit=1`}>
+                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  </Link>
                 </div>
               </div>
 
