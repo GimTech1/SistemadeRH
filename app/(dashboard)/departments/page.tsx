@@ -141,12 +141,27 @@ export default function DepartmentsPage() {
             }
           }
 
+          // Contar colaboradores do departamento
+          let employeeCount = 0
+          try {
+            const { count, error: countError } = await supabase
+              .from('employees')
+              .select('*', { count: 'exact', head: true })
+              .eq('department', dept.id)
+            
+            if (!countError && count !== null) {
+              employeeCount = count
+            }
+          } catch (error) {
+            console.error('Erro ao contar colaboradores:', error)
+          }
+
           return {
             id: dept.id,
             name: dept.name,
             manager: managerName,
             managerId: dept.manager_id || '',
-            employeeCount: 0, // Será calculado quando tivermos dados reais
+            employeeCount: employeeCount,
             averageScore: 0, // Será calculado quando tivermos dados reais
             trend: 'stable' as const,
             description: dept.description || '',

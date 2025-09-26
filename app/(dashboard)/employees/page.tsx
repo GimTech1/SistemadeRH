@@ -61,22 +61,43 @@ export default function EmployeesPage() {
         throw error
       }
 
-      const mapped: Employee[] = (data || []).map((e: any) => ({
-        id: e.id,
-        name: e.full_name,
-        email: e.email || '',
-        position: e.position || '',
-        department: e.department || '—',
-        score: 0,
-        trend: 'stable',
-        evaluations: 0,
-        feedbacks: 0,
-        avatar: (e.full_name || e.email || '?')
-          .split(' ')
-          .map((n: string) => n[0])
-          .join('')
-          .toUpperCase(),
-        avatarUrl: e.avatar_url || '',
+      // Buscar nomes dos departamentos para cada funcionário
+      const mapped: Employee[] = await Promise.all((data || []).map(async (e: any) => {
+        let departmentName = '—'
+        
+        if (e.department) {
+          try {
+            const { data: deptData } = await supabase
+              .from('departments')
+              .select('name')
+              .eq('id', e.department)
+              .single()
+            
+            if (deptData) {
+              departmentName = (deptData as any).name || '—'
+            }
+          } catch (error) {
+            console.error('Erro ao buscar departamento:', error)
+          }
+        }
+
+        return {
+          id: e.id,
+          name: e.full_name,
+          email: e.email || '',
+          position: e.position || '',
+          department: departmentName,
+          score: 0,
+          trend: 'stable',
+          evaluations: 0,
+          feedbacks: 0,
+          avatar: (e.full_name || e.email || '?')
+            .split(' ')
+            .map((n: string) => n[0])
+            .join('')
+            .toUpperCase(),
+          avatarUrl: e.avatar_url || '',
+        }
       }))
 
       setEmployees(mapped)
