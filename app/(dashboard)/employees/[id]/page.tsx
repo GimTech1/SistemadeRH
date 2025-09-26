@@ -173,6 +173,7 @@ export default function EmployeeProfilePage() {
   // Estados para departamentos no modal de edição
   const [departments, setDepartments] = useState<Array<{ id: string; name: string; description?: string }>>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
+  const [departmentName, setDepartmentName] = useState<string>('')
   
   const [editData, setEditData] = useState({
     // Básico
@@ -379,6 +380,26 @@ export default function EmployeeProfilePage() {
         notes: (data as any).notes || '',
         updated_at: (data as any).updated_at,
       })
+
+      // Buscar nome do departamento
+      if ((data as any).department) {
+        try {
+          const { data: deptData } = await supabase
+            .from('departments')
+            .select('name')
+            .eq('id', (data as any).department)
+            .single()
+          
+          if (deptData) {
+            setDepartmentName((deptData as any).name || '—')
+          }
+        } catch (error) {
+          console.error('Erro ao buscar departamento:', error)
+          setDepartmentName('—')
+        }
+      } else {
+        setDepartmentName('—')
+      }
 
       // Preencher dados de edição
       const dataAny = data as any
@@ -809,7 +830,7 @@ export default function EmployeeProfilePage() {
           <div>
             <h2 style="color: #1B263B; font-size: 24px; margin: 0; font-weight: bold;">${employee.full_name}</h2>
             <p style="color: #666; font-size: 16px; margin: 5px 0;">${employee.position}</p>
-            <p style="color: #888; font-size: 14px; margin: 0;">${employee.department} • Matrícula: ${employee.employee_id}</p>
+            <p style="color: #888; font-size: 14px; margin: 0;">${departmentName} • Matrícula: ${employee.employee_id}</p>
           </div>
         </div>
 
@@ -850,7 +871,7 @@ export default function EmployeeProfilePage() {
             <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">INFORMAÇÕES PROFISSIONAIS</h3>
             <div style="margin-bottom: 8px;"><strong>Matrícula:</strong> ${employee.employee_id || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Cargo:</strong> ${employee.position || '-'}</div>
-            <div style="margin-bottom: 8px;"><strong>Departamento:</strong> ${employee.department || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Departamento:</strong> ${departmentName || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Data de Admissão:</strong> ${employee.admission_date || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Tipo de Contrato:</strong> ${employee.contract_type || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Jornada de Trabalho:</strong> ${employee.work_schedule || '-'}</div>
@@ -1025,7 +1046,7 @@ export default function EmployeeProfilePage() {
             <h2>Informações Profissionais</h2>
             <div class="field"><span class="label">Matrícula:</span><span class="value">${employee.employee_id || '-'}</span></div>
             <div class="field"><span class="label">Cargo:</span><span class="value">${employee.position || '-'}</span></div>
-            <div class="field"><span class="label">Departamento:</span><span class="value">${employee.department || '-'}</span></div>
+            <div class="field"><span class="label">Departamento:</span><span class="value">${departmentName || '-'}</span></div>
             <div class="field"><span class="label">Data de Admissão:</span><span class="value">${employee.admission_date || '-'}</span></div>
             <div class="field"><span class="label">Tipo de Contrato:</span><span class="value">${employee.contract_type || '-'}</span></div>
             <div class="field"><span class="label">Jornada de Trabalho:</span><span class="value">${employee.work_schedule || '-'}</span></div>
@@ -1105,7 +1126,7 @@ export default function EmployeeProfilePage() {
     
     const shareData = {
       title: `Ficha do Colaborador - ${employee.full_name}`,
-      text: `Dados do colaborador ${employee.full_name} - ${employee.position} - ${employee.department}`,
+      text: `Dados do colaborador ${employee.full_name} - ${employee.position} - ${departmentName}`,
       url: window.location.href
     }
 
@@ -1198,7 +1219,7 @@ export default function EmployeeProfilePage() {
               <div className="flex items-center space-x-4 mt-3 text-sm text-slate-600">
                 <span className="flex items-center">
                   <Building className="h-4 w-4 mr-1" />
-                  {employee.department}
+                  {departmentName}
                 </span>
                 <span className="flex items-center">
                   <CreditCard className="h-4 w-4 mr-1" />
@@ -1331,7 +1352,7 @@ export default function EmployeeProfilePage() {
               <CardContent className="grid grid-cols-3 gap-6">
                 <Field label="Matrícula" value={employee.employee_id} />
                 <Field label="Cargo" value={employee.position} />
-                <Field label="Departamento" value={employee.department} />
+                <Field label="Departamento" value={departmentName} />
                 <Field label="Data de Admissão" value={employee.admission_date} />
                 <Field label="Tipo de Contrato" value={employee.contract_type} />
                 <Field label="Jornada de Trabalho" value={employee.work_schedule} />
@@ -1932,7 +1953,7 @@ export default function EmployeeProfilePage() {
                             {loadingDepartments ? 'Carregando departamentos...' : 'Selecione um departamento'}
                           </option>
                           {departments.map((dept) => (
-                            <option key={dept.id} value={dept.name}>
+                            <option key={dept.id} value={dept.id}>
                               {dept.name}
                             </option>
                           ))}

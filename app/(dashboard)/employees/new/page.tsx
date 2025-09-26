@@ -729,7 +729,7 @@ export default function NewEmployeePage() {
                     {loadingDepartments ? 'Carregando departamentos...' : 'Selecione um departamento'}
                   </option>
                   {departments.map((dept) => (
-                    <option key={dept.id} value={dept.name}>
+                    <option key={dept.id} value={dept.id}>
                       {dept.name}
                     </option>
                   ))}
