@@ -54,12 +54,12 @@ export default function ProfilePage() {
 
       setProfile(data)
       setForm({
-        full_name: data.full_name || '',
-        email: data.email || '',
-        position: data.position || '',
-        department_id: data.department_id || '',
-        phone: data.phone || '',
-        admission_date: data.admission_date || '',
+        full_name: (data as any).full_name || '',
+        email: (data as any).email || '',
+        position: (data as any).position || '',
+        department_id: (data as any).department_id || '',
+        phone: (data as any).phone || '',
+        admission_date: (data as any).admission_date || '',
       })
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
@@ -88,7 +88,7 @@ export default function ProfilePage() {
 
     setSaving(true)
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           full_name: form.full_name.trim(),
