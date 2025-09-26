@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import {
   User,
   Mail,
@@ -624,6 +626,360 @@ export default function EmployeeProfilePage() {
     }
   }
 
+  const handleDownload = async () => {
+    if (!employee) return
+    
+    try {
+      // Criar elemento temporário para renderizar o PDF
+      const tempDiv = document.createElement('div')
+      tempDiv.style.position = 'absolute'
+      tempDiv.style.left = '-9999px'
+      tempDiv.style.top = '-9999px'
+      tempDiv.style.width = '210mm'
+      tempDiv.style.padding = '20mm'
+      tempDiv.style.backgroundColor = 'white'
+      tempDiv.style.fontFamily = 'Arial, sans-serif'
+      tempDiv.style.fontSize = '12px'
+      tempDiv.style.lineHeight = '1.4'
+      tempDiv.style.color = '#333'
+      
+      tempDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1B263B; padding-bottom: 20px;">
+          <h1 style="color: #1B263B; font-size: 28px; margin: 0; font-weight: bold;">FICHA DO COLABORADOR</h1>
+          <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Sistema de Recursos Humanos</p>
+        </div>
+
+        <div style="display: flex; margin-bottom: 25px; align-items: center;">
+          <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-size: 24px; font-weight: bold; color: #666;">
+            ${employee.avatar_url ? 
+              `<img src="${employee.avatar_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" />` : 
+              employee.full_name.split(' ').map(n => n[0]).join('')
+            }
+          </div>
+          <div>
+            <h2 style="color: #1B263B; font-size: 24px; margin: 0; font-weight: bold;">${employee.full_name}</h2>
+            <p style="color: #666; font-size: 16px; margin: 5px 0;">${employee.position}</p>
+            <p style="color: #888; font-size: 14px; margin: 0;">${employee.department} • Matrícula: ${employee.employee_id}</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">INFORMAÇÕES PESSOAIS</h3>
+            <div style="margin-bottom: 8px;"><strong>Nome:</strong> ${employee.full_name}</div>
+            <div style="margin-bottom: 8px;"><strong>CPF:</strong> ${employee.cpf || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>RG:</strong> ${employee.rg || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Data de Nascimento:</strong> ${employee.birth_date || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Gênero:</strong> ${employee.gender || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Estado Civil:</strong> ${employee.marital_status || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Nacionalidade:</strong> ${employee.nationality || '-'}</div>
+          </div>
+          
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">CONTATOS</h3>
+            <div style="margin-bottom: 8px;"><strong>E-mail Corporativo:</strong> ${employee.email || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>E-mail Pessoal:</strong> ${employee.personal_email || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Telefone:</strong> ${employee.phone || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Celular:</strong> ${employee.mobile || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Contato de Emergência:</strong> ${employee.emergency_contact || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Telefone de Emergência:</strong> ${employee.emergency_phone || '-'}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">ENDEREÇO</h3>
+          <div style="margin-bottom: 8px;"><strong>Logradouro:</strong> ${employee.address || '-'}</div>
+          <div style="margin-bottom: 8px;"><strong>Bairro:</strong> ${employee.neighborhood || '-'}</div>
+          <div style="margin-bottom: 8px;"><strong>CEP:</strong> ${employee.zip_code || '-'}</div>
+          <div style="margin-bottom: 8px;"><strong>Cidade:</strong> ${employee.city || '-'}</div>
+          <div style="margin-bottom: 8px;"><strong>Estado:</strong> ${employee.state || '-'}</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">INFORMAÇÕES PROFISSIONAIS</h3>
+            <div style="margin-bottom: 8px;"><strong>Matrícula:</strong> ${employee.employee_id || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Cargo:</strong> ${employee.position || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Departamento:</strong> ${employee.department || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Data de Admissão:</strong> ${employee.admission_date || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Tipo de Contrato:</strong> ${employee.contract_type || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Jornada de Trabalho:</strong> ${employee.work_schedule || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</div>
+          </div>
+          
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">BENEFÍCIOS</h3>
+            <div style="margin-bottom: 8px;"><strong>Plano de Saúde:</strong> <span style="color: ${employee.health_plan ? '#28a745' : '#dc3545'}; font-weight: bold;">${employee.health_plan ? 'Ativo' : 'Inativo'}</span></div>
+            <div style="margin-bottom: 8px;"><strong>Plano Odontológico:</strong> <span style="color: ${employee.dental_plan ? '#28a745' : '#dc3545'}; font-weight: bold;">${employee.dental_plan ? 'Ativo' : 'Inativo'}</span></div>
+            <div style="margin-bottom: 8px;"><strong>Vale Refeição:</strong> R$ ${employee.meal_voucher?.toFixed(2) || '0,00'}</div>
+            <div style="margin-bottom: 8px;"><strong>Vale Transporte:</strong> R$ ${employee.transport_voucher?.toFixed(2) || '0,00'}</div>
+          </div>
+        </div>
+
+        ${employee.dependents && employee.dependents.length > 0 ? `
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">DEPENDENTES</h3>
+          ${employee.dependents.map((dep, index) => `
+            <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-left: 4px solid #1B263B;">
+              <h4 style="color: #1B263B; font-size: 14px; margin: 0 0 10px 0;">Dependente ${index + 1}</h4>
+              <div style="margin-bottom: 5px;"><strong>Nome:</strong> ${dep.name}</div>
+              <div style="margin-bottom: 5px;"><strong>Parentesco:</strong> ${dep.relationship}</div>
+              <div style="margin-bottom: 5px;"><strong>Data de Nascimento:</strong> ${dep.birth_date}</div>
+              <div style="margin-bottom: 5px;"><strong>CPF:</strong> ${dep.cpf || '-'}</div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">FORMAÇÃO ACADÊMICA</h3>
+            <div style="margin-bottom: 8px;"><strong>Nível de Escolaridade:</strong> ${employee.education_level || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Instituição:</strong> ${employee.institution || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Curso:</strong> ${employee.course || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Ano de Conclusão:</strong> ${employee.graduation_year || '-'}</div>
+          </div>
+          
+          <div>
+            <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">INFORMAÇÕES BANCÁRIAS</h3>
+            <div style="margin-bottom: 8px;"><strong>Banco:</strong> ${employee.bank || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Agência:</strong> ${employee.agency || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Conta:</strong> ${employee.account || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Tipo de Conta:</strong> ${employee.account_type || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Chave PIX:</strong> ${employee.pix_key || '-'}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">DESEMPENHO</h3>
+          <div style="margin-bottom: 8px;"><strong>Pontuação Geral:</strong> ${employee.overall_score || '-'}</div>
+          <div style="margin-bottom: 8px;"><strong>Total de Avaliações:</strong> ${employee.total_evaluations || 0}</div>
+          <div style="margin-bottom: 8px;"><strong>CHA:</strong> C ${employee.cha_scores?.conhecimento || '-'} | H ${employee.cha_scores?.habilidade || '-'} | A ${employee.cha_scores?.atitude || '-'}</div>
+        </div>
+
+        ${employee.notes ? `
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">OBSERVAÇÕES</h3>
+          <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #1B263B;">${employee.notes}</div>
+        </div>
+        ` : ''}
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; color: #666; font-size: 10px;">
+          Documento gerado em ${new Date().toLocaleString('pt-BR')}
+        </div>
+      `
+      
+      document.body.appendChild(tempDiv)
+      
+      // Capturar o elemento como canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      })
+      
+      // Remover elemento temporário
+      document.body.removeChild(tempDiv)
+      
+      // Criar PDF
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgWidth = 210
+      const pageHeight = 295
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      
+      let position = 0
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      
+      // Salvar PDF
+      const fileName = `ficha-${employee.full_name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`
+      pdf.save(fileName)
+      
+      toast.success('PDF baixado com sucesso')
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error)
+      toast.error('Erro ao gerar PDF')
+    }
+  }
+
+  const handlePrint = () => {
+    if (!employee) return
+    
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha do Colaborador - ${employee.full_name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+            h1 { color: #1B263B; border-bottom: 2px solid #1B263B; padding-bottom: 10px; }
+            h2 { color: #1B263B; margin-top: 30px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            h3 { color: #666; margin-top: 20px; }
+            .section { margin-bottom: 25px; }
+            .field { margin-bottom: 8px; }
+            .label { font-weight: bold; color: #333; }
+            .value { margin-left: 10px; }
+            .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+            .status.active { background: #d4edda; color: #155724; }
+            .status.inactive { background: #f8d7da; color: #721c24; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <h1>Ficha do Colaborador</h1>
+          
+          <div class="section">
+            <h2>Informações Pessoais</h2>
+            <div class="field"><span class="label">Nome:</span><span class="value">${employee.full_name}</span></div>
+            <div class="field"><span class="label">CPF:</span><span class="value">${employee.cpf || '-'}</span></div>
+            <div class="field"><span class="label">RG:</span><span class="value">${employee.rg || '-'}</span></div>
+            <div class="field"><span class="label">Data de Nascimento:</span><span class="value">${employee.birth_date || '-'}</span></div>
+            <div class="field"><span class="label">Gênero:</span><span class="value">${employee.gender || '-'}</span></div>
+            <div class="field"><span class="label">Estado Civil:</span><span class="value">${employee.marital_status || '-'}</span></div>
+            <div class="field"><span class="label">Nacionalidade:</span><span class="value">${employee.nationality || '-'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Contatos</h2>
+            <div class="field"><span class="label">E-mail Corporativo:</span><span class="value">${employee.email || '-'}</span></div>
+            <div class="field"><span class="label">E-mail Pessoal:</span><span class="value">${employee.personal_email || '-'}</span></div>
+            <div class="field"><span class="label">Telefone:</span><span class="value">${employee.phone || '-'}</span></div>
+            <div class="field"><span class="label">Celular:</span><span class="value">${employee.mobile || '-'}</span></div>
+            <div class="field"><span class="label">Contato de Emergência:</span><span class="value">${employee.emergency_contact || '-'}</span></div>
+            <div class="field"><span class="label">Telefone de Emergência:</span><span class="value">${employee.emergency_phone || '-'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Endereço</h2>
+            <div class="field"><span class="label">Logradouro:</span><span class="value">${employee.address || '-'}</span></div>
+            <div class="field"><span class="label">Bairro:</span><span class="value">${employee.neighborhood || '-'}</span></div>
+            <div class="field"><span class="label">CEP:</span><span class="value">${employee.zip_code || '-'}</span></div>
+            <div class="field"><span class="label">Cidade:</span><span class="value">${employee.city || '-'}</span></div>
+            <div class="field"><span class="label">Estado:</span><span class="value">${employee.state || '-'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Informações Profissionais</h2>
+            <div class="field"><span class="label">Matrícula:</span><span class="value">${employee.employee_id || '-'}</span></div>
+            <div class="field"><span class="label">Cargo:</span><span class="value">${employee.position || '-'}</span></div>
+            <div class="field"><span class="label">Departamento:</span><span class="value">${employee.department || '-'}</span></div>
+            <div class="field"><span class="label">Data de Admissão:</span><span class="value">${employee.admission_date || '-'}</span></div>
+            <div class="field"><span class="label">Tipo de Contrato:</span><span class="value">${employee.contract_type || '-'}</span></div>
+            <div class="field"><span class="label">Jornada de Trabalho:</span><span class="value">${employee.work_schedule || '-'}</span></div>
+            <div class="field"><span class="label">Salário Base:</span><span class="value">R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Benefícios</h2>
+            <div class="field"><span class="label">Plano de Saúde:</span><span class="value"><span class="status ${employee.health_plan ? 'active' : 'inactive'}">${employee.health_plan ? 'Ativo' : 'Inativo'}</span></span></div>
+            <div class="field"><span class="label">Plano Odontológico:</span><span class="value"><span class="status ${employee.dental_plan ? 'active' : 'inactive'}">${employee.dental_plan ? 'Ativo' : 'Inativo'}</span></span></div>
+            <div class="field"><span class="label">Vale Refeição:</span><span class="value">R$ ${employee.meal_voucher?.toFixed(2) || '0,00'}</span></div>
+            <div class="field"><span class="label">Vale Transporte:</span><span class="value">R$ ${employee.transport_voucher?.toFixed(2) || '0,00'}</span></div>
+          </div>
+
+          ${employee.dependents && employee.dependents.length > 0 ? `
+          <div class="section">
+            <h2>Dependentes</h2>
+            ${employee.dependents.map((dep, index) => `
+              <h3>Dependente ${index + 1}</h3>
+              <div class="field"><span class="label">Nome:</span><span class="value">${dep.name}</span></div>
+              <div class="field"><span class="label">Parentesco:</span><span class="value">${dep.relationship}</span></div>
+              <div class="field"><span class="label">Data de Nascimento:</span><span class="value">${dep.birth_date}</span></div>
+              <div class="field"><span class="label">CPF:</span><span class="value">${dep.cpf || '-'}</span></div>
+            `).join('')}
+          </div>
+          ` : ''}
+
+          <div class="section">
+            <h2>Formação Acadêmica</h2>
+            <div class="field"><span class="label">Nível de Escolaridade:</span><span class="value">${employee.education_level || '-'}</span></div>
+            <div class="field"><span class="label">Instituição:</span><span class="value">${employee.institution || '-'}</span></div>
+            <div class="field"><span class="label">Curso:</span><span class="value">${employee.course || '-'}</span></div>
+            <div class="field"><span class="label">Ano de Conclusão:</span><span class="value">${employee.graduation_year || '-'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Informações Bancárias</h2>
+            <div class="field"><span class="label">Banco:</span><span class="value">${employee.bank || '-'}</span></div>
+            <div class="field"><span class="label">Agência:</span><span class="value">${employee.agency || '-'}</span></div>
+            <div class="field"><span class="label">Conta:</span><span class="value">${employee.account || '-'}</span></div>
+            <div class="field"><span class="label">Tipo de Conta:</span><span class="value">${employee.account_type || '-'}</span></div>
+            <div class="field"><span class="label">Chave PIX:</span><span class="value">${employee.pix_key || '-'}</span></div>
+          </div>
+
+          <div class="section">
+            <h2>Desempenho</h2>
+            <div class="field"><span class="label">Pontuação Geral:</span><span class="value">${employee.overall_score || '-'}</span></div>
+            <div class="field"><span class="label">Total de Avaliações:</span><span class="value">${employee.total_evaluations || 0}</span></div>
+            <div class="field"><span class="label">CHA:</span><span class="value">C ${employee.cha_scores?.conhecimento || '-'} | H ${employee.cha_scores?.habilidade || '-'} | A ${employee.cha_scores?.atitude || '-'}</span></div>
+          </div>
+
+          ${employee.notes ? `
+          <div class="section">
+            <h2>Observações</h2>
+            <p>${employee.notes}</p>
+          </div>
+          ` : ''}
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666;">
+            Documento gerado em ${new Date().toLocaleString('pt-BR')}
+          </div>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
+    
+    toast.success('Impressão iniciada')
+  }
+
+  const handleShare = async () => {
+    if (!employee) return
+    
+    const shareData = {
+      title: `Ficha do Colaborador - ${employee.full_name}`,
+      text: `Dados do colaborador ${employee.full_name} - ${employee.position} - ${employee.department}`,
+      url: window.location.href
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        toast.success('Compartilhado com sucesso')
+      } else {
+        // Fallback para navegadores que não suportam Web Share API
+        await navigator.clipboard.writeText(shareData.url)
+        toast.success('Link copiado para a área de transferência')
+      }
+    } catch (error) {
+      // Fallback final - copiar URL
+      try {
+        await navigator.clipboard.writeText(shareData.url)
+        toast.success('Link copiado para a área de transferência')
+      } catch (clipboardError) {
+        toast.error('Não foi possível compartilhar')
+      }
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -680,20 +1036,20 @@ export default function EmployeeProfilePage() {
               </div>
             </div>
           </div>
-          <div className="flex space-x-2">
-            <Button variant="secondary" size="sm">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="secondary" size="sm">
-              <Printer className="h-4 w-4" />
-            </Button>
-            <Button variant="secondary" size="sm">
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90" onClick={() => setIsEditOpen(true)}>
-              <span className="flex items-center"><Edit className="h-4 w-4 mr-2" />Editar</span>
-            </Button>
-          </div>
+           <div className="flex space-x-2">
+             <Button variant="secondary" size="sm" onClick={handleDownload} title="Baixar ficha">
+               <Download className="h-4 w-4" />
+             </Button>
+             <Button variant="secondary" size="sm" onClick={handlePrint} title="Imprimir ficha">
+               <Printer className="h-4 w-4" />
+             </Button>
+             <Button variant="secondary" size="sm" onClick={handleShare} title="Compartilhar">
+               <Share2 className="h-4 w-4" />
+             </Button>
+             <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90" onClick={() => setIsEditOpen(true)}>
+               <span className="flex items-center"><Edit className="h-4 w-4 mr-2" />Editar</span>
+             </Button>
+           </div>
         </div>
       </Card>
 

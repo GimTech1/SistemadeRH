@@ -21,7 +21,9 @@ export async function PUT(
       nationality?: string
       // campos normalizados vindos do frontend
       phone?: string | null
+      mobile?: string | null
       emergency_contact?: string | null
+      emergency_phone?: string | null
       address?: string | null
       city?: string | null
       state?: string | null
@@ -41,11 +43,22 @@ export async function PUT(
       bank_agency?: string | null
       bank_account?: string | null
       account_type?: string | null
+      pix_key?: string | null
       // benefícios
       vale_refeicao?: number | null
       vale_transporte?: number | null
       plano_saude?: boolean | null
       plano_dental?: boolean | null
+      // dependentes (até 3)
+      dependent_name_1?: string | null
+      dependent_relationship_1?: string | null
+      dependent_birth_date_1?: string | null
+      dependent_name_2?: string | null
+      dependent_relationship_2?: string | null
+      dependent_birth_date_2?: string | null
+      dependent_name_3?: string | null
+      dependent_relationship_3?: string | null
+      dependent_birth_date_3?: string | null
       // uploads
       avatar_url?: string | null
       rg_photo?: string | null
@@ -72,7 +85,9 @@ export async function PUT(
       nationality: body.nationality || null,
       // Contatos e Endereço
       phone: body.phone ?? null,
+      mobile: body.mobile ?? null,
       emergency_contact: body.emergency_contact ?? null,
+      emergency_phone: body.emergency_phone ?? null,
       address: body.address ?? null,
       city: body.city ?? null,
       state: body.state ?? null,
@@ -92,11 +107,22 @@ export async function PUT(
       bank_agency: body.bank_agency ?? null,
       bank_account: body.bank_account ?? null,
       account_type: body.account_type ?? null,
+      pix_key: body.pix_key ?? null,
       // Benefícios
       vale_refeicao: body.vale_refeicao ?? null,
       vale_transporte: body.vale_transporte ?? null,
       plano_saude: body.plano_saude ?? null,
       plano_dental: body.plano_dental ?? null,
+      // Dependentes (até 3)
+      dependent_name_1: body.dependent_name_1 ?? null,
+      dependent_relationship_1: body.dependent_relationship_1 ?? null,
+      dependent_birth_date_1: body.dependent_birth_date_1 ?? null,
+      dependent_name_2: body.dependent_name_2 ?? null,
+      dependent_relationship_2: body.dependent_relationship_2 ?? null,
+      dependent_birth_date_2: body.dependent_birth_date_2 ?? null,
+      dependent_name_3: body.dependent_name_3 ?? null,
+      dependent_relationship_3: body.dependent_relationship_3 ?? null,
+      dependent_birth_date_3: body.dependent_birth_date_3 ?? null,
       // Outros
       notes: body.notes || null,
       updated_at: new Date().toISOString(),
@@ -124,6 +150,29 @@ export async function PUT(
     return NextResponse.json({ employee: data }, { status: 200 })
   } catch (error: any) {
     console.error('Unexpected error:', error)
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
+  }
+}
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+    const supabase = await createServerClient()
+    const { data, error } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
+      .from('employees')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 404 })
+    }
+
+    return NextResponse.json({ employee: data }, { status: 200 })
+  } catch (error: any) {
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }
