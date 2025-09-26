@@ -118,6 +118,10 @@ export default function NewEmployeePage() {
   }>({})
   const [isValidatingCEP, setIsValidatingCEP] = useState(false)
 
+  // Estados para departamentos
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string; description?: string }>>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
+
   // Refs para os campos de arquivo
   const rgPhotoRef = useRef<HTMLInputElement>(null)
   const cpfPhotoRef = useRef<HTMLInputElement>(null)
@@ -285,6 +289,32 @@ export default function NewEmployeePage() {
       }))
     }
   }
+
+  // Função para buscar departamentos
+  const fetchDepartments = async () => {
+    try {
+      setLoadingDepartments(true)
+      const response = await fetch('/api/departments')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setDepartments(data.departments || [])
+      } else {
+        console.error('Erro ao buscar departamentos:', data.error)
+        toast.error('Erro ao carregar departamentos')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar departamentos:', error)
+      toast.error('Erro ao carregar departamentos')
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
+  // Carregar departamentos quando o componente montar
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
 
   const uploadFile = async (file: File, path: string) => {
     const { data, error } = await supabase.storage
@@ -695,14 +725,22 @@ export default function NewEmployeePage() {
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Departamento
                 </label>
-                <input
-                  type="text"
+                <select
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  placeholder="Ex: TI, RH, Financeiro, etc."
-                />
+                  disabled={loadingDepartments}
+                  className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none"
+                >
+                  <option value="">
+                    {loadingDepartments ? 'Carregando departamentos...' : 'Selecione um departamento'}
+                  </option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

@@ -169,6 +169,10 @@ export default function EmployeeProfilePage() {
     cep?: string;
   }>({})
   const [isValidatingCEP, setIsValidatingCEP] = useState(false)
+
+  // Estados para departamentos no modal de edição
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string; description?: string }>>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
   
   const [editData, setEditData] = useState({
     // Básico
@@ -650,6 +654,34 @@ export default function EmployeeProfilePage() {
       }))
     }
   }
+
+  // Função para buscar departamentos no modal de edição
+  const fetchDepartments = async () => {
+    try {
+      setLoadingDepartments(true)
+      const response = await fetch('/api/departments')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setDepartments(data.departments || [])
+      } else {
+        console.error('Erro ao buscar departamentos:', data.error)
+        toast.error('Erro ao carregar departamentos')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar departamentos:', error)
+      toast.error('Erro ao carregar departamentos')
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
+  // Carregar departamentos quando o modal abrir
+  useEffect(() => {
+    if (isEditOpen) {
+      fetchDepartments()
+    }
+  }, [isEditOpen])
 
   const handleSaveEdit = async () => {
     try {
@@ -1893,12 +1925,22 @@ export default function EmployeeProfilePage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-dept">Departamento</Label>
-                        <Input
+                        <select
                           id="edit-dept"
-                          placeholder="Vendas"
                           value={editData.department}
                           onChange={(e) => setEditData({ ...editData, department: e.target.value })}
-                        />
+                          disabled={loadingDepartments}
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">
+                            {loadingDepartments ? 'Carregando departamentos...' : 'Selecione um departamento'}
+                          </option>
+                          {departments.map((dept) => (
+                            <option key={dept.id} value={dept.name}>
+                              {dept.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
