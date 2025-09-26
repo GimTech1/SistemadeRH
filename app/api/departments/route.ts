@@ -12,7 +12,6 @@ export async function GET() {
       .order('name', { ascending: true })
 
     if (error) {
-      console.error('Erro ao buscar departamentos:', error)
       return NextResponse.json(
         { error: 'Erro ao buscar departamentos' },
         { status: 500 }
@@ -21,7 +20,6 @@ export async function GET() {
 
     return NextResponse.json({ departments }, { status: 200 })
   } catch (error) {
-    console.error('Erro no endpoint GET departments:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -64,7 +62,6 @@ export async function POST(request: Request) {
 
     // Se o perfil não existe, criar um automaticamente
     if (profileError && profileError.code === 'PGRST116') {
-      console.log('Perfil não encontrado, criando automaticamente...')
       
       const { data: newProfile, error: createError } = await typedSupabase
         .from('profiles')
@@ -79,7 +76,6 @@ export async function POST(request: Request) {
         .single()
 
       if (createError) {
-        console.error('Erro ao criar perfil:', createError)
         return NextResponse.json(
           { error: 'Erro ao criar perfil do usuário' },
           { status: 500 }
@@ -116,7 +112,6 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Erro ao criar departamento:', error)
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Já existe um departamento com este nome' },
@@ -137,7 +132,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ department }, { status: 201 })
   } catch (error) {
-    console.error('Erro no endpoint POST departments:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

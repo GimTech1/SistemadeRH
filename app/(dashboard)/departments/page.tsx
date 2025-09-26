@@ -76,15 +76,12 @@ export default function DepartmentsPage() {
   const loadAvailableManagers = async () => {
     setLoadingManagers(true)
     try {
-      console.log('🔍 Buscando gerentes...')
       
       // Primeiro, vamos ver todos os profiles
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('id, full_name, position, role, is_active')
 
-      console.log('📊 Todos os profiles:', allProfiles)
-      console.log('❌ Erro ao buscar todos:', allError)
 
       // Agora buscar apenas admin e gerente
       const { data, error } = await supabase
@@ -94,11 +91,8 @@ export default function DepartmentsPage() {
         .eq('is_active', true)
         .order('full_name', { ascending: true })
 
-      console.log('👥 Gerentes encontrados:', data)
-      console.log('❌ Erro ao buscar gerentes:', error)
 
       if (error) {
-        console.error('Erro ao carregar gerentes:', error)
         toast.error('Erro ao carregar lista de gerentes')
         setAvailableManagers([])
         return
@@ -110,10 +104,8 @@ export default function DepartmentsPage() {
         position: profile.position || 'Cargo não informado'
       }))
 
-      console.log('✅ Gerentes processados:', managers)
       setAvailableManagers(managers)
     } catch (error) {
-      console.error('Erro ao carregar gerentes:', error)
       toast.error('Erro ao carregar lista de gerentes')
       setAvailableManagers([])
     } finally {
@@ -276,7 +268,6 @@ export default function DepartmentsPage() {
       setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
       loadDepartments() // Recarregar a lista
     } catch (error) {
-      console.error('Erro ao criar departamento:', error)
       toast.error(error instanceof Error ? error.message : 'Erro ao criar departamento')
     } finally {
       setIsCreating(false)
