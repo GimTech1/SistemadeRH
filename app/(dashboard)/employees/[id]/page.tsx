@@ -153,6 +153,8 @@ export default function EmployeeProfilePage() {
   const [showCamera, setShowCamera] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
+  const [capturing, setCapturing] = useState(false)
   const [editData, setEditData] = useState({
     // Básico
     name: '',
@@ -353,9 +355,10 @@ export default function EmployeeProfilePage() {
         goals: [], // Placeholder
         evaluations_history: [], // Placeholder
         
-        avatar_url: '',
+        avatar_url: (data as any).avatar_url || '',
         status: 'active',
         notes: (data as any).notes || '',
+        updated_at: (data as any).updated_at,
       })
 
       // Preencher dados de edição
@@ -421,22 +424,23 @@ export default function EmployeeProfilePage() {
 
   const startCamera = async () => {
     try {
-      // Para iOS/Safari e notebooks, use a camera frontal quando possível
-      const constraints: MediaStreamConstraints = { video: { facingMode: 'user' } }
-      // Se já houver stream aberto, encerra antes de abrir outro
-      if (videoRef.current && videoRef.current.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop())
-        videoRef.current.srcObject = null
+      setShowCamera(true)
+      // Garante que o elemento <video> esteja montado antes de anexar o stream
+      await new Promise(resolve => requestAnimationFrame(() => resolve(null)))
+      const constraints: MediaStreamConstraints = { video: { facingMode: 'user' }, audio: false }
+      // Encerra stream anterior, se houver
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop())
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      setMediaStream(stream)
       if (videoRef.current) {
         videoRef.current.srcObject = stream as any
-        // Alguns browsers exigem atributos no elemento (autoPlay/playsInline/muted)
         await videoRef.current.play().catch(() => {})
       }
-      setShowCamera(true)
     } catch {
       toast.error('Não foi possível acessar a câmera')
+      setShowCamera(false)
     }
   }
 
@@ -446,11 +450,23 @@ export default function EmployeeProfilePage() {
       tracks.forEach(t => t.stop())
       videoRef.current.srcObject = null
     }
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop())
+      setMediaStream(null)
+    }
     setShowCamera(false)
   }
 
+  // Ao fechar o modal de edição, garanta que a câmera seja desligada
+  useEffect(() => {
+    if (!isEditOpen) {
+      stopCamera()
+    }
+  }, [isEditOpen])
+
   const capturePhoto = async () => {
-    if (!videoRef.current || !canvasRef.current) return
+    if (!videoRef.current || !canvasRef.current || capturing) return
+    setCapturing(true)
     const video = videoRef.current
     const canvas = canvasRef.current
     canvas.width = video.videoWidth
@@ -465,6 +481,8 @@ export default function EmployeeProfilePage() {
         stopCamera()
       } catch (err: any) {
         toast.error(err.message || 'Falha ao salvar foto')
+      } finally {
+        setCapturing(false)
       }
     }, 'image/png')
   }
@@ -562,6 +580,16 @@ export default function EmployeeProfilePage() {
         course_name: (editData as any).education?.course || null,
         institution_name: (editData as any).education?.institution || null,
         graduation_year: (editData as any).education?.graduation_year || null,
+        // dependentes (até 3)
+        dependent_name_1: editData.dependents?.[0]?.name || null,
+        dependent_relationship_1: editData.dependents?.[0]?.relationship || null,
+        dependent_birth_date_1: editData.dependents?.[0]?.birth_date || null,
+        dependent_name_2: editData.dependents?.[1]?.name || null,
+        dependent_relationship_2: editData.dependents?.[1]?.relationship || null,
+        dependent_birth_date_2: editData.dependents?.[1]?.birth_date || null,
+        dependent_name_3: editData.dependents?.[2]?.name || null,
+        dependent_relationship_3: editData.dependents?.[2]?.relationship || null,
+        dependent_birth_date_3: editData.dependents?.[2]?.birth_date || null,
         // bancário
         bank_name: (editData as any).bank?.bank_name || null,
         bank_agency: (editData as any).bank?.agency || null,
@@ -620,7 +648,7 @@ export default function EmployeeProfilePage() {
           <div className="flex items-start space-x-4">
             <div className="h-24 w-24 rounded-full bg-neutral-200 overflow-hidden flex items-center justify-center text-3xl font-medium text-white/90">
               {employee.avatar_url ? (
-                <img src={employee.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                <img src={withVersion(employee.avatar_url, employee.updated_at)} alt="Avatar" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-slate-500">{employee.full_name.split(' ').map(n => n[0]).join('')}</span>
               )}
@@ -1052,7 +1080,7 @@ export default function EmployeeProfilePage() {
                     <div className="flex items-center gap-4">
                       <div className="h-20 w-20 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
                         {avatarPreview || (employee as any).avatar_url ? (
-                          <img src={avatarPreview || (employee as any).avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                          <img src={avatarPreview || withVersion((employee as any).avatar_url, employee.updated_at)} alt="Avatar" className="h-full w-full object-cover" />
                         ) : (
                           <span className="text-slate-500 text-sm">Sem foto</span>
                         )}
@@ -1070,9 +1098,20 @@ export default function EmployeeProfilePage() {
                         </div>
                         {showCamera && (
                           <div className="mt-4 flex items-center gap-4">
-                            <video ref={videoRef} className="rounded-xl border border-slate-200" autoPlay playsInline muted />
+                            <video
+                              ref={videoRef}
+                              className="rounded-xl border border-slate-200 w-64 h-48 bg-black"
+                              autoPlay
+                              playsInline
+                              muted
+                            />
                             <div className="flex flex-col gap-2">
-                              <Button variant="primary" className="!bg-[#1B263B]" onClick={capturePhoto}>Capturar</Button>
+                              <Button variant="primary" className="!bg-[#1B263B] flex items-center justify-center gap-2" onClick={capturePhoto} disabled={capturing}>
+                                {capturing && (
+                                  <span className="inline-block h-4 w-4 rounded-full border-2 border-white/50 border-t-white animate-spin" />
+                                )}
+                                {capturing ? 'Capturando...' : 'Capturar'}
+                              </Button>
                               <Button variant="ghost" onClick={stopCamera}>Fechar</Button>
                             </div>
                             <canvas ref={canvasRef} className="hidden" />
@@ -1432,7 +1471,84 @@ export default function EmployeeProfilePage() {
 
                 {editTab === 'dependentes' && (
                   <div className="space-y-6">
-                    <p className="text-sm text-slate-600">Edição detalhada de dependentes será adicionada posteriormente.</p>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-slate-800">Dependentes</h4>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          if ((editData.dependents || []).length >= 3) return
+                          setEditData({
+                            ...editData,
+                            dependents: [...(editData.dependents || []), { name: '', relationship: '', birth_date: '' }],
+                          })
+                        }}
+                        disabled={(editData.dependents || []).length >= 3}
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {(editData.dependents || []).map((dep, idx) => (
+                        <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm text-slate-600">Dependente {idx + 1}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const next = [...editData.dependents]
+                                next.splice(idx, 1)
+                                setEditData({ ...editData, dependents: next })
+                              }}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label>Nome</Label>
+                              <Input
+                                placeholder="Maria da Silva"
+                                value={dep.name}
+                                onChange={(e) => {
+                                  const next = [...editData.dependents]
+                                  next[idx] = { ...next[idx], name: e.target.value }
+                                  setEditData({ ...editData, dependents: next })
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Parentesco</Label>
+                              <Input
+                                placeholder="Filho(a) / Cônjuge / etc."
+                                value={dep.relationship}
+                                onChange={(e) => {
+                                  const next = [...editData.dependents]
+                                  next[idx] = { ...next[idx], relationship: e.target.value }
+                                  setEditData({ ...editData, dependents: next })
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Data de Nascimento</Label>
+                              <Input
+                                type="date"
+                                value={dep.birth_date}
+                                onChange={(e) => {
+                                  const next = [...editData.dependents]
+                                  next[idx] = { ...next[idx], birth_date: e.target.value }
+                                  setEditData({ ...editData, dependents: next })
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(editData.dependents || []).length === 0 && (
+                        <p className="text-sm text-slate-600">Nenhum dependente adicionado. Clique em "Adicionar" para incluir até 3.</p>
+                      )}
+                    </div>
                   </div>
                 )}
 

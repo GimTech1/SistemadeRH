@@ -198,6 +198,7 @@ CREATE TABLE IF NOT EXISTS public.employees (
   work_schedule TEXT,
   salary NUMERIC(12,2),
   -- documentos (fotos)
+  avatar_url TEXT,
   rg_photo TEXT,
   cpf_photo TEXT,
   ctps_photo TEXT,

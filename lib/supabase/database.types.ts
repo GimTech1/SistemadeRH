@@ -53,6 +53,170 @@ export type Database = {
           updated_at?: string
         }
       }
+      employees: {
+        Row: {
+          id: string
+          full_name: string
+          email: string | null
+          position: string | null
+          department: string | null
+          cpf: string | null
+          rg: string | null
+          birth_date: string | null
+          gender: string | null
+          marital_status: string | null
+          nationality: string | null
+          phone: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          address: string | null
+          city: string | null
+          state: string | null
+          zip_code: string | null
+          employee_code: string | null
+          admission_date: string | null
+          contract_type: string | null
+          work_schedule: string | null
+          salary: number | null
+          avatar_url: string | null
+          rg_photo: string | null
+          cpf_photo: string | null
+          ctps_photo: string | null
+          diploma_photo: string | null
+          vale_refeicao: number | null
+          vale_transporte: number | null
+          plano_saude: boolean | null
+          plano_dental: boolean | null
+          dependent_name_1: string | null
+          dependent_relationship_1: string | null
+          dependent_birth_date_1: string | null
+          dependent_name_2: string | null
+          dependent_relationship_2: string | null
+          dependent_birth_date_2: string | null
+          dependent_name_3: string | null
+          dependent_relationship_3: string | null
+          dependent_birth_date_3: string | null
+          education_level: string | null
+          course_name: string | null
+          institution_name: string | null
+          graduation_year: number | null
+          bank_name: string | null
+          bank_agency: string | null
+          bank_account: string | null
+          account_type: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email?: string | null
+          position?: string | null
+          department?: string | null
+          cpf?: string | null
+          rg?: string | null
+          birth_date?: string | null
+          gender?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          phone?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          employee_code?: string | null
+          admission_date?: string | null
+          contract_type?: string | null
+          work_schedule?: string | null
+          salary?: number | null
+          avatar_url?: string | null
+          rg_photo?: string | null
+          cpf_photo?: string | null
+          ctps_photo?: string | null
+          diploma_photo?: string | null
+          vale_refeicao?: number | null
+          vale_transporte?: number | null
+          plano_saude?: boolean | null
+          plano_dental?: boolean | null
+          dependent_name_1?: string | null
+          dependent_relationship_1?: string | null
+          dependent_birth_date_1?: string | null
+          dependent_name_2?: string | null
+          dependent_relationship_2?: string | null
+          dependent_birth_date_2?: string | null
+          dependent_name_3?: string | null
+          dependent_relationship_3?: string | null
+          dependent_birth_date_3?: string | null
+          education_level?: string | null
+          course_name?: string | null
+          institution_name?: string | null
+          graduation_year?: number | null
+          bank_name?: string | null
+          bank_agency?: string | null
+          bank_account?: string | null
+          account_type?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string | null
+          position?: string | null
+          department?: string | null
+          cpf?: string | null
+          rg?: string | null
+          birth_date?: string | null
+          gender?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          phone?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          employee_code?: string | null
+          admission_date?: string | null
+          contract_type?: string | null
+          work_schedule?: string | null
+          salary?: number | null
+          avatar_url?: string | null
+          rg_photo?: string | null
+          cpf_photo?: string | null
+          ctps_photo?: string | null
+          diploma_photo?: string | null
+          vale_refeicao?: number | null
+          vale_transporte?: number | null
+          plano_saude?: boolean | null
+          plano_dental?: boolean | null
+          dependent_name_1?: string | null
+          dependent_relationship_1?: string | null
+          dependent_birth_date_1?: string | null
+          dependent_name_2?: string | null
+          dependent_relationship_2?: string | null
+          dependent_birth_date_2?: string | null
+          dependent_name_3?: string | null
+          dependent_relationship_3?: string | null
+          dependent_birth_date_3?: string | null
+          education_level?: string | null
+          course_name?: string | null
+          institution_name?: string | null
+          graduation_year?: number | null
+          bank_name?: string | null
+          bank_agency?: string | null
+          bank_account?: string | null
+          account_type?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       departments: {
         Row: {
           id: string

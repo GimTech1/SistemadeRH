@@ -33,6 +33,7 @@ interface Employee {
   evaluations: number
   feedbacks: number
   avatar: string
+  avatarUrl?: string
 }
 
 export default function EmployeesPage() {
@@ -74,6 +75,7 @@ export default function EmployeesPage() {
           .map((n: string) => n[0])
           .join('')
           .toUpperCase(),
+        avatarUrl: e.avatar_url || '',
       }))
 
       setEmployees(mapped)
@@ -284,8 +286,12 @@ export default function EmployeesPage() {
                   <tr key={employee.id} className="hover:bg-platinum-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
-                        {employee.avatar}
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
+                        {employee.avatarUrl ? (
+                          <img src={employee.avatarUrl} alt={employee.name} className="h-full w-full object-cover" />
+                        ) : (
+                          employee.avatar
+                        )}
                       </div>
                       <div className="ml-3">
                           <p className="font-roboto font-medium text-rich-black-900">{employee.name}</p>
@@ -334,8 +340,12 @@ export default function EmployeesPage() {
               {/* Header do card */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center space-x-4">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
-                    {employee.avatar}
+                  <div className="h-12 w-12 rounded-full overflow-hidden bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
+                    {employee.avatarUrl ? (
+                      <img src={employee.avatarUrl} alt={employee.name} className="h-full w-full object-cover" />
+                    ) : (
+                      employee.avatar
+                    )}
                   </div>
                   <div>
                     <h3 className="font-roboto font-medium text-rich-black-900 text-lg">{employee.name}</h3>
