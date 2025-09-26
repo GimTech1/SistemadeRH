@@ -25,7 +25,6 @@ import {
   Phone,
   X,
   Save,
-  ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -708,21 +707,29 @@ export default function DepartmentsPage() {
                     Gerente do Departamento
                   </label>
                   <div className="relative">
-                  <select
-                    value={newDepartment.manager_id}
-                    onChange={(e) => setNewDepartment(prev => ({ ...prev, manager_id: e.target.value }))}
-                    className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto appearance-none cursor-pointer"
-                    disabled={loadingManagers}
-                  >
-                    <option value="">Selecione um gerente (opcional)</option>
-                    {availableManagers.map((manager) => (
-                      <option key={manager.id} value={manager.id}>
-                        {manager.name} - {manager.position}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={newDepartment.manager_id}
+                      onChange={(e) => setNewDepartment(prev => ({ ...prev, manager_id: e.target.value }))}
+                      className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto cursor-pointer"
+                      style={{ 
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        backgroundImage: 'none'
+                      }}
+                      disabled={loadingManagers}
+                    >
+                      <option value="">Selecione um gerente (opcional)</option>
+                      {availableManagers.map((manager) => (
+                        <option key={manager.id} value={manager.id}>
+                          {manager.name} - {manager.position}
+                        </option>
+                      ))}
+                    </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <ChevronDown className="h-5 w-5 text-oxford-blue-400" />
+                      <svg className="h-5 w-5 text-oxford-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
                   {loadingManagers && (
@@ -744,7 +751,13 @@ export default function DepartmentsPage() {
                     <select
                       value={newDepartment.parent_department_id}
                       onChange={(e) => setNewDepartment(prev => ({ ...prev, parent_department_id: e.target.value }))}
-                      className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto appearance-none cursor-pointer"
+                      className="w-full px-4 py-3 pr-10 bg-white border border-platinum-300 rounded-xl text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto cursor-pointer"
+                      style={{ 
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        backgroundImage: 'none'
+                      }}
                     >
                       <option value="">Selecione um departamento pai (opcional)</option>
                       {departments.map((dept) => (
@@ -754,7 +767,9 @@ export default function DepartmentsPage() {
                       ))}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <ChevronDown className="h-5 w-5 text-oxford-blue-400" />
+                      <svg className="h-5 w-5 text-oxford-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
                   <p className="text-xs text-oxford-blue-500 mt-1 font-roboto">
