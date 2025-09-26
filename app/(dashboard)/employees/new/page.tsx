@@ -221,7 +221,7 @@ export default function NewEmployeePage() {
         console.log('Diploma Photo URL:', diplomaPhotoUrl)
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('employees')
         .insert({
           full_name: formData.name,
