@@ -57,6 +57,7 @@ export default function EmployeesPage() {
         .order('full_name', { ascending: true })
 
       if (error) {
+        toast.error('Erro ao carregar funcionários: ' + error.message)
         throw error
       }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -17,11 +17,12 @@ type Department = {
   updated_at?: string
 }
 
-export default function DepartmentDetailsPage({ params }: { params: { id: string } }) {
+export default function DepartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const supabase = createClient()
 
-  const departmentId = useMemo(() => params.id, [params.id])
+  const resolvedParams = use(params)
+  const departmentId = useMemo(() => resolvedParams.id, [resolvedParams.id])
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

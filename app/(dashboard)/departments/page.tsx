@@ -114,111 +114,52 @@ export default function DepartmentsPage() {
 
   const loadDepartments = async () => {
     try {
-      setDepartments([
-        {
-          id: '1',
-          name: 'Vendas',
-          manager: 'João Silva',
-          managerId: '1',
-          employeeCount: 24,
-          averageScore: 8.4,
-          trend: 'up',
-          description: 'Responsável por prospecção, negociação e fechamento de vendas',
-          goals: 15,
-          completedGoals: 10,
-          topPerformers: [
-            { id: '1', name: 'Carlos Mendes', score: 9.2, avatar: 'CM' },
-            { id: '2', name: 'Ana Costa', score: 9.0, avatar: 'AC' },
-            { id: '3', name: 'Roberto Lima', score: 8.8, avatar: 'RL' },
-          ],
-        },
-        {
-          id: '2',
-          name: 'Marketing',
-          manager: 'Maria Santos',
-          managerId: '2',
-          employeeCount: 18,
-          averageScore: 8.9,
-          trend: 'up',
-          description: 'Estratégias de marketing, branding e comunicação',
-          goals: 12,
-          completedGoals: 9,
-          topPerformers: [
-            { id: '4', name: 'Juliana Lima', score: 9.5, avatar: 'JL' },
-            { id: '5', name: 'Pedro Alves', score: 9.3, avatar: 'PA' },
-            { id: '6', name: 'Fernanda Silva', score: 9.1, avatar: 'FS' },
-          ],
-        },
-        {
-          id: '3',
-          name: 'Tecnologia',
-          manager: 'Pedro Costa',
-          managerId: '3',
-          employeeCount: 32,
-          averageScore: 8.7,
-          trend: 'stable',
-          description: 'Desenvolvimento, infraestrutura e suporte técnico',
-          goals: 20,
-          completedGoals: 14,
-          topPerformers: [
-            { id: '7', name: 'Lucas Martins', score: 9.6, avatar: 'LM' },
-            { id: '8', name: 'Marina Souza', score: 9.4, avatar: 'MS' },
-            { id: '9', name: 'Rafael Santos', score: 9.2, avatar: 'RS' },
-          ],
-        },
-        {
-          id: '4',
-          name: 'Recursos Humanos',
-          manager: 'Ana Oliveira',
-          managerId: '4',
-          employeeCount: 12,
-          averageScore: 9.1,
-          trend: 'up',
-          description: 'Gestão de pessoas, recrutamento e desenvolvimento organizacional',
-          goals: 8,
-          completedGoals: 7,
-          topPerformers: [
-            { id: '10', name: 'Beatriz Costa', score: 9.7, avatar: 'BC' },
-            { id: '11', name: 'Thiago Oliveira', score: 9.5, avatar: 'TO' },
-            { id: '12', name: 'Camila Rocha', score: 9.3, avatar: 'CR' },
-          ],
-        },
-        {
-          id: '5',
-          name: 'Financeiro',
-          manager: 'Carlos Ferreira',
-          managerId: '5',
-          employeeCount: 15,
-          averageScore: 8.5,
-          trend: 'down',
-          description: 'Controladoria, tesouraria e planejamento financeiro',
-          goals: 10,
-          completedGoals: 6,
-          topPerformers: [
-            { id: '13', name: 'André Silva', score: 9.0, avatar: 'AS' },
-            { id: '14', name: 'Patricia Lima', score: 8.8, avatar: 'PL' },
-            { id: '15', name: 'Ricardo Alves', score: 8.6, avatar: 'RA' },
-          ],
-        },
-        {
-          id: '6',
-          name: 'Operações',
-          manager: 'Roberto Mendes',
-          managerId: '6',
-          employeeCount: 28,
-          averageScore: 8.3,
-          trend: 'stable',
-          description: 'Logística, produção e gestão de processos operacionais',
-          goals: 18,
-          completedGoals: 12,
-          topPerformers: [
-            { id: '16', name: 'Marcos Silva', score: 8.9, avatar: 'MS' },
-            { id: '17', name: 'Daniela Costa', score: 8.7, avatar: 'DC' },
-            { id: '18', name: 'Paulo Santos', score: 8.5, avatar: 'PS' },
-          ],
-        },
-      ])
+      const response = await fetch('/api/departments')
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao carregar departamentos')
+      }
+
+      // Buscar dados dos gerentes para cada departamento
+      const departmentsWithManagers = await Promise.all(
+        data.departments.map(async (dept: any) => {
+          let managerName = 'Gerente não definido'
+          
+          if (dept.manager_id) {
+            try {
+              const { data: managerData, error: managerError } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', dept.manager_id)
+                .single()
+              
+              if (!managerError && managerData) {
+                managerName = (managerData as any).full_name || 'Nome não informado'
+              }
+            } catch (error) {
+            }
+          }
+
+          return {
+            id: dept.id,
+            name: dept.name,
+            manager: managerName,
+            managerId: dept.manager_id || '',
+            employeeCount: 0, // Será calculado quando tivermos dados reais
+            averageScore: 0, // Será calculado quando tivermos dados reais
+            trend: 'stable' as const,
+            description: dept.description || '',
+            goals: 0, // Será calculado quando tivermos dados reais
+            completedGoals: 0, // Será calculado quando tivermos dados reais
+            topPerformers: [], // Será preenchido quando tivermos dados reais
+          }
+        })
+      )
+
+      setDepartments(departmentsWithManagers)
     } catch (error) {
+      toast.error('Erro ao carregar departamentos')
     } finally {
       setLoading(false)
     }
@@ -265,7 +206,7 @@ export default function DepartmentsPage() {
       toast.success('Departamento criado com sucesso!')
       setIsModalOpen(false)
       setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
-      loadDepartments() // Recarregar a lista
+      await loadDepartments() // Recarregar a lista
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao criar departamento')
     } finally {
