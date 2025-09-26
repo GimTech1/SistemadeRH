@@ -869,30 +869,46 @@ export default function EmployeeProfilePage() {
                 <CardTitle>Dependentes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {employee.dependents.map((dep, index) => (
-                     <div key={index} className="p-4 bg-white rounded-lg border border-slate-200">
-                      <div className="grid grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-slate-700">Nome</p>
-                          <p className="text-slate-950 font-semibold">{dep.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-slate-700">Parentesco</p>
-                          <p className="text-slate-950 font-semibold">{dep.relationship}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-slate-700">Data de Nascimento</p>
-                          <p className="text-slate-950 font-semibold">{dep.birth_date}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-slate-700">CPF</p>
-                          <p className="text-slate-950 font-semibold">{dep.cpf}</p>
+                {employee.dependents && employee.dependents.length > 0 ? (
+                  <div className="space-y-4">
+                    {employee.dependents.map((dep, index) => (
+                      <div key={index} className="p-4 bg-white rounded-lg border border-slate-200">
+                        <div className="grid grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-sm text-slate-700">Nome</p>
+                            <p className="text-slate-950 font-semibold">{dep.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-700">Parentesco</p>
+                            <p className="text-slate-950 font-semibold">{dep.relationship}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-700">Data de Nascimento</p>
+                            <p className="text-slate-950 font-semibold">{dep.birth_date}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-700">CPF</p>
+                            <p className="text-slate-950 font-semibold">{dep.cpf || '-'}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-dashed border-slate-300 bg-slate-50">
+                    <p className="text-sm text-slate-600">Nenhum dependente cadastrado.</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditOpen(true)
+                        setEditTab('dependentes')
+                      }}
+                    >
+                      Adicionar dependente
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -900,117 +916,124 @@ export default function EmployeeProfilePage() {
 
         {activeTab === 'education' && (
           <div className="lg:col-span-3">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="card">
-                <div className="p-6 border-b border-neutral-800">
-                  <h2 className="text-lg font-semibold">Formação Acadêmica</h2>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm text-slate-500">Nível de Escolaridade</p>
-                    <p className="text-slate-900">{employee.education_level}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Instituição</p>
-                    <p className="text-slate-900">{employee.institution}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Curso</p>
-                    <p className="text-slate-900">{employee.course}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Ano de Conclusão</p>
-                    <p className="text-slate-900">{employee.graduation_year}</p>
-                  </div>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Formação Acadêmica</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <Field label="Nível de Escolaridade" value={employee.education_level} />
+                  <Field label="Instituição" value={employee.institution} />
+                  <Field label="Curso" value={employee.course} />
+                  <Field label="Ano de Conclusão" value={employee.graduation_year} />
+                </CardContent>
+              </Card>
 
-              <div className="card">
-                <div className="p-6 border-b border-neutral-800">
-                  <h2 className="text-lg font-semibold">Certificações e Idiomas</h2>
-                </div>
-                <div className="p-6 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Certificações e Idiomas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div>
                     <p className="text-sm text-neutral-500 mb-2">Certificações</p>
                     <div className="space-y-1">
-                      {employee.certifications.map((cert, index) => (
-                        <p key={index} className="text-slate-950 font-semibold flex items-center">
-                          <Award className="h-3 w-3 mr-2 text-primary-500" />
-                          {cert}
-                        </p>
-                      ))}
+                      {employee.certifications.length > 0 ? (
+                        employee.certifications.map((cert, index) => (
+                          <p key={index} className="text-slate-950 font-semibold flex items-center">
+                            <Award className="h-3 w-3 mr-2 text-primary-500" />
+                            {cert}
+                          </p>
+                        ))
+                      ) : (
+                        <p className="text-slate-700">-</p>
+                      )}
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-neutral-500 mb-2">Idiomas</p>
                     <div className="space-y-1">
-                      {employee.languages.map((lang, index) => (
-                        <p key={index} className="text-slate-950 font-semibold">{lang}</p>
-                      ))}
+                      {employee.languages.length > 0 ? (
+                        employee.languages.map((lang, index) => (
+                          <p key={index} className="text-slate-950 font-semibold">{lang}</p>
+                        ))
+                      ) : (
+                        <p className="text-slate-700">-</p>
+                      )}
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
 
         {activeTab === 'financial' && (
           <div className="lg:col-span-3">
-            <div className="card">
-              <div className="p-6 border-b border-neutral-800">
-                <h2 className="text-lg font-semibold">Informações Bancárias</h2>
-              </div>
-              <div className="p-6 grid grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-slate-500">Banco</p>
-                  <p className="text-slate-900">{employee.bank}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Agência</p>
-                  <p className="text-slate-900">{employee.agency}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Conta</p>
-                  <p className="text-slate-900">{employee.account}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Tipo de Conta</p>
-                  <p className="text-slate-900">{employee.account_type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Chave PIX</p>
-                  <p className="text-slate-900">{employee.pix_key}</p>
-                </div>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Bancárias</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <Field label="Banco" value={employee.bank || '-'} />
+                <Field label="Agência" value={employee.agency || '-'} />
+                <Field label="Conta" value={employee.account || '-'} />
+                <Field label="Tipo de Conta" value={employee.account_type || '-'} />
+                <Field label="Chave PIX" value={employee.pix_key || '-'} />
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === 'performance' && (
           <div className="lg:col-span-3">
-            <Card>
-              <CardContent>
-                <h2 className="text-lg font-semibold mb-4">Feedbacks Recentes</h2>
-                <div className="space-y-4">
-                  {employee.recent_feedbacks.map((feedback) => (
-                    <div key={feedback.id} className="border-b border-neutral-800 pb-4 last:border-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-semibold text-slate-950">{feedback.from}</p>
-                          <p className="text-sm text-slate-700">{feedback.role} • {feedback.date}</p>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">{feedback.score}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-slate-800">{feedback.comment}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumo de Desempenho</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <Field label="Pontuação Geral" value={employee.overall_score?.toFixed ? employee.overall_score.toFixed(1) : employee.overall_score} />
+                  <Field label="Total de Avaliações" value={employee.total_evaluations ?? 0} />
+                  <div>
+                    <p className="text-sm tracking-wide text-slate-700">CHA (C-H-A)</p>
+                    <div className="mt-1 grid grid-cols-3 gap-2 text-slate-950 font-semibold">
+                      <span>C {employee.cha_scores?.conhecimento ?? '-'}</span>
+                      <span>H {employee.cha_scores?.habilidade ?? '-'}</span>
+                      <span>A {employee.cha_scores?.atitude ?? '-'}</span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Feedbacks Recentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {employee.recent_feedbacks && employee.recent_feedbacks.length > 0 ? (
+                    <div className="space-y-4">
+                      {employee.recent_feedbacks.map((feedback: any) => (
+                        <div key={feedback.id} className="pb-4 border-b border-neutral-200 last:border-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="font-semibold text-slate-950">{feedback.from}</p>
+                              <p className="text-sm text-slate-700">{feedback.role} • {feedback.date}</p>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              <span className="font-medium">{feedback.score}</span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-800">{feedback.comment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-600">Nenhum feedback recente.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
