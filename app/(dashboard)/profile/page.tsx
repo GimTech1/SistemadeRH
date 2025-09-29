@@ -216,7 +216,7 @@ export default function ProfilePage() {
                 <select
                   value={form.department_id}
                   onChange={(e) => setForm(prev => ({ ...prev, department_id: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-platinum-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500"
+                  className="w-full px-4 py-2.5 bg-white border border-platinum-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 appearance-none"
                 >
                   <option value="">Selecione um departamento</option>
                   {departments.map((dept) => (
