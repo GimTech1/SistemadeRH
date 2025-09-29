@@ -47,6 +47,7 @@ export default function RequestsPage() {
 
   const [activeTab, setActiveTab] = useState<RequestStatus>('requested')
   const [requests, setRequests] = useState<RequestItem[]>([])
+  const [loadingRequests, setLoadingRequests] = useState(false)
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -116,8 +117,26 @@ export default function RequestsPage() {
       setSubmitting(true)
       const employee = employees.find(e => e.id === selectedEmployee)
       const dept = departments.find(d => d.id === departmentId)
+      const insert = await (supabase as any)
+        .from('requests')
+        .insert({
+          employee_id: selectedEmployee,
+          department_id: departmentId,
+          description: description.trim(),
+          urgency,
+          status: 'requested',
+        } as any)
+        .select('id, created_at')
+        .single()
+
+      if (insert.error) {
+        console.error('Erro insert requests:', insert.error)
+        toast.error('Erro ao salvar no banco: ' + insert.error.message)
+        throw insert.error
+      }
+
       const item: RequestItem = {
-        id: crypto.randomUUID(),
+        id: (insert.data as any).id,
         employeeId: selectedEmployee,
         employeeName: employee?.name || 'Colaborador',
         departmentId,
@@ -125,10 +144,9 @@ export default function RequestsPage() {
         description: description.trim(),
         urgency: urgency as any,
         status: 'requested',
-        createdAt: new Date().toISOString(),
+        createdAt: (insert.data as any).created_at,
       }
 
-      // Por enquanto mantemos local. Integração com Supabase pode ser feita depois.
       setRequests(prev => [item, ...prev])
       setSelectedEmployee('')
       setDepartmentId('')
@@ -145,6 +163,66 @@ export default function RequestsPage() {
 
   const updateStatus = (id: string, status: RequestStatus) => {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  // Carregar solicitações do banco
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        setLoadingRequests(true)
+        const { data, error } = await (supabase as any)
+          .from('requests')
+          .select(`
+            id,
+            description,
+            urgency,
+            status,
+            created_at,
+            employee_id,
+            department_id,
+            employees:employee_id ( full_name ),
+            departments:department_id ( name )
+          `)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+
+        const mapped: RequestItem[] = (data || []).map((r: any) => ({
+          id: r.id,
+          employeeId: r.employee_id,
+          employeeName: r.employees?.full_name || employees.find(e => e.id === r.employee_id)?.name || 'Colaborador',
+          departmentId: r.department_id,
+          department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
+          description: r.description,
+          urgency: r.urgency,
+          status: r.status,
+          createdAt: r.created_at,
+        }))
+        setRequests(mapped)
+      } catch (err) {
+        console.error('Erro load requests:', err)
+        toast.error('Não foi possível carregar solicitações')
+      } finally {
+        setLoadingRequests(false)
+      }
+    }
+
+    // só carrega quando já temos deps básicos
+    if (departments.length > 0) {
+      loadRequests()
+    }
+  }, [supabase, departments, employees])
+
+  const handleUpdateStatus = async (id: string, status: RequestStatus) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('requests')
+        .update({ status } as any)
+        .eq('id', id)
+      if (error) throw error
+      updateStatus(id, status)
+    } catch (err) {
+      toast.error('Falha ao atualizar status')
+    }
   }
 
   return (
@@ -266,13 +344,13 @@ export default function RequestsPage() {
             </div>
             <div className="flex gap-2">
               {activeTab !== 'approved' && (
-                <Button variant="secondary" onClick={() => updateStatus(item.id, 'approved')}>Aprovar</Button>
+                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
               )}
               {activeTab !== 'rejected' && (
-                <Button variant="secondary" onClick={() => updateStatus(item.id, 'rejected')}>Não Aprovar</Button>
+                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
               )}
               {activeTab !== 'done' && (
-                <Button variant="secondary" onClick={() => updateStatus(item.id, 'done')}>Concluir</Button>
+                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
               )}
             </div>
           </Card>

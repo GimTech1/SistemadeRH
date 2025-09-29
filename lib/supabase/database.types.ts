@@ -532,6 +532,35 @@ export type Database = {
           created_at?: string
         }
       }
+      requests: {
+        Row: {
+          id: string
+          employee_id: string
+          department_id: string
+          description: string
+          urgency: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
+          status: 'requested' | 'approved' | 'rejected' | 'done'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          department_id: string
+          description: string
+          urgency: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
+          status?: 'requested' | 'approved' | 'rejected' | 'done'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          department_id?: string
+          description?: string
+          urgency?: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
+          status?: 'requested' | 'approved' | 'rejected' | 'done'
+          created_at?: string
+        }
+      }
     }
   }
 }
