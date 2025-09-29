@@ -105,6 +105,18 @@ export default function DashboardPage() {
       iconBg: 'bg-[#E0E1DD]',
     },
     {
+      title: 'Solicitações',
+      value: '12',
+      subtitle: 'Pedidos abertos',
+      change: '+2',
+      changeText: 'na última semana',
+      positive: true,
+      color: 'border-l-[#415A77]',
+      icon: FileText,
+      iconColor: 'text-[#778DA9]',
+      iconBg: 'bg-[#E0E1DD]',
+    },
+    {
       title: 'Avaliações',
       value: '23',
       subtitle: 'Avaliações ativas',
@@ -187,27 +199,27 @@ export default function DashboardPage() {
       </div>
 
       {/* Cards de métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {statsCards.map((stat, index) => (
-          <div key={index} className={`bg-white rounded-lg border-l-4 ${stat.color} p-6 shadow-sm hover:shadow-md transition-shadow duration-300`}>
+          <div key={index} className={`bg-white rounded-lg border-l-4 ${stat.color} p-5 shadow-sm hover:shadow-md transition-shadow duration-300`}>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`w-12 h-12 ${stat.iconBg} rounded-lg flex items-center justify-center`}>
-                    <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className={`w-10 h-10 ${stat.iconBg} rounded-lg flex items-center justify-center`}>
+                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
                   </div>
                   <div>
-                    <p className="text-3xl font-roboto font-bold text-rich-black-900">{stat.value}</p>
-                    <p className="text-base font-roboto font-medium text-rich-black-900">{stat.title}</p>
+                    <p className="text-2xl font-roboto font-bold text-rich-black-900">{stat.value}</p>
+                    <p className="text-sm font-roboto font-medium text-rich-black-900">{stat.title}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-roboto font-light text-oxford-blue-500">{stat.subtitle}</p>
+                  <p className="text-xs font-roboto font-light text-oxford-blue-500">{stat.subtitle}</p>
                   <div className="flex items-center gap-1">
-                    <span className={`text-sm font-roboto font-medium ${stat.positive ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <span className={`text-xs font-roboto font-medium ${stat.positive ? 'text-emerald-600' : 'text-red-600'}`}>
                       {stat.change}
                     </span>
-                    <span className="text-sm font-roboto font-light text-oxford-blue-400">{stat.changeText}</span>
+                    <span className="text-xs font-roboto font-light text-oxford-blue-400">{stat.changeText}</span>
                   </div>
                 </div>
               </div>
@@ -484,6 +496,17 @@ export default function DashboardPage() {
 
       {/* Ações rápidas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Link href="/requests" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#E0E1DD] rounded-lg flex items-center justify-center group-hover:bg-[#d6d8d4] transition-colors">
+              <FileText className="w-6 h-6 text-[#778DA9]" />
+            </div>
+            <div>
+              <h4 className="font-roboto font-medium text-rich-black-900">Solicitações</h4>
+              <p className="text-sm font-roboto font-light text-oxford-blue-500">Criar e acompanhar pedidos</p>
+            </div>
+          </div>
+        </Link>
         <Link href="/evaluations/new" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-yinmn-blue-100 rounded-lg flex items-center justify-center group-hover:bg-yinmn-blue-200 transition-colors">
