@@ -214,6 +214,11 @@ export default function RequestsPage() {
 
   const handleUpdateStatus = async (id: string, status: RequestStatus) => {
     try {
+      const current = requests.find(r => r.id === id)
+      if (current?.status === 'done') {
+        toast.error('Não é possível alterar o status de um pedido concluído.')
+        return
+      }
       const { error } = await (supabase as any)
         .from('requests')
         .update({ status } as any)
@@ -342,15 +347,23 @@ export default function RequestsPage() {
               <p className="text-sm text-oxford-blue-700">{item.description}</p>
               <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
             </div>
-            <div className="flex gap-2">
-              {activeTab !== 'approved' && (
-                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
-              )}
-              {activeTab !== 'rejected' && (
-                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
-              )}
-              {activeTab !== 'done' && (
-                <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
+            <div className="flex items-center gap-2">
+              {item.status === 'done' ? (
+                <span className="text-xs px-3 py-1 rounded-xl bg-platinum-100 text-oxford-blue-700">
+                  Este pedido está concluído e não pode ter o status alterado.
+                </span>
+              ) : (
+                <>
+                  {activeTab !== 'approved' && (
+                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
+                  )}
+                  {activeTab !== 'rejected' && (
+                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
+                  )}
+                  {activeTab !== 'done' && (
+                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
+                  )}
+                </>
               )}
             </div>
           </Card>
