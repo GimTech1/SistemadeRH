@@ -34,7 +34,7 @@ interface Goal {
   title: string
   description: string
   category: 'performance' | 'skill' | 'career' | 'personal'
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'in_progress' | 'hit' | 'missed'
   progress: number
   startDate: string
   deadline: string
@@ -79,6 +79,14 @@ export default function GoalsPage() {
   useEffect(() => {
     if (showNewGoalModal) {
       document.body.classList.add('overflow-hidden')
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setShowNewGoalModal(false)
+      }
+      document.addEventListener('keydown', onKey)
+      return () => {
+        document.body.classList.remove('overflow-hidden')
+        document.removeEventListener('keydown', onKey)
+      }
     } else {
       document.body.classList.remove('overflow-hidden')
     }
@@ -133,127 +141,38 @@ export default function GoalsPage() {
 
   const loadGoals = async () => {
     try {
-      // Simular dados
-      setGoals([
-        {
-          id: '1',
-          title: 'Aumentar vendas em 20%',
-          description: 'Alcançar um aumento de 20% nas vendas comparado ao trimestre anterior',
-          category: 'performance',
-          status: 'in_progress',
-          progress: 65,
-          startDate: '01/01/2024',
-          deadline: '31/03/2024',
-          assignedTo: 'João Silva',
-          assignedBy: 'Maria Santos',
-          priority: 'high',
-          keyResults: [
-            'Prospectar 50 novos clientes',
-            'Fechar 15 novos contratos',
-            'Aumentar ticket médio em 10%',
-          ],
-          comments: [
-            { id: '1', author: 'Maria Santos', date: '10/01/2024', text: 'Excelente progresso!' },
-          ],
-        },
-        {
-          id: '2',
-          title: 'Certificação em Gestão de Projetos',
-          description: 'Obter certificação PMP até o final do semestre',
-          category: 'skill',
-          status: 'in_progress',
-          progress: 40,
-          startDate: '01/02/2024',
-          deadline: '30/06/2024',
-          assignedTo: 'Pedro Costa',
-          assignedBy: 'Ana Oliveira',
-          priority: 'medium',
-          keyResults: [
-            'Completar curso preparatório',
-            'Realizar simulados com 80%+ de acerto',
-            'Agendar e passar no exame',
-          ],
-          comments: [],
-        },
-        {
-          id: '3',
-          title: 'Desenvolver liderança de equipe',
-          description: 'Assumir responsabilidades de liderança e mentoria',
-          category: 'career',
-          status: 'pending',
-          progress: 0,
-          startDate: '15/02/2024',
-          deadline: '31/12/2024',
-          assignedTo: 'Carlos Mendes',
-          assignedBy: 'João Silva',
-          priority: 'low',
-          keyResults: [
-            'Mentorar 2 júniores',
-            'Liderar projeto cross-funcional',
-            'Completar treinamento de liderança',
-          ],
-          comments: [],
-        },
-        {
-          id: '4',
-          title: 'Melhorar satisfação do cliente',
-          description: 'Aumentar NPS de 7.5 para 9.0',
-          category: 'performance',
-          status: 'completed',
-          progress: 100,
-          startDate: '01/10/2023',
-          deadline: '31/12/2023',
-          assignedTo: 'Juliana Lima',
-          assignedBy: 'Maria Santos',
-          priority: 'critical',
-          keyResults: [
-            'Implementar novo processo de atendimento',
-            'Reduzir tempo de resposta em 50%',
-            'Treinar equipe em experiência do cliente',
-          ],
-          comments: [
-            { id: '2', author: 'Maria Santos', date: '20/12/2023', text: 'Meta superada! Parabéns!' },
-          ],
-        },
-        {
-          id: '5',
-          title: 'Dominar React e Next.js',
-          description: 'Aprofundar conhecimentos em tecnologias front-end modernas',
-          category: 'skill',
-          status: 'in_progress',
-          progress: 75,
-          startDate: '01/01/2024',
-          deadline: '30/04/2024',
-          assignedTo: 'Lucas Martins',
-          assignedBy: 'Pedro Costa',
-          priority: 'medium',
-          keyResults: [
-            'Completar curso avançado de React',
-            'Desenvolver 3 projetos práticos',
-            'Contribuir para projeto open source',
-          ],
-          comments: [],
-        },
-        {
-          id: '6',
-          title: 'Equilíbrio vida-trabalho',
-          description: 'Implementar práticas de bem-estar e produtividade',
-          category: 'personal',
-          status: 'in_progress',
-          progress: 30,
-          startDate: '01/03/2024',
-          deadline: '31/12/2024',
-          assignedTo: 'Fernanda Silva',
-          assignedBy: 'Ana Oliveira',
-          priority: 'low',
-          keyResults: [
-            'Estabelecer rotina de exercícios',
-            'Implementar técnicas de mindfulness',
-            'Reduzir horas extras em 20%',
-          ],
-          comments: [],
-        },
-      ])
+      setLoading(true)
+      const { data, error } = await (supabase as any)
+        .from('goals')
+        .select(`
+          id, title, description, target_date, progress, is_completed, created_at,
+          employee_id,
+          employees:employee_id ( full_name )
+        `)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+
+      const mapped: Goal[] = (data || []).map((g: any) => {
+        const status: 'in_progress' | 'hit' | 'missed' = g.is_completed
+          ? 'hit'
+          : (Number(g.progress || 0) >= 100 ? 'hit' : 'in_progress')
+        return {
+        id: g.id,
+        title: g.title || '',
+        description: g.description || '',
+        category: 'performance',
+        status,
+        progress: Number(g.progress || 0),
+        startDate: g.created_at ? new Date(g.created_at).toLocaleDateString('pt-BR') : '',
+        deadline: g.target_date ? new Date(g.target_date).toLocaleDateString('pt-BR') : '',
+        assignedTo: g.employees?.full_name || '—',
+        assignedBy: '',
+        priority: 'medium',
+        keyResults: [],
+        comments: [],
+        }
+      })
+      setGoals(mapped)
     } catch (error) {
     } finally {
       setLoading(false)
@@ -282,10 +201,9 @@ export default function GoalsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-emerald-700 bg-emerald-100'
+      case 'hit': return 'text-emerald-700 bg-emerald-100'
+      case 'missed': return 'text-red-700 bg-red-100'
       case 'in_progress': return 'text-blue-700 bg-blue-100'
-      case 'pending': return 'text-yellow-700 bg-yellow-100'
-      case 'cancelled': return 'text-red-700 bg-red-100'
       default: return 'text-oxford-blue-700 bg-oxford-blue-100'
     }
   }
@@ -302,10 +220,9 @@ export default function GoalsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'Pendente'
       case 'in_progress': return 'Em Progresso'
-      case 'completed': return 'Concluída'
-      case 'cancelled': return 'Cancelada'
+      case 'hit': return 'Batida'
+      case 'missed': return 'Não Batida'
       default: return status
     }
   }
@@ -393,9 +310,9 @@ export default function GoalsPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Concluídas</p>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Batidas</p>
               <p className="text-3xl font-roboto font-semibold text-rich-black-900">
-                {goals.filter(g => g.status === 'completed').length}
+                {goals.filter(g => g.status === 'hit').length}
               </p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">finalizadas</p>
             </div>
@@ -411,7 +328,7 @@ export default function GoalsPage() {
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Taxa de Conclusão</p>
               <p className="text-3xl font-roboto font-semibold text-rich-black-900">
                 {goals.length > 0 
-                  ? Math.round((goals.filter(g => g.status === 'completed').length / goals.length) * 100)
+                  ? Math.round((goals.filter(g => g.status === 'hit').length / goals.length) * 100)
                   : 0}%
               </p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">sucesso geral</p>
@@ -450,10 +367,9 @@ export default function GoalsPage() {
                 className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
               >
                 <option value="all">Todos os Status</option>
-                <option value="pending">Pendente</option>
                 <option value="in_progress">Em Progresso</option>
-                <option value="completed">Concluída</option>
-                <option value="cancelled">Cancelada</option>
+                <option value="hit">Batida</option>
+                <option value="missed">Não Batida</option>
               </select>
             </div>
             
@@ -724,10 +640,8 @@ export default function GoalsPage() {
       )}
 
       {showNewGoalModal && (
-        <div className="fixed inset-0 z-50">
-          <div className="fixed inset-0 bg-black/70" onClick={() => setShowNewGoalModal(false)} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-platinum-200">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowNewGoalModal(false)}>
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-platinum-200" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between p-4 border-b border-platinum-200">
                 <h3 className="text-lg font-roboto font-medium text-rich-black-900">Nova Meta</h3>
                 <button className="p-2 rounded-lg hover:bg-platinum-100" onClick={() => setShowNewGoalModal(false)}>
@@ -735,22 +649,53 @@ export default function GoalsPage() {
                 </button>
               </div>
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
-                  if (!newGoal.title || !newGoal.deadline || !newGoal.assignedTo) {
+                  if (!newGoal.title || !newGoal.deadline || !selectedEmployeeId) {
                     toast.error('Preencha título, prazo e responsável')
                     return
                   }
+                  // bloquear datas no passado
+                  const picked = new Date(newGoal.deadline + 'T00:00:00')
+                  const today = new Date()
+                  today.setHours(0,0,0,0)
+                  if (picked < today) {
+                    toast.error('O prazo não pode ser uma data no passado')
+                    return
+                  }
+                  // salvar no Supabase
+                  try {
+                    const { data: userData } = await supabase.auth.getUser()
+                    const insert = await (supabase as any)
+                      .from('goals')
+                      .insert({
+                        employee_id: selectedEmployeeId,
+                        title: newGoal.title,
+                        description: newGoal.description,
+                        target_date: newGoal.deadline,
+                        progress: 0,
+                        is_completed: false,
+                        created_by: userData?.user?.id || null,
+                      } as any)
+                      .select('id, created_at')
+                      .single()
+                    if (insert.error) throw insert.error
+                  } catch (e: any) {
+                    console.error('Erro ao salvar meta:', e)
+                    toast.error('Erro ao salvar meta no banco')
+                    return
+                  }
+
                   const created: Goal = {
                     id: crypto.randomUUID(),
                     title: newGoal.title,
                     description: newGoal.description,
                     category: newGoal.category,
-                    status: 'pending',
+                    status: 'in_progress',
                     progress: 0,
                     startDate: new Date().toLocaleDateString('pt-BR'),
-                    deadline: newGoal.deadline,
-                    assignedTo: (employees.find(e => e.id === selectedEmployeeId)?.name || newGoal.assignedTo || 'Responsável'),
+                    deadline: new Date(newGoal.deadline + 'T00:00:00').toLocaleDateString('pt-BR'),
+                    assignedTo: (employees.find(e => e.id === selectedEmployeeId)?.name || 'Responsável'),
                     assignedBy: 'Você',
                     priority: newGoal.priority,
                     keyResults: [],
@@ -802,7 +747,7 @@ export default function GoalsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm font-roboto font-medium text-rich-black-900">Prazo</label>
-                      <input type="date" value={newGoal.deadline} onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value ? new Date(e.target.value).toLocaleDateString('pt-BR') : '' })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                      <input type="date" value={newGoal.deadline} min={new Date().toISOString().split('T')[0]} onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
                     </div>
                     <div>
                       <label className="text-sm font-roboto font-medium text-rich-black-900">Setor</label>
@@ -836,7 +781,6 @@ export default function GoalsPage() {
                 </div>
               </form>
             </div>
-          </div>
         </div>
       )}
     </div>
