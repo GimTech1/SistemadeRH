@@ -71,15 +71,21 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: ['admin', 'manager', 'employee'],
     },
     {
-      title: 'Avaliações',
-      icon: ClipboardCheck,
-      href: '/evaluations',
-      roles: ['admin', 'manager', 'employee'],
-    },
-    {
       title: 'Metas',
       icon: Target,
       href: '/goals',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Solicitações',
+      icon: FilePlus2,
+      href: '/requests',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Avaliações',
+      icon: ClipboardCheck,
+      href: '/evaluations',
       roles: ['admin', 'manager', 'employee'],
     },
     {
@@ -92,12 +98,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Feedbacks',
       icon: MessageSquare,
       href: '/feedback',
-      roles: ['admin', 'manager', 'employee'],
-    },
-    {
-      title: 'Solicitações',
-      icon: FilePlus2,
-      href: '/requests',
       roles: ['admin', 'manager', 'employee'],
     },
     {

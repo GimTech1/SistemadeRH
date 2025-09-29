@@ -76,6 +76,16 @@ export default function GoalsPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [loadingEmployees, setLoadingEmployees] = useState(false)
+  const [detailsGoal, setDetailsGoal] = useState<Goal | null>(null)
+  const [editGoal, setEditGoal] = useState<Goal | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    deadline: '',
+    progress: 0,
+    isCompleted: false,
+  })
   useEffect(() => {
     if (showNewGoalModal) {
       document.body.classList.add('overflow-hidden')
@@ -92,6 +102,18 @@ export default function GoalsPage() {
     }
     return () => document.body.classList.remove('overflow-hidden')
   }, [showNewGoalModal])
+
+  // Fechar detalhes e edição com ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (detailsGoal) setDetailsGoal(null)
+        if (editGoal) setEditGoal(null)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [detailsGoal, editGoal])
 
   useEffect(() => {
     loadGoals()
@@ -178,6 +200,52 @@ export default function GoalsPage() {
       setLoading(false)
     }
   }
+
+  const markAsHit = async (id: string) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('goals')
+        .update({ is_completed: true, progress: 100 } as any)
+        .eq('id', id)
+      if (error) throw error
+      setGoals(prev => prev.map(g => g.id === id ? { ...g, status: 'hit', progress: 100 } : g))
+      toast.success('Meta marcada como batida')
+    } catch (e) {
+      toast.error('Não foi possível atualizar a meta')
+    }
+  }
+
+  const deleteGoal = async (id: string) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('goals')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+      setGoals(prev => prev.filter(g => g.id !== id))
+      toast.success('Meta excluída')
+    } catch (e) {
+      toast.error('Não foi possível excluir a meta')
+    }
+  }
+
+  // Preenche formulário de edição ao abrir
+  useEffect(() => {
+    if (editGoal) {
+      setEditForm({
+        title: editGoal.title,
+        description: editGoal.description,
+        deadline: (() => {
+          // tentar reverter dd/mm/aaaa para yyyy-mm-dd
+          const p = editGoal.deadline.split('/')
+          if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
+          return ''
+        })(),
+        progress: editGoal.progress || 0,
+        isCompleted: editGoal.status === 'hit',
+      })
+    }
+  }, [editGoal])
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -534,11 +602,20 @@ export default function GoalsPage() {
                       <p className="text-sm font-roboto font-light text-oxford-blue-600">{goal.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${getPriorityColor(goal.priority)}`} />
-                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
+                  <div className="relative">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${getPriorityColor(goal.priority)}`} />
+                      <button onClick={() => setOpenMenuId(openMenuId === goal.id ? null : goal.id)} className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {openMenuId === goal.id && (
+                      <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-platinum-200 py-2 z-10">
+                        <button onClick={() => { setEditGoal(goal); setOpenMenuId(null) }} className="w-full text-left px-4 py-2 text-sm hover:bg-platinum-100">Editar</button>
+                        <button onClick={() => { markAsHit(goal.id); setOpenMenuId(null) }} className="w-full text-left px-4 py-2 text-sm hover:bg-platinum-100">Marcar como batida</button>
+                        <button onClick={() => { deleteGoal(goal.id); setOpenMenuId(null) }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Excluir</button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -603,22 +680,119 @@ export default function GoalsPage() {
                   {/* Ações */}
                   <div className="flex items-center justify-between pt-4 border-t border-platinum-200">
                     <div className="flex gap-2">
-                      <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                      <button onClick={() => setDetailsGoal(goal)} className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                      <button onClick={() => setEditGoal(goal)} className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                         <Edit className="h-4 w-4" />
                       </button>
                     </div>
-                    <button className="text-sm font-roboto font-medium text-yinmn-blue-600 hover:text-yinmn-blue-700 flex items-center gap-1">
-                      Ver detalhes
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {editGoal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditGoal(null)}>
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-platinum-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-platinum-200">
+              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Editar Meta</h3>
+              <button className="p-2 rounded-lg hover:bg-platinum-100" onClick={() => setEditGoal(null)}>
+                <X className="w-4 h-4 text-oxford-blue-600" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!editGoal) return
+                // validação básica
+                if (!editForm.title || !editForm.deadline) {
+                  toast.error('Preencha título e prazo')
+                  return
+                }
+                try {
+                  const { error } = await (supabase as any)
+                    .from('goals')
+                    .update({
+                      title: editForm.title,
+                      description: editForm.description,
+                      target_date: editForm.deadline,
+                      progress: editForm.progress,
+                      is_completed: editForm.isCompleted,
+                    } as any)
+                    .eq('id', (editGoal as any).id)
+                  if (error) throw error
+
+                  // atualiza estado local
+                  setGoals(prev => prev.map(g => g.id === (editGoal as any).id ? {
+                    ...g,
+                    title: editForm.title,
+                    description: editForm.description,
+                    deadline: new Date(editForm.deadline + 'T00:00:00').toLocaleDateString('pt-BR'),
+                    progress: editForm.progress,
+                    status: editForm.isCompleted ? 'hit' : (editForm.progress >= 100 ? 'hit' : 'in_progress'),
+                  } : g))
+                  toast.success('Meta atualizada')
+                  setEditGoal(null)
+                } catch (e) {
+                  toast.error('Não foi possível salvar as alterações')
+                }
+              }}
+            >
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className="text-sm font-roboto font-medium text-rich-black-900">Título</label>
+                  <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                </div>
+                <div>
+                  <label className="text-sm font-roboto font-medium text-rich-black-900">Descrição</label>
+                  <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-roboto font-medium text-rich-black-900">Prazo</label>
+                    <input type="date" min={new Date().toISOString().split('T')[0]} value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-roboto font-medium text-rich-black-900">Progresso</label>
+                    <input type="number" min={0} max={100} value={editForm.progress} onChange={(e) => setEditForm({ ...editForm, progress: Math.max(0, Math.min(100, Number(e.target.value))) })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input id="chk_done" type="checkbox" checked={editForm.isCompleted} onChange={(e) => setEditForm({ ...editForm, isCompleted: e.target.checked })} />
+                  <label htmlFor="chk_done" className="text-sm font-roboto">Marcar como batida</label>
+                </div>
+              </div>
+              <div className="p-4 border-t border-platinum-200 flex items-center justify-end gap-2">
+                <button type="button" onClick={() => setEditGoal(null)} className="px-4 py-2 rounded-xl bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200 text-sm">Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-xl text-white text-sm" style={{ backgroundColor: '#1B263B' }}>Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {detailsGoal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetailsGoal(null)}>
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-platinum-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-platinum-200">
+              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Detalhes da Meta</h3>
+              <button className="p-2 rounded-lg hover:bg-platinum-100" onClick={() => setDetailsGoal(null)}>
+                <X className="w-4 h-4 text-oxford-blue-600" />
+              </button>
+            </div>
+            <div className="p-4 space-y-2 text-sm">
+              <p><strong>Título:</strong> {detailsGoal.title}</p>
+              <p><strong>Descrição:</strong> {detailsGoal.description || '—'}</p>
+              <p><strong>Responsável:</strong> {detailsGoal.assignedTo}</p>
+              <p><strong>Prazo:</strong> {detailsGoal.deadline}</p>
+              <p><strong>Status:</strong> {getStatusText(detailsGoal.status)}</p>
+              <p><strong>Progresso:</strong> {detailsGoal.progress}%</p>
+            </div>
+          </div>
         </div>
       )}
 
