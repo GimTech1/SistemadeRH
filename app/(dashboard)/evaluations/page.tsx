@@ -58,84 +58,18 @@ export default function EvaluationsPage() {
 
   const loadEvaluations = async () => {
     try {
-      // Simular dados de avaliações
-      setEvaluations([
-        {
-          id: '1',
-          employee_name: 'João Silva',
-          evaluator_name: 'Maria Santos',
-          cycle_name: 'Q1 2024',
-          status: 'completed',
-          overall_score: 8.5,
-          created_at: '2024-01-10',
-          submitted_at: '2024-01-15',
-          cha_scores: {
-            conhecimento: 8.0,
-            habilidade: 9.0,
-            atitude: 8.5,
-          },
-        },
-        {
-          id: '2',
-          employee_name: 'Ana Costa',
-          evaluator_name: 'Pedro Oliveira',
-          cycle_name: 'Q1 2024',
-          status: 'in_progress',
-          overall_score: 0,
-          created_at: '2024-01-12',
-          submitted_at: '',
-          cha_scores: {
-            conhecimento: 7.5,
-            habilidade: 8.0,
-            atitude: 0,
-          },
-        },
-        {
-          id: '3',
-          employee_name: 'Carlos Mendes',
-          evaluator_name: 'Maria Santos',
-          cycle_name: 'Q4 2023',
-          status: 'reviewed',
-          overall_score: 9.2,
-          created_at: '2023-10-05',
-          submitted_at: '2023-10-20',
-          cha_scores: {
-            conhecimento: 9.0,
-            habilidade: 9.5,
-            atitude: 9.0,
-          },
-        },
-        {
-          id: '4',
-          employee_name: 'Fernanda Lima',
-          evaluator_name: 'Roberto Costa',
-          cycle_name: 'Q1 2024',
-          status: 'draft',
-          overall_score: 0,
-          created_at: '2024-01-08',
-          submitted_at: '',
-          cha_scores: {
-            conhecimento: 0,
-            habilidade: 0,
-            atitude: 0,
-          },
-        },
-        {
-          id: '5',
-          employee_name: 'Lucas Martins',
-          evaluator_name: 'Ana Oliveira',
-          cycle_name: 'Q1 2024',
-          status: 'completed',
-          overall_score: 7.8,
-          created_at: '2024-01-05',
-          submitted_at: '2024-01-12',
-          cha_scores: {
-            conhecimento: 7.5,
-            habilidade: 8.0,
-            atitude: 8.0,
-          },
-        },
-      ])
+      const res = await fetch('/api/evaluations', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Falha ao carregar avaliações')
+      const json = await res.json()
+      const list = Array.isArray(json.evaluations) ? json.evaluations : []
+      // Como não buscamos CHA detalhado aqui, zere os scores por categoria (ou calcule se tiver endpoint futuro)
+      const withCha = list.map((e: any) => ({
+        ...e,
+        cha_scores: { conhecimento: 0, habilidade: 0, atitude: 0 },
+        overall_score: e.overall_score || 0,
+        submitted_at: e.submitted_at || '',
+      }))
+      setEvaluations(withCha)
     } catch (error) {
     } finally {
       setLoading(false)

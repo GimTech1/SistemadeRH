@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -113,9 +113,37 @@ export default function NewEvaluationPage() {
   const router = useRouter()
   const [employee, setEmployee] = useState('')
   const [evaluationCycle, setEvaluationCycle] = useState('')
+  const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([])
+  const [cycles, setCycles] = useState<{ id: string; name: string }[]>([])
   const [skills, setSkills] = useState<Skill[]>(defaultSkills)
   const [loading, setLoading] = useState(false)
+  const [loadingOptions, setLoadingOptions] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      setLoadingOptions(true)
+      try {
+        const [empRes, cycRes] = await Promise.all([
+          supabase.from('employees').select('id, full_name').order('full_name', { ascending: true }),
+          supabase.from('evaluation_cycles').select('id, name').order('start_date', { ascending: false }),
+        ])
+
+        if (empRes.error) {
+          toast.error('Erro ao carregar colaboradores')
+        }
+        if (cycRes.error) {
+          toast.error('Erro ao carregar ciclos de avaliação')
+        }
+
+        setEmployees(empRes.data || [])
+        setCycles(cycRes.data || [])
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+    loadOptions()
+  }, [])
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -174,12 +202,36 @@ export default function NewEvaluationPage() {
 
     setLoading(true)
     try {
-      // Aqui você salvaria no banco
-      toast.success(
-        action === 'save' 
-          ? 'Avaliação salva como rascunho!' 
-          : 'Avaliação enviada com sucesso!'
-      )
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      const payload = {
+        cycle_id: evaluationCycle,
+        employee_id: employee,
+        evaluator_id: user?.id,
+        status: action === 'save' ? 'draft' : 'completed',
+        overall_score: Number(calculateOverallScore()),
+        comments: null,
+        strengths: null,
+        improvements: null,
+        goals: null,
+        // skills: [] // opcional: enviar quando mapear para IDs reais de skills
+        submitted: action === 'submit',
+      }
+
+      const res = await fetch('/api/evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(error?.message || 'Erro ao salvar avaliação')
+      }
+
+      toast.success(action === 'save' ? 'Avaliação salva como rascunho!' : 'Avaliação enviada com sucesso!')
       router.push('/evaluations')
     } catch (error) {
       toast.error('Erro ao salvar avaliação')
@@ -217,7 +269,8 @@ export default function NewEvaluationPage() {
           <button
             onClick={() => handleSubmit('submit')}
             disabled={loading}
-            className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+            className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 hover:opacity-90"
+            style={{ backgroundColor: '#1B263B' }}
           >
             <Send className="h-4 w-4" />
             Enviar Avaliação
@@ -300,14 +353,16 @@ export default function NewEvaluationPage() {
             <select
               value={employee}
               onChange={(e) => setEmployee(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors"
+              disabled={loadingOptions}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors disabled:opacity-60"
             >
               <option value="">Selecione o colaborador</option>
-              <option value="1">João Silva</option>
-              <option value="2">Maria Santos</option>
-              <option value="3">Pedro Costa</option>
-              <option value="4">Ana Oliveira</option>
-              <option value="5">Carlos Mendes</option>
+              {employees.length === 0 && !loadingOptions && (
+                <option disabled value="">Nenhum colaborador encontrado</option>
+              )}
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>{e.full_name}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -318,13 +373,16 @@ export default function NewEvaluationPage() {
             <select
               value={evaluationCycle}
               onChange={(e) => setEvaluationCycle(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors"
+              disabled={loadingOptions}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors disabled:opacity-60"
             >
               <option value="">Selecione o ciclo</option>
-              <option value="2024-Q1">2024 - Q1</option>
-              <option value="2024-Q2">2024 - Q2</option>
-              <option value="2024-Q3">2024 - Q3</option>
-              <option value="2024-Q4">2024 - Q4</option>
+              {cycles.length === 0 && !loadingOptions && (
+                <option disabled value="">Nenhum ciclo encontrado</option>
+              )}
+              {cycles.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
           </div>
         </div>
