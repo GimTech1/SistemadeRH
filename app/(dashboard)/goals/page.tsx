@@ -507,6 +507,24 @@ export default function GoalsPage() {
         </div>
       </div>
 
+      {/* Abas rápidas */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { key: 'all', label: 'Todas' },
+          { key: 'in_progress', label: 'Em Progresso' },
+          { key: 'hit', label: 'Batidas' },
+          { key: 'missed', label: 'Não Batidas' },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setFilterStatus(t.key as any)}
+            className={`px-4 py-2 rounded-xl text-sm border ${filterStatus === t.key ? 'bg-yinmn-blue-600 text-white border-yinmn-blue-600' : 'bg-white text-rich-black-900 border-platinum-300 hover:bg-platinum-100'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* Visualização de metas */}
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">

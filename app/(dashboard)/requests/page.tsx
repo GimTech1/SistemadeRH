@@ -45,7 +45,7 @@ export default function RequestsPage() {
   const [urgency, setUrgency] = useState<'Pequena' | 'Média' | 'Grande' | 'Urgente' | ''>('')
   const [submitting, setSubmitting] = useState(false)
 
-  const [activeTab, setActiveTab] = useState<RequestStatus>('requested')
+  const [activeTab, setActiveTab] = useState<RequestStatus | 'all'>('requested')
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loadingRequests, setLoadingRequests] = useState(false)
 
@@ -103,6 +103,7 @@ export default function RequestsPage() {
   }, [departmentId, supabase])
 
   const filteredByTab = useMemo(() => {
+    if (activeTab === 'all') return requests
     return requests.filter(r => r.status === activeTab)
   }, [requests, activeTab])
 
@@ -318,6 +319,7 @@ export default function RequestsPage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         {[
+          { key: 'all', label: 'Todas' },
           { key: 'requested', label: 'Solicitado' },
           { key: 'approved', label: 'Aprovado' },
           { key: 'rejected', label: 'Não Aprovado' },
@@ -325,7 +327,7 @@ export default function RequestsPage() {
         ].map(t => (
           <button
             key={t.key}
-            onClick={() => setActiveTab(t.key as RequestStatus)}
+            onClick={() => setActiveTab(t.key as any)}
             className={cn(
               'px-4 py-2 rounded-xl text-sm border',
               activeTab === t.key ? 'bg-yinmn-blue-600 text-white border-yinmn-blue-600' : 'bg-white text-rich-black-900 border-platinum-300 hover:bg-platinum-100'
