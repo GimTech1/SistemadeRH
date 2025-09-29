@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   Award,
   BarChart3,
+  FilePlus2,
   Settings,
   LogOut,
   Menu,
@@ -91,6 +92,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Feedbacks',
       icon: MessageSquare,
       href: '/feedback',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Solicitações',
+      icon: FilePlus2,
+      href: '/requests',
       roles: ['admin', 'manager', 'employee'],
     },
     {

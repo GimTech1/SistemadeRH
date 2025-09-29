@@ -251,3 +251,10 @@ select option {
   background-color: white;
   color: #334155;
 }
+
+/* Helper para remover a seta nativa quando usamos ícone customizado */
+.no-native-arrow {
+  background-image: none !important;
+  background-position: initial !important;
+  padding-right: 0 !important;
+}

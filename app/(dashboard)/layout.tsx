@@ -91,6 +91,7 @@ export default function DashboardLayout({
       '/feedback/internal': 'Avaliar Colegas',
       '/feedback/external': 'Feedback Externo',
       '/reports': 'Relatórios',
+      '/requests': 'Solicitações',
     }
     // tenta match exato, senão usa segmento base
     if (map[pathname]) return map[pathname]
