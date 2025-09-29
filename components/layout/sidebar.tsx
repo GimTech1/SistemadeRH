@@ -112,12 +112,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       href: '/reports',
       roles: ['admin', 'manager'],
     },
-    {
-      title: 'Configurações',
-      icon: Settings,
-      href: '/settings',
-      roles: ['admin'],
-    },
   ]
 
   const filteredMenuItems = menuItems.filter(item => 
