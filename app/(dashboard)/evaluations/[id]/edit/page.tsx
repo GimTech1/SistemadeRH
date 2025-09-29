@@ -24,6 +24,16 @@ interface EvaluationSkillEditRow {
   comments: string | null
 }
 
+interface EvaluationWithRelations {
+  id: string
+  employee: {
+    full_name: string
+  } | null
+  cycle: {
+    name: string
+  } | null
+}
+
 export default function EditEvaluationPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -43,9 +53,9 @@ export default function EditEvaluationPage() {
           .from('evaluations')
           .select(`id, employee:employee_id ( full_name ), cycle:cycle_id ( name )`)
           .eq('id', params.id)
-          .single()
+          .single() as { data: EvaluationWithRelations | null, error: any }
 
-        if (error) {
+        if (error || !evalRow) {
           router.push('/evaluations')
           return
         }

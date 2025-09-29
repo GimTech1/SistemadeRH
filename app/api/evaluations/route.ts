@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+interface EvaluationInsert {
+  cycle_id: string
+  employee_id: string
+  evaluator_id: string
+  status: string
+  comments: string | null
+  strengths: string | null
+  improvements: string | null
+  goals: string | null
+  overall_score: number | null
+  submitted_at: string | null
+}
+
 // GET /api/evaluations -> lista avaliações com joins básicos
 export async function GET() {
   try {
@@ -65,29 +78,29 @@ export async function POST(req: Request) {
 
     const submitted_at = submitted ? new Date().toISOString() : null
 
+    const evaluationData: EvaluationInsert = {
+      cycle_id,
+      employee_id,
+      evaluator_id,
+      status,
+      comments,
+      strengths,
+      improvements,
+      goals,
+      overall_score,
+      submitted_at,
+    }
+
     const { data: created, error: insertError } = await supabase
       .from('evaluations')
-      .insert([
-        {
-          cycle_id,
-          employee_id,
-          evaluator_id,
-          status,
-          comments,
-          strengths,
-          improvements,
-          goals,
-          overall_score,
-          submitted_at,
-        },
-      ])
+      .insert([evaluationData] as any)
       .select('id')
-      .single()
+      .single() as { data: { id: string } | null, error: any }
 
-    if (insertError) {
+    if (insertError || !created) {
       console.error('POST /api/evaluations insert error:', insertError)
-      const status = insertError.message?.toLowerCase().includes('permission denied') ? 403 : 500
-      return NextResponse.json({ message: 'Erro ao criar avaliação', error: insertError.message }, { status })
+      const status = insertError?.message?.toLowerCase().includes('permission denied') ? 403 : 500
+      return NextResponse.json({ message: 'Erro ao criar avaliação', error: insertError?.message }, { status })
     }
 
     if (Array.isArray(skills) && skills.length > 0) {
@@ -98,7 +111,7 @@ export async function POST(req: Request) {
         comments: s.comments ?? null,
       }))
 
-      const { error: skillsError } = await supabase.from('evaluation_skills').insert(rows)
+      const { error: skillsError } = await supabase.from('evaluation_skills').insert(rows as any)
       if (skillsError) {
         console.error('POST /api/evaluations skills insert error:', skillsError)
         return NextResponse.json({ message: 'Avaliação criada, mas falhou ao salvar competências', error: skillsError.message }, { status: 207 })

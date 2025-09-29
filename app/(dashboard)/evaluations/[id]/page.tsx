@@ -37,6 +37,24 @@ interface EvaluationSkillRow {
   skill_category: 'conhecimento' | 'habilidade' | 'atitude'
 }
 
+interface EvaluationWithRelations {
+  id: string
+  status: 'draft' | 'in_progress' | 'completed' | 'reviewed'
+  overall_score: number | null
+  comments: string | null
+  submitted_at: string | null
+  created_at: string
+  employee: {
+    full_name: string
+  } | null
+  evaluator: {
+    full_name: string
+  } | null
+  cycle: {
+    name: string
+  } | null
+}
+
 export default function ViewEvaluationPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -59,9 +77,9 @@ export default function ViewEvaluationPage() {
             cycle:cycle_id ( name )
           `)
           .eq('id', params.id)
-          .single()
+          .single() as { data: EvaluationWithRelations | null, error: any }
 
-        if (evalError) {
+        if (evalError || !evalRow) {
           router.push('/evaluations')
           return
         }
