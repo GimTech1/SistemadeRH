@@ -23,6 +23,7 @@ import {
   Grid3X3,
   List,
   Download,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -59,10 +60,75 @@ export default function GoalsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const [showNewGoalModal, setShowNewGoalModal] = useState(false)
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    description: '',
+    category: 'performance' as 'performance' | 'skill' | 'career' | 'personal',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
+    deadline: '',
+    assignedTo: '',
+  })
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([])
+  const [departmentId, setDepartmentId] = useState('')
+  const [employees, setEmployees] = useState<{ id: string; name: string; department?: string | null }[]>([])
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
+  const [loadingEmployees, setLoadingEmployees] = useState(false)
+  useEffect(() => {
+    if (showNewGoalModal) {
+      document.body.classList.add('overflow-hidden')
+    } else {
+      document.body.classList.remove('overflow-hidden')
+    }
+    return () => document.body.classList.remove('overflow-hidden')
+  }, [showNewGoalModal])
 
   useEffect(() => {
     loadGoals()
   }, [])
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        setLoadingDepartments(true)
+        const { data, error } = await supabase
+          .from('departments')
+          .select('id, name')
+          .order('name', { ascending: true })
+        if (error) throw error
+        setDepartments((data || []).map((d: any) => ({ id: d.id, name: d.name })))
+      } catch (e) {
+      } finally {
+        setLoadingDepartments(false)
+      }
+    }
+    loadDepartments()
+  }, [supabase])
+
+  useEffect(() => {
+    const loadEmployeesByDepartment = async () => {
+      if (!departmentId) {
+        setEmployees([])
+        setSelectedEmployeeId('')
+        return
+      }
+      try {
+        setLoadingEmployees(true)
+        const { data, error } = await supabase
+          .from('employees')
+          .select('id, full_name, department')
+          .eq('department', departmentId)
+          .order('full_name', { ascending: true })
+        if (error) throw error
+        setEmployees((data || []).map((e: any) => ({ id: e.id, name: e.full_name || 'Sem nome', department: e.department })))
+      } catch (e) {
+      } finally {
+        setLoadingEmployees(false)
+      }
+    }
+    loadEmployeesByDepartment()
+  }, [departmentId, supabase])
 
   const loadGoals = async () => {
     try {
@@ -287,7 +353,7 @@ export default function GoalsPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Plano de Desenvolvimento Individual e metas de performance </h1>
         </div>
-        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
+        <button onClick={() => setShowNewGoalModal(true)} className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
           <Plus className="h-4 w-4" />
           Nova Meta
         </button>
@@ -649,10 +715,115 @@ export default function GoalsPage() {
           <p className="text-sm text-oxford-blue-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
             Tente ajustar sua busca ou crie uma nova meta para começar a acompanhar o desenvolvimento dos colaboradores
           </p>
-          <button className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 mx-auto mt-8">
+          <button onClick={() => setShowNewGoalModal(true)} className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 mx-auto mt-8">
             <Plus className="h-4 w-4" />
             Criar Primeira Meta
           </button>
+        </div>
+      )}
+
+      {showNewGoalModal && (
+        <div className="fixed inset-0 z-50">
+          <div className="fixed inset-0 bg-black/70" onClick={() => setShowNewGoalModal(false)} />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-platinum-200">
+              <div className="flex items-center justify-between p-4 border-b border-platinum-200">
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">Nova Meta</h3>
+                <button className="p-2 rounded-lg hover:bg-platinum-100" onClick={() => setShowNewGoalModal(false)}>
+                  <X className="w-4 h-4 text-oxford-blue-600" />
+                </button>
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (!newGoal.title || !newGoal.deadline || !newGoal.assignedTo) {
+                    toast.error('Preencha título, prazo e responsável')
+                    return
+                  }
+                  const created: Goal = {
+                    id: crypto.randomUUID(),
+                    title: newGoal.title,
+                    description: newGoal.description,
+                    category: newGoal.category,
+                    status: 'pending',
+                    progress: 0,
+                    startDate: new Date().toLocaleDateString('pt-BR'),
+                    deadline: newGoal.deadline,
+                    assignedTo: (employees.find(e => e.id === selectedEmployeeId)?.name || newGoal.assignedTo || 'Responsável'),
+                    assignedBy: 'Você',
+                    priority: newGoal.priority,
+                    keyResults: [],
+                    comments: [],
+                  }
+                  setGoals((g) => [created, ...g])
+                  setShowNewGoalModal(false)
+                  setNewGoal({ title: '', description: '', category: 'performance', priority: 'medium', deadline: '', assignedTo: '' })
+                  setDepartmentId('')
+                  setSelectedEmployeeId('')
+                  toast.success('Meta criada')
+                }}
+              >
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="text-sm font-roboto font-medium text-rich-black-900">Título</label>
+                    <input value={newGoal.title} onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-roboto font-medium text-rich-black-900">Descrição</label>
+                    <textarea value={newGoal.description} onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Categoria</label>
+                      <select value={newGoal.category} onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value as any })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
+                        <option value="performance">Performance</option>
+                        <option value="skill">Habilidade</option>
+                        <option value="career">Carreira</option>
+                        <option value="personal">Pessoal</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Prioridade</label>
+                      <select value={newGoal.priority} onChange={(e) => setNewGoal({ ...newGoal, priority: e.target.value as any })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
+                        <option value="low">Baixa</option>
+                        <option value="medium">Média</option>
+                        <option value="high">Alta</option>
+                        <option value="critical">Crítica</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Prazo</label>
+                      <input type="date" value={newGoal.deadline} onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value ? new Date(e.target.value).toLocaleDateString('pt-BR') : '' })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Setor</label>
+                      <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
+                        <option value="">Selecione</option>
+                        {departments.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-roboto font-medium text-rich-black-900">Responsável</label>
+                    <select value={selectedEmployeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} disabled={!departmentId || loadingEmployees} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
+                      <option value="">Selecione</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-platinum-200 flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setShowNewGoalModal(false)} className="px-4 py-2 rounded-xl bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200 text-sm">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 rounded-xl text-white text-sm" style={{ backgroundColor: '#1B263B' }}>Criar Meta</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>
