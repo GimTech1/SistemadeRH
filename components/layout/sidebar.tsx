@@ -34,16 +34,21 @@ import type { Database } from '@/lib/supabase/database.types'
 interface SidebarProps {
   userRole?: 'admin' | 'manager' | 'employee'
   onCollapseChange?: (isCollapsed: boolean) => void
+  mobileOpen?: boolean
+  onMobileOpenChange?: (open: boolean) => void
 }
 
-export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProps) {
+export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, onMobileOpenChange }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
+
+  const isOpen = mobileOpen ?? internalOpen
+  const setIsOpen = onMobileOpenChange ?? setInternalOpen
 
   const menuItems = [
     {
@@ -185,14 +190,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange }: SidebarProp
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-lg text-slate-700 hover:text-slate-900 hover:bg-white transition-all duration-300"
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </button>
-
       {/* Overlay for mobile */}
       {isOpen && (
         <div

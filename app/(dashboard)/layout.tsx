@@ -18,6 +18,7 @@ export default function DashboardLayout({
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
   const [loading, setLoading] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState('')
   const [userPosition, setUserPosition] = useState('')
@@ -100,11 +101,11 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
       <Toaster position="top-right" />
-      <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
+      <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} mobileOpen={mobileOpen} onMobileOpenChange={setMobileOpen} />
       <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-[70px]' : 'lg:ml-64'}`}>
         <DashboardHeader
           title={getPageTitle()}
-          onOpenMenu={() => {}}
+          onOpenMenu={() => setMobileOpen(!mobileOpen)}
           onNotificationClick={() => {}}
           hasUnread
           unreadCount={2}
