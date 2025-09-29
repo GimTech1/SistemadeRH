@@ -24,6 +24,15 @@ export default function DashboardLayout({
   const [userPosition, setUserPosition] = useState('')
   const pathname = usePathname()
 
+  const normalizeRole = (
+    role: string | null | undefined
+  ): 'admin' | 'manager' | 'employee' => {
+    const r = (role || '').toLowerCase().trim()
+    if (r === 'admin' || r === 'administrador') return 'admin'
+    if (r === 'manager' || r === 'gerente') return 'manager'
+    return 'employee'
+  }
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -42,7 +51,7 @@ export default function DashboardLayout({
           .single<{ role: Database['public']['Tables']['profiles']['Row']['role']; full_name: string | null; position: string | null }>()
 
         if (profile) {
-          setUserRole(profile.role as 'admin' | 'manager' | 'employee')
+          setUserRole(normalizeRole(profile.role as unknown as string))
           setUserName(profile.full_name || user.user_metadata?.full_name || user.email || 'Usuário')
           setUserPosition(profile.position || user.user_metadata?.position || '')
         } else {
