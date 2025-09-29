@@ -12,6 +12,9 @@ interface EvaluationInsert {
   goals: string | null
   overall_score: number | null
   submitted_at: string | null
+  knowledge_score?: number | null
+  skill_score?: number | null
+  attitude_score?: number | null
 }
 
 // GET /api/evaluations -> lista avaliações com joins básicos
@@ -24,6 +27,7 @@ export async function GET() {
       .select(
         `
         id, status, overall_score, comments, submitted_at, created_at,
+        knowledge_score, skill_score, attitude_score,
         employee:employee_id ( id, full_name ),
         evaluator:evaluator_id ( id, full_name ),
         cycle:cycle_id ( id, name )
@@ -39,6 +43,9 @@ export async function GET() {
       id: row.id,
       status: row.status,
       overall_score: row.overall_score,
+      knowledge_score: row.knowledge_score,
+      skill_score: row.skill_score,
+      attitude_score: row.attitude_score,
       created_at: row.created_at,
       submitted_at: row.submitted_at,
       employee_name: row.employee?.full_name ?? '—',
@@ -66,8 +73,11 @@ export async function POST(req: Request) {
       improvements = null,
       goals = null,
       overall_score = null,
-      skills = [], // [{ skill_id, score, comments }]
+      skills = [], // [{ skill_id, score, comments, category? }]
       submitted = false,
+      knowledge_score: knowledgeScoreFromClient,
+      skill_score: skillScoreFromClient,
+      attitude_score: attitudeScoreFromClient,
     } = body
 
     if (!employee_id || !cycle_id || !evaluator_id) {
@@ -78,6 +88,35 @@ export async function POST(req: Request) {
 
     const submitted_at = submitted ? new Date().toISOString() : null
 
+    // Calcula média geral no servidor a partir das skills (se enviadas)
+    let computedOverall: number | null = null
+    let computedKnowledge: number | null = null
+    let computedSkill: number | null = null
+    let computedAttitude: number | null = null
+    if (Array.isArray(skills) && skills.length > 0) {
+      const toNum = (n: any) => (typeof n === 'number' ? n : null)
+      const knowledge: number[] = []
+      const skill: number[] = []
+      const attitude: number[] = []
+      const all: number[] = []
+
+      for (const s of skills) {
+        const score = toNum((s as any).score)
+        if (score === null) continue
+        all.push(score)
+        const cat = (s as any).category as 'conhecimento'|'habilidade'|'atitude'|undefined
+        if (cat === 'conhecimento') knowledge.push(score)
+        else if (cat === 'habilidade') skill.push(score)
+        else if (cat === 'atitude') attitude.push(score)
+      }
+
+      const avg = (arr: number[]) => arr.length > 0 ? parseFloat((arr.reduce((a,b)=>a+b,0) / arr.length).toFixed(1)) : null
+      computedOverall = avg(all)
+      computedKnowledge = avg(knowledge)
+      computedSkill = avg(skill)
+      computedAttitude = avg(attitude)
+    }
+
     const evaluationData: EvaluationInsert = {
       cycle_id,
       employee_id,
@@ -87,7 +126,10 @@ export async function POST(req: Request) {
       strengths,
       improvements,
       goals,
-      overall_score,
+      overall_score: computedOverall ?? (typeof overall_score === 'number' ? overall_score : null),
+      knowledge_score: typeof knowledgeScoreFromClient === 'number' ? knowledgeScoreFromClient : computedKnowledge ?? null,
+      skill_score: typeof skillScoreFromClient === 'number' ? skillScoreFromClient : computedSkill ?? null,
+      attitude_score: typeof attitudeScoreFromClient === 'number' ? attitudeScoreFromClient : computedAttitude ?? null,
       submitted_at,
     }
 

@@ -119,6 +119,9 @@ export default function NewEvaluationPage() {
   const [skills, setSkills] = useState<Skill[]>(defaultSkills)
   const [loading, setLoading] = useState(false)
   const [loadingOptions, setLoadingOptions] = useState(false)
+  const [strengths, setStrengths] = useState('')
+  const [improvements, setImprovements] = useState('')
+  const [goalsText, setGoalsText] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
@@ -233,9 +236,14 @@ export default function NewEvaluationPage() {
             skill_id: skillId,
             score: s.score,
             comments: s.comments || null,
+            category: s.category,
           }
         })
-        .filter(Boolean) as { skill_id: string; score: number; comments: string | null }[]
+        .filter(Boolean) as { skill_id: string; score: number; comments: string | null; category: Skill['category'] }[]
+
+      const knowledgeAvg = Number(calculateCategoryAverage('conhecimento'))
+      const skillAvg = Number(calculateCategoryAverage('habilidade'))
+      const attitudeAvg = Number(calculateCategoryAverage('atitude'))
 
       const payload = {
         cycle_id: evaluationCycle,
@@ -244,11 +252,14 @@ export default function NewEvaluationPage() {
         status: action === 'save' ? 'draft' : 'completed',
         overall_score: Number(calculateOverallScore()),
         comments: null,
-        strengths: null,
-        improvements: null,
-        goals: null,
+        strengths: strengths.trim() || null,
+        improvements: improvements.trim() || null,
+        goals: goalsText.trim() || null,
         skills: skillsPayload,
         submitted: action === 'submit',
+        knowledge_score: knowledgeAvg,
+        skill_score: skillAvg,
+        attitude_score: attitudeAvg,
       }
 
       const res = await fetch('/api/evaluations', {
@@ -272,7 +283,7 @@ export default function NewEvaluationPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center space-x-4">
@@ -286,27 +297,12 @@ export default function NewEvaluationPage() {
             <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
               Avalie Conhecimentos, Habilidades e Atitudes do colaborador
             </p>
+            <p className="text-xs font-roboto font-medium text-red-600 mt-2">
+              Atenção: avaliações do ciclo não são editáveis após salvas. Revise as notas antes de enviar.
+            </p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => handleSubmit('save')}
-            disabled={loading}
-            className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Salvar Rascunho
-          </button>
-          <button
-            onClick={() => handleSubmit('submit')}
-            disabled={loading}
-            className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 hover:opacity-90"
-            style={{ backgroundColor: '#1B263B' }}
-          >
-            <Send className="h-4 w-4" />
-            Enviar Avaliação
-          </button>
-        </div>
+        <div className="flex items-center space-x-3"></div>
       </div>
 
       {/* Cards de resumo */}
@@ -431,6 +427,43 @@ export default function NewEvaluationPage() {
         </div>
       </div>
 
+      {/* Campos adicionais: Forças, Melhorias, Metas */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+        <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6">Análises e Metas</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Forças</label>
+            <textarea
+              value={strengths}
+              onChange={(e) => setStrengths(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Pontos fortes identificados..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Melhorias</label>
+            <textarea
+              value={improvements}
+              onChange={(e) => setImprovements(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Pontos de melhoria..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Metas</label>
+            <textarea
+              value={goalsText}
+              onChange={(e) => setGoalsText(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Metas sugeridas..."
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Avaliação CHA */}
       {['conhecimento', 'habilidade', 'atitude'].map((category) => {
         const Icon = getCategoryIcon(category)
@@ -530,6 +563,27 @@ export default function NewEvaluationPage() {
           </div>
         )
       })}
+      
+      {/* Ações - Botões no final da página */}
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <button
+          onClick={() => handleSubmit('save')}
+          disabled={loading}
+          className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+        >
+          <Save className="h-4 w-4" />
+          Salvar Rascunho
+        </button>
+        <button
+          onClick={() => handleSubmit('submit')}
+          disabled={loading}
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 hover:opacity-90"
+          style={{ backgroundColor: '#1B263B' }}
+        >
+          <Send className="h-4 w-4" />
+          Enviar Avaliação
+        </button>
+      </div>
     </div>
   )
 }

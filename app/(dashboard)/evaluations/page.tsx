@@ -34,6 +34,9 @@ interface Evaluation {
   cycle_name: string
   status: 'draft' | 'in_progress' | 'completed' | 'reviewed'
   overall_score: number
+  knowledge_score?: number | null
+  skill_score?: number | null
+  attitude_score?: number | null
   created_at: string
   submitted_at: string
   cha_scores: {
@@ -65,7 +68,11 @@ export default function EvaluationsPage() {
       // Como não buscamos CHA detalhado aqui, zere os scores por categoria (ou calcule se tiver endpoint futuro)
       const withCha = list.map((e: any) => ({
         ...e,
-        cha_scores: { conhecimento: 0, habilidade: 0, atitude: 0 },
+        cha_scores: {
+          conhecimento: typeof e.knowledge_score === 'number' ? e.knowledge_score : 0,
+          habilidade: typeof e.skill_score === 'number' ? e.skill_score : 0,
+          atitude: typeof e.attitude_score === 'number' ? e.attitude_score : 0,
+        },
         overall_score: e.overall_score || 0,
         submitted_at: e.submitted_at || '',
       }))
@@ -391,11 +398,6 @@ export default function EvaluationsPage() {
                             <Eye className="h-4 w-4" />
                           </button>
                         </Link>
-                        <Link href={`/evaluations/${evaluation.id}/edit`}>
-                          <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -467,16 +469,11 @@ export default function EvaluationsPage() {
                 </div>
 
                 {/* Ações */}
-                <div className="flex items-center justify-between pt-4 border-t border-platinum-200">
+                  <div className="flex items-center justify-between pt-4 border-t border-platinum-200">
                   <div className="flex gap-2">
                     <Link href={`/evaluations/${evaluation.id}`}>
                       <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
                         <Eye className="h-4 w-4" />
-                      </button>
-                    </Link>
-                    <Link href={`/evaluations/${evaluation.id}/edit`}>
-                      <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                        <Edit className="h-4 w-4" />
                       </button>
                     </Link>
                   </div>

@@ -43,6 +43,14 @@ export default function EditEvaluationPage() {
   const [title, setTitle] = useState('Editar Avaliação')
   const [rows, setRows] = useState<EvaluationSkillEditRow[]>([])
   const [skills, setSkills] = useState<SkillItem[]>([])
+  const [strengths, setStrengths] = useState('')
+  const [improvements, setImprovements] = useState('')
+  const [goals, setGoals] = useState('')
+  const [grouped, setGrouped] = useState<Record<'conhecimento'|'habilidade'|'atitude', EvaluationSkillEditRow[]>>({
+    conhecimento: [],
+    habilidade: [],
+    atitude: [],
+  })
 
   useEffect(() => {
     const load = async () => {
@@ -62,11 +70,22 @@ export default function EditEvaluationPage() {
 
         setTitle(`Editar Avaliação • ${evalRow.employee?.full_name ?? '—'} • ${evalRow.cycle?.name ?? '—'}`)
 
+        const { data: meta } = await supabase
+          .from('evaluations')
+          .select('strengths, improvements, goals')
+          .eq('id', params.id)
+          .single()
+
+        setStrengths((meta as any)?.strengths ?? '')
+        setImprovements((meta as any)?.improvements ?? '')
+        setGoals((meta as any)?.goals ?? '')
+
         const { data: allSkills } = await supabase
           .from('skills')
           .select('id, name, category')
 
-        setSkills((allSkills || []) as any)
+        const allSkillsArr = (allSkills || []) as SkillItem[]
+        setSkills(allSkillsArr)
 
         const { data: evalSkills, error: evalSkillsError } = await supabase
           .from('evaluation_skills')
@@ -77,12 +96,20 @@ export default function EditEvaluationPage() {
           console.error('Erro ao carregar competências da avaliação:', evalSkillsError)
         }
 
-        setRows((evalSkills || []).map((r: any) => ({
+        const mapped = (evalSkills || []).map((r: any) => ({
           id: r.id,
           skill_id: r.skill_id,
           score: r.score,
           comments: r.comments,
-        })))
+        }))
+        setRows(mapped)
+        const nextGrouped = { conhecimento: [] as EvaluationSkillEditRow[], habilidade: [] as EvaluationSkillEditRow[], atitude: [] as EvaluationSkillEditRow[] }
+        for (const row of mapped) {
+          const info = allSkillsArr.find((s) => s.id === row.skill_id)
+          const cat = (info?.category ?? 'conhecimento') as 'conhecimento'|'habilidade'|'atitude'
+          nextGrouped[cat].push(row)
+        }
+        setGrouped(nextGrouped)
       } finally {
         setLoading(false)
       }
@@ -106,6 +133,41 @@ export default function EditEvaluationPage() {
           .upsert(toUpdate, { onConflict: 'id' })
         if (error) throw error
       }
+
+      // Recalcula médias por categoria e geral no cliente para persistir
+      const numericScores = rows
+        .map(r => (typeof r.score === 'number' ? r.score : null))
+        .filter((n): n is number => typeof n === 'number')
+      const overall = numericScores.length > 0
+        ? parseFloat((numericScores.reduce((a,b)=>a+b,0) / numericScores.length).toFixed(1))
+        : null
+
+      const withCat = rows.map(r => {
+        const info = skills.find(s => s.id === r.skill_id)
+        return { score: r.score, category: info?.category }
+      })
+      const avg = (arr: (number|null|undefined)[]) => {
+        const nums = arr.filter((n): n is number => typeof n === 'number')
+        return nums.length ? parseFloat((nums.reduce((a,b)=>a+b,0) / nums.length).toFixed(1)) : null
+      }
+      const kAvg = avg(withCat.filter(x => x.category === 'conhecimento').map(x => x.score ?? null))
+      const sAvg = avg(withCat.filter(x => x.category === 'habilidade').map(x => x.score ?? null))
+      const aAvg = avg(withCat.filter(x => x.category === 'atitude').map(x => x.score ?? null))
+
+      // Atualiza campos de texto e médias na avaliação
+      const { error: evalError } = await (supabase as any)
+        .from('evaluations')
+        .update({
+          strengths: strengths.trim() || null,
+          improvements: improvements.trim() || null,
+          goals: goals.trim() || null,
+          overall_score: overall,
+          knowledge_score: kAvg,
+          skill_score: sAvg,
+          attitude_score: aAvg,
+        })
+        .eq('id', params.id)
+      if (evalError) throw evalError
       toast.success('Avaliação atualizada com sucesso!')
       router.push(`/evaluations/${params.id}`)
     } catch (e: any) {
@@ -143,47 +205,91 @@ export default function EditEvaluationPage() {
         </button>
       </div>
 
+      {(['conhecimento','habilidade','atitude'] as const).map(cat => (
+        <div key={cat} className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
+          <div className="p-6 border-b border-platinum-200">
+            <h2 className="text-lg font-roboto font-medium text-rich-black-900 capitalize">{cat}</h2>
+            <p className="text-sm text-oxford-blue-600">Atualize as pontuações e observações</p>
+          </div>
+          <div className="divide-y divide-platinum-200">
+            {grouped[cat].length === 0 ? (
+              <div className="p-6 text-sm text-oxford-blue-600">Nenhuma competência registrada.</div>
+            ) : (
+              grouped[cat].map((row) => {
+                const idx = rows.findIndex(r => r.id === row.id)
+                const skillInfo = skills.find(s => s.id === row.skill_id)
+                return (
+                  <div key={row.id ?? `${cat}-${idx}`} className="p-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-roboto font-medium text-rich-black-900">{skillInfo?.name ?? 'Competência'}</p>
+                        <p className="text-xs text-oxford-blue-500">{skillInfo?.category ?? ''}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={10}
+                          value={row.score ?? 0}
+                          onChange={(e) => handleChange(idx, { score: Math.max(0, Math.min(10, Number(e.target.value))) })}
+                          className="w-20 px-3 py-2 bg-white border border-platinum-300 rounded-lg text-right"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <textarea
+                        value={row.comments ?? ''}
+                        onChange={(e) => handleChange(idx, { comments: e.target.value })}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm"
+                        placeholder="Observações..."
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      ))}
+
+      {/* Campos adicionais: Forças, Melhorias, Metas */}
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
         <div className="p-6 border-b border-platinum-200">
-          <h2 className="text-lg font-roboto font-medium text-rich-black-900">Competências</h2>
-          <p className="text-sm text-oxford-blue-600">Atualize as pontuações e observações</p>
+          <h2 className="text-lg font-roboto font-medium text-rich-black-900">Análises e Metas</h2>
+          <p className="text-sm text-oxford-blue-600">Atualize as seções de texto</p>
         </div>
-        <div className="divide-y divide-platinum-200">
-          {rows.length === 0 && (
-            <div className="p-6 text-sm text-oxford-blue-600">Nenhuma competência registrada.</div>
-          )}
-          {rows.map((row, idx) => {
-            const skillInfo = skills.find(s => s.id === row.skill_id)
-            return (
-              <div key={row.id ?? idx} className="p-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-roboto font-medium text-rich-black-900">{skillInfo?.name ?? 'Competência'}</p>
-                    <p className="text-xs text-oxford-blue-500">{skillInfo?.category ?? ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      max={10}
-                      value={row.score ?? 0}
-                      onChange={(e) => handleChange(idx, { score: Math.max(0, Math.min(10, Number(e.target.value))) })}
-                      className="w-20 px-3 py-2 bg-white border border-platinum-300 rounded-lg text-right"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <textarea
-                    value={row.comments ?? ''}
-                    onChange={(e) => handleChange(idx, { comments: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm"
-                    placeholder="Observações..."
-                  />
-                </div>
-              </div>
-            )
-          })}
+        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Forças</label>
+            <textarea
+              value={strengths}
+              onChange={(e) => setStrengths(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm"
+              placeholder="Pontos fortes..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Melhorias</label>
+            <textarea
+              value={improvements}
+              onChange={(e) => setImprovements(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm"
+              placeholder="Pontos de melhoria..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Metas</label>
+            <textarea
+              value={goals}
+              onChange={(e) => setGoals(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm"
+              placeholder="Metas propostas..."
+            />
+          </div>
         </div>
       </div>
     </div>
