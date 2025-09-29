@@ -101,7 +101,7 @@ export default function DashboardLayout({
     <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
       <Toaster position="top-right" />
       <Sidebar userRole={userRole} onCollapseChange={setIsCollapsed} />
-      <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+      <main className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-[70px]' : 'lg:ml-64'}`}>
         <DashboardHeader
           title={getPageTitle()}
           onOpenMenu={() => {}}

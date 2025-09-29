@@ -78,7 +78,7 @@ export default function DashboardHeader({
       'sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-platinum-200',
       className
     )}>
-      <div className="w-full px-2 md:px-4 py-2.5 flex items-center justify-between">
+      <div className="w-full px-2 md:px-4 py-1 flex items-center justify-between">
         <div className="flex items-center">
           <button
             className="md:hidden mr-3 text-oxford-blue-700 hover:text-oxford-blue-900"
@@ -88,7 +88,7 @@ export default function DashboardHeader({
             <Menu className="w-5 h-5" />
           </button>
           <h1
-            className="text-xl md:text-2xl font-roboto tracking-wide text-rich-black-900"
+            className="text-lg md:text-xl font-roboto tracking-wide text-rich-black-900"
             style={{ fontWeight: 300 }}
           >
             {title}
@@ -99,9 +99,9 @@ export default function DashboardHeader({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 p-2 rounded-xl hover:bg-platinum-100 transition-colors"
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-platinum-100 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center overflow-hidden shadow-sm ring-2 ring-white/50">
                 {userAvatar ? (
                   <Image
                     src={userAvatar}
