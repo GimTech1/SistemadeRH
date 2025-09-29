@@ -24,6 +24,7 @@ import {
   List,
   Download,
   X,
+  ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -775,21 +776,27 @@ export default function GoalsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm font-roboto font-medium text-rich-black-900">Categoria</label>
-                      <select value={newGoal.category} onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value as any })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
-                        <option value="performance">Performance</option>
-                        <option value="skill">Habilidade</option>
-                        <option value="career">Carreira</option>
-                        <option value="personal">Pessoal</option>
-                      </select>
+                      <div className="relative mt-1">
+                        <select value={newGoal.category} onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value as any })} className="w-full bg-white border border-platinum-300 rounded-lg px-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 appearance-none no-native-arrow">
+                          <option value="performance">Performance</option>
+                          <option value="skill">Habilidade</option>
+                          <option value="career">Carreira</option>
+                          <option value="personal">Pessoal</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
+                      </div>
                     </div>
                     <div>
                       <label className="text-sm font-roboto font-medium text-rich-black-900">Prioridade</label>
-                      <select value={newGoal.priority} onChange={(e) => setNewGoal({ ...newGoal, priority: e.target.value as any })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
-                        <option value="low">Baixa</option>
-                        <option value="medium">Média</option>
-                        <option value="high">Alta</option>
-                        <option value="critical">Crítica</option>
-                      </select>
+                      <div className="relative mt-1">
+                        <select value={newGoal.priority} onChange={(e) => setNewGoal({ ...newGoal, priority: e.target.value as any })} className="w-full bg-white border border-platinum-300 rounded-lg px-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 appearance-none no-native-arrow">
+                          <option value="low">Baixa</option>
+                          <option value="medium">Média</option>
+                          <option value="high">Alta</option>
+                          <option value="critical">Crítica</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -799,22 +806,28 @@ export default function GoalsPage() {
                     </div>
                     <div>
                       <label className="text-sm font-roboto font-medium text-rich-black-900">Setor</label>
-                      <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
-                        <option value="">Selecione</option>
-                        {departments.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
+                      <div className="relative mt-1">
+                        <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="w-full bg-white border border-platinum-300 rounded-lg px-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 appearance-none no-native-arrow">
+                          <option value="">Selecione</option>
+                          {departments.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
+                      </div>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-roboto font-medium text-rich-black-900">Responsável</label>
-                    <select value={selectedEmployeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} disabled={!departmentId || loadingEmployees} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500">
-                      <option value="">Selecione</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                      ))}
-                    </select>
+                    <div className="relative mt-1">
+                      <select value={selectedEmployeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} disabled={!departmentId || loadingEmployees} className="w-full bg-white border border-platinum-300 rounded-lg px-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 appearance-none no-native-arrow">
+                        <option value="">Selecione</option>
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
+                    </div>
                   </div>
                 </div>
                 <div className="p-4 border-t border-platinum-200 flex items-center justify-end gap-2">
