@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -43,13 +44,17 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   const pathname = usePathname()
   const router = useRouter()
   const [internalOpen, setInternalOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true) // Colapsada por padrão
+  const [isHovered, setIsHovered] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
 
   const isOpen = mobileOpen ?? internalOpen
   const setIsOpen = onMobileOpenChange ?? setInternalOpen
+  
+  // No desktop, expande no hover quando colapsada
+  const shouldExpand = !isCollapsed || (isHovered && typeof window !== 'undefined' && window.innerWidth >= 1024)
 
   const menuItems = [
     {
@@ -87,6 +92,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       icon: ClipboardCheck,
       href: '/evaluations',
       roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Ciclos de Avaliação',
+      icon: Calendar,
+      href: '/cycles',
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Habilidades CHA',
@@ -142,13 +153,9 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   }, [pathname])
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedState = localStorage.getItem('sidebarCollapsed')
-      if (savedState === 'true') {
-        setIsCollapsed(true)
-        onCollapseChange?.(true)
-      }
-    }
+    // Sidebar sempre inicia colapsada
+    setIsCollapsed(true)
+    onCollapseChange?.(true)
   }, [onCollapseChange])
 
   useEffect(() => {
@@ -205,16 +212,18 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
           "fixed left-0 top-0 flex-col z-40 shadow-lg transition-all duration-300 h-screen",
           "lg:flex",
           isOpen ? "flex" : "hidden",
-          isCollapsed ? "w-[70px]" : "w-64"
+          shouldExpand ? "w-64" : "w-[70px]"
         )}
         style={{ backgroundColor: '#0D1B2A' }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Header com logo */}
         <div className={cn(
           "border-b border-gray-600 flex items-center justify-between flex-shrink-0",
-          isCollapsed ? "p-3" : "p-4"
+          shouldExpand ? "p-4" : "p-3"
         )}>
-          {!isCollapsed && (
+          {shouldExpand && (
             <div className="flex items-center">
               <Image 
                 src="/logo-full-horizontal-branco.png" 
@@ -230,7 +239,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
             onClick={toggleSidebar}
             className={cn(
               "p-2 rounded-xl text-white hover:text-white hover:bg-gray-700 transition-all duration-300",
-              isCollapsed ? "mx-auto" : ""
+              !shouldExpand ? "mx-auto" : ""
             )}
             title={isCollapsed ? "Expandir menu" : "Colapsar menu"}
           >
@@ -251,18 +260,18 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
                     href={item.href}
                     className={cn(
                       "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
-                      isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3",
+                      shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3",
                       isActive 
                         ? "bg-gray-700 text-white shadow-sm" 
                         : "text-white hover:bg-gray-700 hover:text-white"
                     )}
-                    title={isCollapsed ? item.title : undefined}
+                    title={!shouldExpand ? item.title : undefined}
                   >
                     <Icon className={cn(
                       "flex-shrink-0",
-                      isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                      shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
                     )} />
-                    {!isCollapsed && <span className="tracking-wide">{item.title}</span>}
+                    {shouldExpand && <span className="tracking-wide">{item.title}</span>}
                   </Link>
                 </li>
               )
@@ -276,45 +285,45 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
                 href="/profile"
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
-                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
+                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
                 )}
-                title="Meu Perfil"
+                title={!shouldExpand ? "Meu Perfil" : undefined}
               >
                 <UserCircle className={cn(
                   "flex-shrink-0",
-                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
                 )} />
-                {!isCollapsed && <span className="tracking-wide">Meu Perfil</span>}
+                {shouldExpand && <span className="tracking-wide">Meu Perfil</span>}
               </Link>
 
               <Link
                 href="/"
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
-                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
+                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
                 )}
-                title="Início"
+                title={!shouldExpand ? "Início" : undefined}
               >
                 <Home className={cn(
                   "flex-shrink-0",
-                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
                 )} />
-                {!isCollapsed && <span className="tracking-wide">Início</span>}
+                {shouldExpand && <span className="tracking-wide">Início</span>}
               </Link>
 
               <button
                 onClick={handleLogout}
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-red-600 hover:text-white transition-all duration-300",
-                  isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"
+                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
                 )}
-                title="Sair"
+                title={!shouldExpand ? "Sair" : undefined}
               >
                 <LogOut className={cn(
                   "flex-shrink-0",
-                  isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
                 )} />
-                {!isCollapsed && <span className="tracking-wide">Sair</span>}
+                {shouldExpand && <span className="tracking-wide">Sair</span>}
               </button>
             </div>
           </div>

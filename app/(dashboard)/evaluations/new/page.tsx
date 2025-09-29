@@ -18,6 +18,7 @@ import {
   Target,
   Award,
   TrendingUp,
+  Settings,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -126,7 +127,7 @@ export default function NewEvaluationPage() {
       try {
         const [empRes, cycRes] = await Promise.all([
           supabase.from('employees').select('id, full_name').order('full_name', { ascending: true }),
-          supabase.from('evaluation_cycles').select('id, name').order('start_date', { ascending: false }),
+          supabase.from('evaluation_cycles').select('id, name').eq('is_active', true).order('start_date', { ascending: false }),
         ])
 
         if (empRes.error) {
@@ -206,6 +207,36 @@ export default function NewEvaluationPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
+      // Mapeia as skills da UI para os IDs reais da tabela `skills`
+      // Busca por nome e categoria para obter os IDs corretos
+      const { data: dbSkills, error: skillsLookupError } = await supabase
+        .from('skills')
+        .select('id, name, category')
+        .in('name', skills.map((s) => s.name))
+
+      if (skillsLookupError) {
+        throw new Error('Erro ao carregar competências')
+      }
+
+      type DBLookupSkill = { id: string; name: string; category: Skill['category'] }
+      const fetchedSkills = (dbSkills ?? []) as DBLookupSkill[]
+      const skillsByKey = new Map(
+        fetchedSkills.map((s) => [`${s.name}__${s.category}`, s.id])
+      )
+
+      const skillsPayload = skills
+        .map((s) => {
+          const key = `${s.name}__${s.category}`
+          const skillId = skillsByKey.get(key)
+          if (!skillId) return null
+          return {
+            skill_id: skillId,
+            score: s.score,
+            comments: s.comments || null,
+          }
+        })
+        .filter(Boolean) as { skill_id: string; score: number; comments: string | null }[]
+
       const payload = {
         cycle_id: evaluationCycle,
         employee_id: employee,
@@ -216,7 +247,7 @@ export default function NewEvaluationPage() {
         strengths: null,
         improvements: null,
         goals: null,
-        // skills: [] // opcional: enviar quando mapear para IDs reais de skills
+        skills: skillsPayload,
         submitted: action === 'submit',
       }
 
@@ -370,20 +401,32 @@ export default function NewEvaluationPage() {
               <Calendar className="h-4 w-4 inline mr-2" />
               Ciclo de Avaliação
             </label>
-            <select
-              value={evaluationCycle}
-              onChange={(e) => setEvaluationCycle(e.target.value)}
-              disabled={loadingOptions}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors disabled:opacity-60"
-            >
-              <option value="">Selecione o ciclo</option>
-              {cycles.length === 0 && !loadingOptions && (
-                <option disabled value="">Nenhum ciclo encontrado</option>
-              )}
-              {cycles.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={evaluationCycle}
+                onChange={(e) => setEvaluationCycle(e.target.value)}
+                disabled={loadingOptions}
+                className="flex-1 px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none cursor-pointer hover:bg-platinum-50 transition-colors disabled:opacity-60"
+              >
+                <option value="">Selecione o ciclo</option>
+                {cycles.length === 0 && !loadingOptions && (
+                  <option disabled value="">Nenhum ciclo encontrado</option>
+                )}
+                {cycles.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <Link href="/cycles">
+                <button
+                  type="button"
+                  className="px-4 py-3 bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 border border-platinum-300"
+                  title="Gerenciar ciclos"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ciclos</span>
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
