@@ -1,19 +1,15 @@
 // Função para validar CPF
 export function validateCPF(cpf: string): { isValid: boolean; error?: string } {
-  // Remove caracteres não numéricos
   const cleanCPF = cpf.replace(/\D/g, '')
   
-  // Verifica se tem 11 dígitos
   if (cleanCPF.length !== 11) {
     return { isValid: false, error: 'CPF deve ter 11 dígitos' }
   }
   
-  // Verifica se todos os dígitos são iguais
   if (/^(\d)\1{10}$/.test(cleanCPF)) {
     return { isValid: false, error: 'CPF inválido' }
   }
   
-  // Validação do primeiro dígito verificador
   let sum = 0
   for (let i = 0; i < 9; i++) {
     sum += parseInt(cleanCPF.charAt(i)) * (10 - i)
@@ -25,7 +21,6 @@ export function validateCPF(cpf: string): { isValid: boolean; error?: string } {
     return { isValid: false, error: 'CPF inválido' }
   }
   
-  // Validação do segundo dígito verificador
   sum = 0
   for (let i = 0; i < 10; i++) {
     sum += parseInt(cleanCPF.charAt(i)) * (11 - i)
@@ -40,23 +35,18 @@ export function validateCPF(cpf: string): { isValid: boolean; error?: string } {
   return { isValid: true }
 }
 
-// Função para formatar CPF
 export function formatCPF(cpf: string): string {
-  const cleanCPF = cpf.replace(/\D/g, '').slice(0, 11) // Limita a 11 dígitos
+  const cleanCPF = cpf.replace(/\D/g, '').slice(0, 11)
   return cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 }
 
-// Função para validar RG
 export function validateRG(rg: string): { isValid: boolean; error?: string } {
-  // Remove caracteres não alfanuméricos
   const cleanRG = rg.replace(/[^\dA-Za-z]/g, '')
   
-  // Verifica se tem pelo menos 7 caracteres
   if (cleanRG.length < 7) {
     return { isValid: false, error: 'RG deve ter pelo menos 7 caracteres' }
   }
   
-  // Verifica se tem no máximo 9 caracteres
   if (cleanRG.length > 9) {
     return { isValid: false, error: 'RG deve ter no máximo 9 caracteres' }
   }
@@ -64,16 +54,14 @@ export function validateRG(rg: string): { isValid: boolean; error?: string } {
   return { isValid: true }
 }
 
-// Função para formatar RG
 export function formatRG(rg: string): string {
-  const cleanRG = rg.replace(/[^\dA-Za-z]/g, '').slice(0, 9) // Limita a 9 caracteres
+  const cleanRG = rg.replace(/[^\dA-Za-z]/g, '').slice(0, 9)
   if (cleanRG.length <= 2) return cleanRG
   if (cleanRG.length <= 5) return cleanRG.replace(/(\d{2})(\d+)/, '$1.$2')
   if (cleanRG.length <= 8) return cleanRG.replace(/(\d{2})(\d{3})(\d+)/, '$1.$2.$3')
   return cleanRG.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, '$1.$2.$3-$4')
 }
 
-// Função para buscar endereço por CEP
 export async function searchAddressByCEP(cep: string): Promise<{
   success: boolean;
   data?: {
@@ -91,15 +79,12 @@ export async function searchAddressByCEP(cep: string): Promise<{
   error?: string;
 }> {
   try {
-    // Remove caracteres não numéricos
     const cleanCEP = cep.replace(/\D/g, '')
     
-    // Verifica se tem 8 dígitos
     if (cleanCEP.length !== 8) {
       return { success: false, error: 'CEP deve ter 8 dígitos' }
     }
     
-    // Busca na API ViaCEP
     const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`)
     
     if (!response.ok) {
