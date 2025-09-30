@@ -1,176 +1,143 @@
 # RH Performance - Sistema de Avaliação de Desempenho
 
-Sistema completo de RH para avaliação de desempenho baseado na metodologia CHA (Conhecimentos, Habilidades e Atitudes), desenvolvido com Next.js, React e Supabase.
+Sistema de RH para avaliação de desempenho baseado na metodologia CHA (Conhecimentos, Habilidades e Atitudes), desenvolvido com Next.js e Supabase.
 
-## Características Principais
+## Visão Geral
 
-- **Avaliação CHA Completa**: Sistema de avaliação baseado em Conhecimentos, Habilidades e Atitudes
-- **Múltiplos Níveis de Acesso**: Admin, Manager e Employee com permissões específicas
-- **Feedback Externo**: Coleta de avaliações de clientes, fornecedores e colegas
-- **Dashboard Interativo**: Visualização de métricas e tendências de desempenho
-- **Design Responsivo**: Interface otimizada para desktop e mobile
-- **Tema Dark Azul**: Interface moderna e elegante com tema escuro
+- **Metodologia CHA**: avaliação por Conhecimentos, Habilidades e Atitudes
+- **Papéis**: `admin`, `manager`, `employee`
+- **Autenticação**: Supabase Auth com proteção via `middleware`
+- **Dashboard**: layout protegido com `Sidebar`, cabeçalho e páginas de gestão
+- **API Routes**: CRUD principal para departamentos, colaboradores e avaliações
+- **UI**: Tailwind CSS, Radix UI, Lucide Icons; feedback com react-hot-toast
 
-## Funcionalidades
+## Tecnologias
 
-### Para Administradores
-- Gerenciar todos os colaboradores e departamentos
-- Criar e configurar ciclos de avaliação
-- Visualizar relatórios completos de desempenho
-- Configurar habilidades CHA por departamento
-- Acessar todas as avaliações e feedbacks
+- Frontend: Next.js 15, React 19, TypeScript
+- Estilos: Tailwind CSS
+- Backend: Supabase (PostgreSQL + Auth)
+- UI: Radix UI, Lucide Icons
+- Formulários: React Hook Form + Zod (resolvers)
+- Gráficos: Chart.js / Recharts
 
-### Para Gestores
-- Avaliar membros da equipe
-- Acompanhar metas e objetivos
-- Visualizar dashboards de desempenho da equipe
-- Solicitar feedback externo
-- Gerar relatórios de desempenho
+## Requisitos
 
-### Para Colaboradores
-- Visualizar próprias avaliações
-- Acompanhar metas pessoais
-- Receber e visualizar feedbacks
-- Acessar histórico de desempenho
-
-## Tecnologias Utilizadas
-
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Estilização**: Tailwind CSS, Framer Motion
-- **Backend**: Supabase (PostgreSQL + Auth)
-- **UI Components**: Radix UI, Lucide Icons
-- **Formulários**: React Hook Form + Zod
-- **Gráficos**: Recharts
+- Node.js 18+
+- NPM ou Yarn
+- Projeto no Supabase (URL e keys)
 
 ## Instalação
 
-### Pré-requisitos
-
-- Node.js 18+ 
-- NPM ou Yarn
-- Conta no Supabase
-
-### Passo a Passo
-
-1. **Clone o repositório**
+1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/rh-performance.git
-cd rh-performance
+git clone <seu-fork-ou-repo>
+cd SistemadeRH-1
 ```
 
-2. **Instale as dependências**
+2. Instale dependências
 ```bash
 npm install
 ```
 
-3. **Configure o Supabase**
+3. Configure as variáveis de ambiente em `.env.local`
+```env
+NEXT_PUBLIC_SUPABASE_URL=SuaURLDoSupabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=SuaAnonKey
+# Opcional, apenas se usar serviços server-to-server
+SUPABASE_SERVICE_ROLE_KEY=SuaServiceRoleKey
+# URL pública do app (para e-mails/links). Opcional em dev
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-   a. Crie um novo projeto no [Supabase](https://supabase.com)
-   
-   b. Execute o schema SQL no editor SQL do Supabase:
-   ```sql
-   -- Copie e execute o conteúdo do arquivo supabase/schema.sql
-   ```
-
-4. **Configure as variáveis de ambiente**
-
-   Crie um arquivo `.env.local` na raiz do projeto:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
-   SUPABASE_SERVICE_ROLE_KEY=sua_chave_de_servico
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   ```
-
-5. **Execute o projeto**
+4. Execute em desenvolvimento
 ```bash
 npm run dev
 ```
+Acesse `http://localhost:3000`.
 
-Acesse http://localhost:3000
+## Scripts
 
-## Configuração Inicial
+- `npm run dev`: inicia Next em modo desenvolvimento
+- `npm run build`: build de produção
+- `npm run start`: inicia servidor de produção (após build)
 
-### Criando o Primeiro Usuário Admin
+## Autenticação e Middleware
 
-1. Acesse `/register` para criar uma conta
-2. No Supabase Dashboard, vá para a tabela `profiles`
-3. Edite o usuário criado e altere o campo `role` para `admin`
+- O `middleware` usa Supabase SSR para sincronizar cookies e proteger rotas.
+- Páginas liberadas: `/login`, `/register`, `/feedback/external` e arquivos estáticos.
+- Ao não autenticado acessar áreas protegidas, será redirecionado para `/login`.
 
-### Estrutura de Permissões
+## Estrutura de Pastas (resumo)
 
-- **Admin**: Acesso total ao sistema
-- **Manager**: Gerencia equipes e avaliações
-- **Employee**: Acesso às próprias informações
+- `app/(auth)/login` e `app/(auth)/register`: telas públicas de login/cadastro
+- `app/(dashboard)/**`: área autenticada com `Sidebar` e cabeçalho
+- `app/api/**`: rotas de API (departments, employees, evaluations)
+- `lib/supabase/*`: clientes Supabase para browser e server (SSR)
+- `components/**`: componentes de layout e UI
 
-## Responsividade
+## Rotas de API (principais)
 
-O sistema é totalmente responsivo e otimizado para:
-- Desktop (1920x1080 e superiores)
-- Tablet (768px - 1024px)
-- Mobile (320px - 768px)
+- `GET /api/departments`: lista departamentos
+- `POST /api/departments`: cria departamento (requer usuário autenticado e perfil `admin` ou `gerente`)
+- `GET /api/departments/:id`: busca departamento por id
+- `PUT /api/departments/:id`: atualiza departamento
+- `DELETE /api/departments/:id`: remove departamento
 
-## Personalização
+- `POST /api/employees`: cria colaborador
+- `GET /api/employees/:id`: obtém colaborador por id
+- `PUT /api/employees/:id`: atualiza colaborador
+- `DELETE /api/employees/:id`: remove colaborador
 
-### Cores do Tema
+- `GET /api/evaluations`: lista avaliações (com joins de ciclo, avaliador e colaborador)
+- `POST /api/evaluations`: cria avaliação; aceita `skills` com notas por categoria e calcula médias CHA (overall, conhecimento, habilidade, atitude)
 
-As cores podem ser personalizadas em `tailwind.config.ts`:
-- Primary: Tons de azul
-- Dark: Tons de cinza escuro
-- Accent: Cores de destaque
+Observação: as rotas utilizam o cliente SSR do Supabase e respeitam as políticas de segurança (RLS) configuradas no banco.
 
-## Metodologia CHA
+## Páginas Principais
 
-### Conhecimentos
-- Conhecimento Técnico
-- Conhecimento do Negócio
-- Conhecimento Regulatório
+- `/login` e `/register`: fluxo de autenticação
+- Área autenticada `(dashboard)` com páginas:
+  - `/dashboard`: visão geral
+  - `/employees`, `/employees/new`, `/employees/[id]`
+  - `/departments`, `/departments/[id]`
+  - `/evaluations`, `/evaluations/new`, `/evaluations/[id]`, `/evaluations/[id]/edit`
+  - `/feedback`, `/feedback/internal`, `/feedback/external`
+  - `/goals`, `/reports`, `/requests`, `/skills`, `/cycles`, `/profile`, `/settings`
 
-### Habilidades
-- Comunicação
-- Resolução de Problemas
-- Gestão do Tempo
+## Banco de Dados (Supabase)
 
-### Atitudes
-- Proatividade
-- Trabalho em Equipe
-- Comprometimento
+- É esperado um schema com tabelas como `profiles`, `departments`, `employees`, `evaluations`, `evaluation_skills`, `cycles` etc.
+- A tabela `profiles` guarda `role` do usuário. Ao registrar, é criado com `role = 'employee'`. Para promover a `admin`, atualize manualmente no Supabase:
+  1. Crie uma conta em `/register`
+  2. No Supabase, vá em `public.profiles`
+  3. Edite o campo `role` para `admin`
 
-## Deploy
+## Variáveis e Deploy
 
-### Vercel (Recomendado)
+- Para produção (ex.: Vercel): defina as mesmas variáveis do `.env.local` no provedor.
+- Garanta que a URL do Supabase e a Anon Key públicas estejam corretas e que as políticas RLS permitam o acesso necessário para o app.
 
-1. Faça push do código para o GitHub
-2. Conecte o repositório no Vercel
-3. Configure as variáveis de ambiente
-4. Deploy automático
+## Utilitários
 
-### Outras Plataformas
+- `lib/validations.ts`: validação/formatos de CPF, RG e CEP (ViaCEP)
+- `lib/utils.ts`: helpers (formatos de data, iniciais, cálculo CHA)
 
-O projeto pode ser deployado em qualquer plataforma que suporte Next.js:
-- Netlify
-- Railway
-- Render
-- AWS Amplify
+## Tema e UI
+
+- Tailwind configurado em `tailwind.config.ts`
+- Fontes: Google Fonts Roboto via `app/layout.tsx`
+- Logos/ícones em `public/`
+
+## Roadmap (ideias)
+
+- Exportação/relatórios (PDF)
+- Integrações (folha de pagamento, calendário, e-mail)
+- Notificações
+- Multi-idioma
+- Backup
 
 ## Licença
 
-Este projeto está sob licença MIT.
+MIT
 
-## Suporte
-
-Para suporte, envie um email para suporte@rhperformance.com
-
-## Atualizações Futuras
-
-- [ ] Integração com sistemas de folha de pagamento
-- [ ] App mobile nativo
-- [ ] Relatórios em PDF
-- [ ] Integração com calendário
-- [ ] Notificações por email
-- [ ] Multi-idioma
-- [ ] Backup automático
-
----
-
-Desenvolvido para otimizar a gestão de pessoas
+Desenvolvido por Matheus Moreira
