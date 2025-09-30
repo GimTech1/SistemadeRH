@@ -82,7 +82,49 @@ export default function DashboardPage() {
         ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
         : 0
 
-      // Mantém dados de apoio simulados para gráficos não conectados ainda
+      // Breakdown de performance: média mensal dos últimos 6 meses
+      const end = new Date()
+      const start = new Date(end.getFullYear(), end.getMonth() - 5, 1)
+
+      const { data: evalForMonths } = await supabase
+        .from('evaluations')
+        .select('overall_score, submitted_at, created_at')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .not('overall_score', 'is', null)
+
+      const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+      const buckets: Record<string, number[]> = {}
+      const iterMonths: { key: string; label: string }[] = []
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+        buckets[key] = []
+        iterMonths.push({ key, label: monthNames[d.getMonth()] })
+      }
+
+      ;(evalForMonths as Array<{ overall_score: number | null; submitted_at: string | null; created_at: string }> | null || []).forEach(row => {
+        const when = row.submitted_at ? new Date(row.submitted_at) : new Date(row.created_at)
+        const key = `${when.getFullYear()}-${String(when.getMonth()+1).padStart(2,'0')}`
+        if (buckets[key]) {
+          const score = typeof row.overall_score === 'number' ? row.overall_score : null
+          if (score !== null) buckets[key].push(score)
+        }
+      })
+
+      const monthlyData = iterMonths.map((m, idx) => {
+        const scores = buckets[m.key]
+        const avg10 = scores && scores.length ? (scores.reduce((a,b)=>a+b,0) / scores.length) : 0
+        const value = Math.round(avg10 * 10) // converte média 0-10 para %
+        // meta = valor do mês anterior; sem fallback
+        return { month: m.label, value, target: undefined as unknown as number | undefined }
+      })
+      // Preenche metas baseadas no mês anterior (sem fallback)
+      for (let i = 1; i < monthlyData.length; i++) {
+        const prevVal = monthlyData[i-1].value
+        monthlyData[i].target = typeof prevVal === 'number' ? prevVal : undefined
+      }
+
       setData(prev => ({
         ...prev,
         totalEmployees,
@@ -100,14 +142,7 @@ export default function DashboardPage() {
           { name: 'RH', value: 12, color: 'bg-amber-500' },
           { name: 'Outros', value: 8, color: 'bg-purple-500' },
         ],
-        monthlyData: prev.monthlyData.length ? prev.monthlyData : [
-          { month: 'Jan', value: 65, target: 60 },
-          { month: 'Fev', value: 70, target: 65 },
-          { month: 'Mar', value: 75, target: 70 },
-          { month: 'Abr', value: 82, target: 75 },
-          { month: 'Mai', value: 88, target: 80 },
-          { month: 'Jun', value: 95, target: 85 },
-        ],
+        monthlyData,
       }))
     } catch (error) {
     } finally {
@@ -196,16 +231,6 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <label className="block text-xs font-roboto font-medium text-oxford-blue-500 mb-1">Ver por</label>
-            <select 
-              value={selectedView}
-              onChange={(e) => setSelectedView(e.target.value)}
-              className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-            >
-              <option>Departamento</option>
-              <option>Função</option>
-              <option>Localização</option>
-            </select>
           </div>
           <div className="relative">
             <label className="block text-xs font-roboto font-medium text-oxford-blue-500 mb-1">Período</label>
@@ -278,15 +303,27 @@ export default function DashboardPage() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Performance Atual</span>
-                <span className="text-2xl font-roboto font-semibold text-rich-black-900">87.5%</span>
+                {data.monthlyData.length > 0 && typeof (data.monthlyData[data.monthlyData.length - 1] as any).value === 'number' && (
+                  <span className="text-2xl font-roboto font-semibold text-rich-black-900">{`${Number((data.monthlyData[data.monthlyData.length - 1] as any).value).toFixed(1)}%`}</span>
+                )}
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Meta</span>
-                <span className="text-xl font-roboto font-medium text-oxford-blue-600">85.0%</span>
+                {data.monthlyData.length > 0 && typeof (data.monthlyData[data.monthlyData.length - 1] as any).target === 'number' && (
+                  <span className="text-xl font-roboto font-medium text-oxford-blue-600">{`${Number((data.monthlyData[data.monthlyData.length - 1] as any).target).toFixed(1)}%`}</span>
+                )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-roboto font-medium text-emerald-600">Meta</span>
-                <span className="text-xl font-roboto font-semibold text-emerald-600">103%</span>
+                <span className="text-sm font-roboto font-medium text-emerald-600">Atingimento</span>
+                {(() => {
+                  if (data.monthlyData.length === 0) return null
+                  const last = data.monthlyData[data.monthlyData.length - 1] as any
+                  if (typeof last.value !== 'number' || typeof last.target !== 'number' || last.target === 0) return null
+                  const pct = Math.round((last.value / last.target) * 100)
+                  return (
+                    <span className="text-xl font-roboto font-semibold text-emerald-600">{`${pct}%`}</span>
+                  )
+                })()}
               </div>
             </div>
             
