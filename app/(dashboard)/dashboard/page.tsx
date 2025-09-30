@@ -166,6 +166,52 @@ export default function DashboardPage() {
           }]
         })
 
+      // Avaliações recentes (nome do colaborador e departamento)
+      const { data: recentEvalsRaw } = await supabase
+        .from('evaluations')
+        .select('id, employee_id, overall_score, submitted_at, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      const employeeIds = Array.from(new Set(((recentEvalsRaw as Array<{ employee_id: string | null }> | null) || [])
+        .map(r => r.employee_id)
+        .filter((v): v is string => typeof v === 'string')))
+
+      let employeesMap = new Map<string, { full_name: string; department: string | null }>()
+      let deptMap = new Map<string, string>()
+      if (employeeIds.length > 0) {
+        const { data: employeesRows } = await supabase
+          .from('employees')
+          .select('id, full_name, department')
+          .in('id', employeeIds)
+        ;(employeesRows || []).forEach((e: any) => {
+          employeesMap.set(e.id, { full_name: e.full_name, department: e.department })
+        })
+        const deptIds = Array.from(new Set((employeesRows || [])
+          .map((e: any) => e.department)
+          .filter((v: any): v is string => typeof v === 'string')))
+        if (deptIds.length > 0) {
+          const { data: deptRows } = await supabase
+            .from('departments')
+            .select('id, name')
+            .in('id', deptIds)
+          ;(deptRows || []).forEach((d: any) => deptMap.set(d.id, d.name))
+        }
+      }
+
+      const recentEvaluations = ((recentEvalsRaw as Array<any> | null) || []).map(ev => {
+        const emp = ev.employee_id ? employeesMap.get(ev.employee_id) : undefined
+        const deptName = emp?.department ? (deptMap.get(emp.department) || emp.department) : ''
+        const dateStr = new Date(ev.submitted_at || ev.created_at).toLocaleDateString('pt-BR')
+        return {
+          name: emp?.full_name || '—',
+          department: deptName || '—',
+          score: typeof ev.overall_score === 'number' ? ev.overall_score : null,
+          date: dateStr,
+          change: null as number | null,
+        }
+      })
+
       setData(prev => ({
         ...prev,
         totalEmployees,
@@ -173,7 +219,7 @@ export default function DashboardPage() {
         activeEvaluations,
         completedGoals,
         averageScore,
-        recentEvaluations: [],
+        recentEvaluations,
         upcomingDeadlines: [],
         performanceTrend: prev.performanceTrend || 0,
         departmentBreakdown,
@@ -497,34 +543,37 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-platinum-100">
-                  {[
-                    { name: 'João Silva', department: 'Vendas', score: 8.7, date: '15/01/2024', change: '+0.3' },
-                    { name: 'Maria Santos', department: 'Marketing', score: 9.2, date: '14/01/2024', change: '+0.5' },
-                    { name: 'Pedro Costa', department: 'TI', score: 7.8, date: '13/01/2024', change: '-0.2' },
-                    { name: 'Ana Oliveira', department: 'RH', score: 8.9, date: '12/01/2024', change: '+0.1' },
-                  ].map((evaluation, index) => (
+                  {data.recentEvaluations.map((evaluation: any, index: number) => (
                     <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yinmn-blue-100 to-yinmn-blue-200/50 flex items-center justify-center text-sm font-roboto font-medium text-yinmn-blue-700">
-                            {evaluation.name.split(' ').map(n => n[0]).join('')}
+                            {evaluation.name.split(' ').map((n: string) => n[0]).join('')}
                           </div>
                           <span className="font-roboto font-medium text-rich-black-900">{evaluation.name}</span>
                         </div>
                       </td>
-                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.department}</td>
+                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.department || '—'}</td>
                       <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.date}</td>
                       <td className="py-4 text-right">
-                        <span className="font-roboto font-semibold text-rich-black-900">{evaluation.score}</span>
+                        {typeof evaluation.score === 'number' ? (
+                          <span className="font-roboto font-semibold text-rich-black-900">{evaluation.score}</span>
+                        ) : (
+                          <span className="text-oxford-blue-400">—</span>
+                        )}
                       </td>
                       <td className="py-4 text-right">
-                        <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
-                          evaluation.change.startsWith('+') 
-                            ? 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50' 
-                            : 'text-red-700 bg-red-50/80 border border-red-200/50'
-                        }`}>
-                          {evaluation.change}
-                        </span>
+                        {typeof evaluation.change === 'number' ? (
+                          <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
+                            evaluation.change >= 0 
+                              ? 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50' 
+                              : 'text-red-700 bg-red-50/80 border border-red-200/50'
+                          }`}>
+                            {evaluation.change > 0 ? `+${evaluation.change.toFixed(1)}` : evaluation.change.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-oxford-blue-400">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
