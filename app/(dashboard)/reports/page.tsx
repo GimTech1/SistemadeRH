@@ -118,7 +118,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-50">Relatórios e Análises</h1>
+          <h1 className="text-2xl font-semibold text-black-50">Relatórios e Análises - PAGINA EM DESENVOLVIMENTO DESCONSIDERAR</h1>
           <p className="text-sm text-neutral-400 mt-1">
             Visualize métricas e gere relatórios detalhados
           </p>
