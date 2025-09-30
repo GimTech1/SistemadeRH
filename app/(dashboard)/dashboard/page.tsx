@@ -212,6 +212,55 @@ export default function DashboardPage() {
         }
       })
 
+      // Próximos prazos (ciclos de avaliação e metas)
+      const today = new Date()
+      const next60 = new Date()
+      next60.setDate(today.getDate() + 60)
+
+      const [{ data: cycles }, { data: goalsRows }] = await Promise.all([
+        supabase
+          .from('evaluation_cycles')
+          .select('id, name, end_date, is_active')
+          .gte('end_date', today.toISOString())
+          .lte('end_date', next60.toISOString())
+          .order('end_date', { ascending: true }),
+        supabase
+          .from('goals')
+          .select('id, title, target_date, is_completed')
+          .eq('is_completed', false)
+          .not('target_date', 'is', null)
+          .gte('target_date', today.toISOString())
+          .lte('target_date', next60.toISOString())
+          .order('target_date', { ascending: true }),
+      ])
+
+      const deadlines: Array<{ title: string; date: string; type: 'evaluation' | 'goal'; daysLeft: number; status: string }> = []
+      ;(cycles || []).forEach((c: any) => {
+        const dt = new Date(c.end_date)
+        const diff = Math.ceil((dt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        const status = diff <= 7 ? 'Urgente' : diff <= 30 ? 'Em andamento' : 'Planejado'
+        deadlines.push({
+          title: c.name || 'Ciclo de Avaliação',
+          date: dt.toLocaleDateString('pt-BR'),
+          type: 'evaluation',
+          daysLeft: diff,
+          status,
+        })
+      })
+      ;(goalsRows || []).forEach((g: any) => {
+        const dt = new Date(g.target_date)
+        const diff = Math.ceil((dt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        const status = diff <= 7 ? 'Urgente' : diff <= 30 ? 'Em andamento' : 'Planejado'
+        deadlines.push({
+          title: g.title,
+          date: dt.toLocaleDateString('pt-BR'),
+          type: 'goal',
+          daysLeft: diff,
+          status,
+        })
+      })
+      deadlines.sort((a, b) => a.daysLeft - b.daysLeft)
+
       setData(prev => ({
         ...prev,
         totalEmployees,
@@ -220,7 +269,7 @@ export default function DashboardPage() {
         completedGoals,
         averageScore,
         recentEvaluations,
-        upcomingDeadlines: [],
+        upcomingDeadlines: deadlines,
         performanceTrend: prev.performanceTrend || 0,
         departmentBreakdown,
         monthlyData,
@@ -606,12 +655,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-platinum-100">
-                  {[
-                    { title: 'Avaliação Trimestral', date: '31/01/2024', type: 'evaluation', daysLeft: 5, status: 'Urgente' },
-                    { title: 'Revisão de Metas', date: '15/02/2024', type: 'goal', daysLeft: 20, status: 'Em andamento' },
-                    { title: 'Feedback 360°', date: '20/02/2024', type: 'feedback', daysLeft: 25, status: 'Planejado' },
-                    { title: 'Relatório Mensal', date: '28/02/2024', type: 'report', daysLeft: 33, status: 'Planejado' },
-                  ].map((deadline, index) => (
+                  {data.upcomingDeadlines.map((deadline: any, index: number) => (
                     <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
@@ -626,12 +670,9 @@ export default function DashboardPage() {
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-roboto font-medium ${
                           deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
                           deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
-                          deadline.type === 'feedback' ? 'bg-amber-50 text-amber-700 border border-amber-200/50' :
                           'bg-purple-50 text-purple-700 border border-purple-200/50'
                   }`}>
-                    {deadline.type === 'evaluation' ? 'Avaliação' :
-                     deadline.type === 'goal' ? 'Meta' :
-                           deadline.type === 'feedback' ? 'Feedback' : 'Relatório'}
+                    {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
                         </span>
                       </td>
                       <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.daysLeft} dias</td>
