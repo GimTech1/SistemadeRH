@@ -93,7 +93,6 @@ export async function searchAddressByCEP(cep: string): Promise<{
     
     const data = await response.json()
     
-    // Verifica se o CEP foi encontrado
     if (data.erro) {
       return { success: false, error: 'CEP não encontrado' }
     }
@@ -104,8 +103,7 @@ export async function searchAddressByCEP(cep: string): Promise<{
   }
 }
 
-// Função para formatar CEP
 export function formatCEP(cep: string): string {
-  const cleanCEP = cep.replace(/\D/g, '').slice(0, 8) // Limita a 8 dígitos
+  const cleanCEP = cep.replace(/\D/g, '').slice(0, 8)
   return cleanCEP.replace(/(\d{5})(\d{3})/, '$1-$2')
 }
