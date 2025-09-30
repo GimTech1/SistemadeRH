@@ -317,7 +317,7 @@ export default function DashboardPage() {
       {/* Seção principal com gráficos */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Breakdown de Performance */}
-        <div className="xl:col-span-2 bg-white rounded-lg shadow-sm border border-platinum-200">
+        <div className="xl:col-span-2 bg-white rounded-lg shadow-sm border border-platinum-200 h-full flex flex-col">
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
               <div>
@@ -334,7 +334,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-6 min-h-[520px] flex-1">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Performance Atual</span>
@@ -372,12 +372,12 @@ export default function DashboardPage() {
                 <span>80</span>
                 <span>100</span>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {data.monthlyData.map((item, index) => (
                   <div key={index} className="flex items-center gap-4">
                     <span className="w-8 text-xs font-roboto font-medium text-oxford-blue-600">{item.month}</span>
                     <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 bg-platinum-100 rounded-full h-6 relative overflow-hidden">
+                      <div className="flex-1 bg-platinum-100 rounded-full h-8 relative overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-yinmn-blue-400 to-yinmn-blue-500 h-full rounded-full transition-all duration-500"
                           style={{ width: `${item.value}%` }}
@@ -403,7 +403,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Segmentos */}
-        <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+        <div className="bg-white rounded-lg shadow-sm border border-platinum-200 h-full flex flex-col">
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
               <div>
@@ -415,7 +415,7 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-6 flex-1">
             {/* Gráfico de pizza dinâmico */}
             <div className="relative w-48 h-48 mx-auto mb-6">
               {(() => {
