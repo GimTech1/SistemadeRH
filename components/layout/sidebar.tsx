@@ -32,7 +32,6 @@ import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
-
 interface SidebarProps {
   userRole?: 'admin' | 'manager' | 'employee'
   onCollapseChange?: (isCollapsed: boolean) => void
@@ -44,7 +43,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   const pathname = usePathname()
   const router = useRouter()
   const [internalOpen, setInternalOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(true) // Colapsada por padrão
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
@@ -52,8 +51,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
 
   const isOpen = mobileOpen ?? internalOpen
   const setIsOpen = onMobileOpenChange ?? setInternalOpen
-  
-  // No desktop, expande no hover quando colapsada
   const shouldExpand = !isCollapsed || (isHovered && typeof window !== 'undefined' && window.innerWidth >= 1024)
 
   const menuItems = [
@@ -123,6 +120,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       href: '/reports',
       roles: ['admin', 'manager'],
     },
+    {
+      title: 'Usuários',
+      icon: Users,
+      href: '/users',
+      roles: ['admin'],
+    },
   ]
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -153,7 +156,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   }, [pathname])
 
   useEffect(() => {
-    // Sidebar sempre inicia colapsada
     setIsCollapsed(true)
     onCollapseChange?.(true)
   }, [onCollapseChange])
@@ -163,8 +165,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
-
-        // Fallback imediato a partir do Auth metadata
         const metaName = (user.user_metadata as any)?.full_name as string | undefined
         const metaPosition = (user.user_metadata as any)?.position as string | undefined
         if (metaName) setUserName(metaName)
@@ -182,7 +182,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
           setUserPosition(profile.position || '')
         }
       } catch (error) {
-        // silencioso
       }
     }
 
@@ -198,7 +197,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
 
   return (
     <>
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
@@ -206,7 +204,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed left-0 top-0 flex-col z-40 shadow-lg transition-all duration-300 h-screen",
@@ -218,7 +215,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Header com logo */}
         <div className={cn(
           "border-b border-gray-600 flex items-center justify-between flex-shrink-0",
           shouldExpand ? "p-4" : "p-3"
@@ -247,7 +243,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
           </button>
         </div>
 
-        {/* Menu principal */}
         <nav className="flex-1 p-2 flex flex-col justify-between">
           <ul className="space-y-1">
             {filteredMenuItems.map((item) => {
@@ -278,7 +273,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
             })}
           </ul>
 
-          {/* Footer - ações rápidas (sem bloco de perfil) */}
           <div className="border-t border-gray-600 pt-2 mt-2">
             <div className="mb-2 space-y-1">
               <Link
