@@ -44,9 +44,24 @@ export default function EmployeesPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
 
   useEffect(() => {
     loadEmployees()
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single<{ role: string | null }>()
+        const r = (profile?.role || '').toLowerCase().trim()
+        setUserRole(r === 'admin' || r === 'administrador' ? 'admin' : r === 'manager' || r === 'gerente' ? 'manager' : 'employee')
+      } catch (e) {
+      }
+    })()
   }, [])
 
   const loadEmployees = async () => {
@@ -327,18 +342,20 @@ export default function EmployeesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                    <Link href={`/employees/${employee.id}`}>
-                          <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                            <Eye className="h-4 w-4" />
-                      </button>
-                    </Link>
-                        <Link href={`/employees/${employee.id}?edit=1`}>
-                          <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        </Link>
-                      </div>
+                      {userRole === 'admin' && (
+                        <div className="flex items-center justify-center gap-2">
+                          <Link href={`/employees/${employee.id}`}>
+                            <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          </Link>
+                          <Link href={`/employees/${employee.id}?edit=1`}>
+                            <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          </Link>
+                        </div>
+                      )}
                   </td>
                 </tr>
               ))}
@@ -365,18 +382,20 @@ export default function EmployeesPage() {
                     <p className="text-sm font-roboto font-light text-oxford-blue-600">{employee.position}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/employees/${employee.id}`}>
-                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  </Link>
-                  <Link href={`/employees/${employee.id}?edit=1`}>
-                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                  </Link>
-                </div>
+                {userRole === 'admin' && (
+                  <div className="flex items-center gap-2">
+                    <Link href={`/employees/${employee.id}`}>
+                      <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </Link>
+                    <Link href={`/employees/${employee.id}?edit=1`}>
+                      <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    </Link>
+                  </div>
+                )}
               </div>
 
               
