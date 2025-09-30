@@ -103,19 +103,19 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Habilidades CHA',
       icon: Award,
       href: '/skills',
-      roles: ['admin', 'manager'],
+      roles: [''],
     },
     {
       title: 'Feedbacks',
       icon: MessageSquare,
       href: '/feedback',
-      roles: ['admin', 'manager', 'employee'],
+      roles: [''],
     },
     {
       title: 'Avaliar Colegas',
       icon: Users,
       href: '/feedback/internal',
-      roles: ['admin', 'manager', 'employee'],
+      roles: [''],
     },
     {
       title: 'Relatórios',
