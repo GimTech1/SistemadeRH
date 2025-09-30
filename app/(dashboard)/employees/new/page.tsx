@@ -947,7 +947,7 @@ export default function NewEmployeePage() {
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   <Calendar className="h-4 w-4 inline mr-2" />
-                  Data de Admissão
+                  Início de Contrato
                 </label>
                 <input
                   type="date"

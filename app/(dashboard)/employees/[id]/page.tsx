@@ -835,7 +835,7 @@ export default function EmployeeProfilePage() {
             <div style="margin-bottom: 8px;"><strong>Matrícula:</strong> ${employee.employee_id || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Cargo:</strong> ${employee.position || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Departamento:</strong> ${departmentName || '-'}</div>
-            <div style="margin-bottom: 8px;"><strong>Data de Admissão:</strong> ${employee.admission_date || '-'}</div>
+            <div style="margin-bottom: 8px;"><strong>Início de Contrato:</strong> ${employee.admission_date || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Tipo de Contrato:</strong> ${employee.contract_type || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Jornada de Trabalho:</strong> ${employee.work_schedule || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</div>
@@ -1006,7 +1006,7 @@ export default function EmployeeProfilePage() {
             <div class="field"><span class="label">Matrícula:</span><span class="value">${employee.employee_id || '-'}</span></div>
             <div class="field"><span class="label">Cargo:</span><span class="value">${employee.position || '-'}</span></div>
             <div class="field"><span class="label">Departamento:</span><span class="value">${departmentName || '-'}</span></div>
-            <div class="field"><span class="label">Data de Admissão:</span><span class="value">${employee.admission_date || '-'}</span></div>
+            <div class="field"><span class="label">Início de Contrato:</span><span class="value">${employee.admission_date || '-'}</span></div>
             <div class="field"><span class="label">Tipo de Contrato:</span><span class="value">${employee.contract_type || '-'}</span></div>
             <div class="field"><span class="label">Jornada de Trabalho:</span><span class="value">${employee.work_schedule || '-'}</span></div>
             <div class="field"><span class="label">Salário Base:</span><span class="value">R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
@@ -1308,7 +1308,7 @@ export default function EmployeeProfilePage() {
                 <Field label="Matrícula" value={employee.employee_id} />
                 <Field label="Cargo" value={employee.position} />
                 <Field label="Departamento" value={departmentName} />
-                <Field label="Data de Admissão" value={employee.admission_date} />
+                <Field label="Início de Contrato" value={employee.admission_date} />
                 <Field label="Tipo de Contrato" value={employee.contract_type} />
                 <Field label="Jornada de Trabalho" value={employee.work_schedule} />
                 <div>
@@ -1922,7 +1922,7 @@ export default function EmployeeProfilePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-admission">Data de Admissão</Label>
+                        <Label htmlFor="edit-admission">Início de Contrato</Label>
                         <Input
                           id="edit-admission"
                           type="date"
