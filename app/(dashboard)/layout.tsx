@@ -43,7 +43,6 @@ export default function DashboardLayout({
           return
         }
 
-        // Buscar o perfil do usuário
         const { data: profile } = await supabase
           .from('profiles')
           .select('role, full_name, position')
@@ -55,7 +54,6 @@ export default function DashboardLayout({
           setUserName(profile.full_name || user.user_metadata?.full_name || user.email || 'Usuário')
           setUserPosition(profile.position || user.user_metadata?.position || '')
         } else {
-          // Fallback somente com o auth
           setUserName(user.user_metadata?.full_name || user.email || 'Usuário')
           setUserPosition(user.user_metadata?.position || '')
         }
@@ -68,7 +66,6 @@ export default function DashboardLayout({
 
     checkAuth()
 
-    // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         router.push('/login')
@@ -102,8 +99,8 @@ export default function DashboardLayout({
       '/reports': 'Relatórios',
       '/requests': 'Solicitações',
       '/users': 'Usuários',
+      '/organograma': 'Organograma',
     }
-    // tenta match exato, senão usa segmento base
     if (map[pathname]) return map[pathname]
     const base = '/' + pathname.split('/').filter(Boolean)[0]
     return map[base] || 'Página'

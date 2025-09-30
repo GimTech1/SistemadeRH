@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Home,
   Calendar,
+  GitBranch,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -119,6 +120,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       icon: BarChart3,
       href: '/reports',
       roles: ['admin', 'manager'],
+    },
+    {
+      title: 'Organograma',
+      icon: GitBranch,
+      href: '/organograma',
+      roles: ['admin', 'manager', 'employee'],
     },
     {
       title: 'Usuários',
