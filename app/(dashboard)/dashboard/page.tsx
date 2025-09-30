@@ -63,12 +63,19 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       // Contadores principais
-      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes] = await Promise.all([
+      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
         supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
         supabase.from('goals').select('id', { count: 'exact', head: true }).eq('is_completed', true),
         supabase.from('evaluations').select('overall_score').not('overall_score', 'is', null),
+        supabase
+          .from('employees')
+          .select('department')
+          .not('department', 'is', null),
+        supabase
+          .from('departments')
+          .select('id, name'),
       ])
 
       const totalEmployees = employeesRes.count || 0
@@ -125,6 +132,40 @@ export default function DashboardPage() {
         monthlyData[i].target = typeof prevVal === 'number' ? prevVal : undefined
       }
 
+      // Mapa de cores fixo (classes e hex para o gráfico)
+      const palette = [
+        { class: 'bg-yinmn-blue-500', hex: '#3B82F6' },
+        { class: 'bg-silver-lake-blue-500', hex: '#06B6D4' },
+        { class: 'bg-emerald-500', hex: '#10B981' },
+        { class: 'bg-amber-500', hex: '#F59E0B' },
+        { class: 'bg-purple-500', hex: '#8B5CF6' },
+        { class: 'bg-rose-500', hex: '#F43F5E' },
+        { class: 'bg-indigo-500', hex: '#6366F1' },
+      ]
+
+      const deptCountsMap = new Map<string, number>()
+      ;((deptRowsRes.data as Array<{ department: string | null }> | null) || []).forEach(row => {
+        const key = String(row.department)
+        deptCountsMap.set(key, (deptCountsMap.get(key) || 0) + 1)
+      })
+
+      const idToName = new Map<string, string>(
+        ((deptsRes.data as Array<{ id: string; name: string }> | null) || []).map(d => [d.id, d.name])
+      )
+
+      const departmentBreakdown = Array.from(deptCountsMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .flatMap(([id, count], idx) => {
+          const displayName = idToName.get(id)
+          if (!displayName) return []
+          return [{
+            name: displayName,
+            value: count,
+            color: palette[idx % palette.length].class,
+            hex: palette[idx % palette.length].hex,
+          }]
+        })
+
       setData(prev => ({
         ...prev,
         totalEmployees,
@@ -135,13 +176,7 @@ export default function DashboardPage() {
         recentEvaluations: [],
         upcomingDeadlines: [],
         performanceTrend: prev.performanceTrend || 0,
-        departmentBreakdown: prev.departmentBreakdown.length ? prev.departmentBreakdown : [
-          { name: 'Vendas', value: 35, color: 'bg-yinmn-blue-500' },
-          { name: 'TI', value: 25, color: 'bg-silver-lake-blue-500' },
-          { name: 'Marketing', value: 20, color: 'bg-emerald-500' },
-          { name: 'RH', value: 12, color: 'bg-amber-500' },
-          { name: 'Outros', value: 8, color: 'bg-purple-500' },
-        ],
+        departmentBreakdown,
         monthlyData,
       }))
     } catch (error) {
@@ -381,37 +416,51 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="p-6">
-            {/* Gráfico de pizza simulado */}
+            {/* Gráfico de pizza dinâmico */}
             <div className="relative w-48 h-48 mx-auto mb-6">
-              <div className="w-full h-full rounded-full relative overflow-hidden" style={{
-                background: `conic-gradient(
-                  #3B82F6 0% 35%, 
-                  #06B6D4 35% 60%, 
-                  #10B981 60% 80%, 
-                  #F59E0B 80% 92%, 
-                  #8B5CF6 92% 100%
-                )`
-              }}>
-                <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-2xl font-roboto font-semibold text-rich-black-900">145</div>
-                    <div className="text-xs font-roboto font-medium text-oxford-blue-500">Total</div>
+              {(() => {
+                const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                if (total === 0) return null
+                let start = 0
+                const stops: string[] = []
+                data.departmentBreakdown.forEach((d: any) => {
+                  const pct = ((d.value || 0) / total) * 100
+                  const end = start + pct
+                  const color = d.hex || '#3B82F6'
+                  stops.push(`${color} ${start.toFixed(2)}% ${end.toFixed(2)}%`)
+                  start = end
+                })
+                const bg = `conic-gradient(${stops.join(', ')})`
+                return (
+                  <div className="w-full h-full rounded-full relative overflow-hidden" style={{ background: bg }}>
+                    <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-2xl font-roboto font-semibold text-rich-black-900">{data.totalEmployees}</div>
+                        <div className="text-xs font-roboto font-medium text-oxford-blue-500">Total</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )
+              })()}
             </div>
             
             {/* Legenda */}
             <div className="space-y-3">
-              {data.departmentBreakdown.map((dept, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${dept.color}`}></div>
-                    <span className="text-sm font-roboto font-medium text-rich-black-900">{dept.name}</span>
-                  </div>
-                  <span className="text-sm font-roboto font-medium text-oxford-blue-600">{dept.value}</span>
-                </div>
-              ))}
+              {(() => {
+                const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                return data.departmentBreakdown.map((dept: any, index: number) => {
+                  const pct = total > 0 ? Math.round(((dept.value || 0) / total) * 100) : 0
+                  return (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${dept.color}`}></div>
+                        <span className="text-sm font-roboto font-medium text-rich-black-900">{dept.name}</span>
+                      </div>
+                      <span className="text-sm font-roboto font-medium text-oxford-blue-600">{`${dept.value} (${pct}%)`}</span>
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </div>
           <div className="p-6 border-t border-platinum-200">
