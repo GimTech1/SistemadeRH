@@ -24,7 +24,6 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import Link from 'next/link'
-
 interface DashboardData {
   totalEmployees: number
   openRequests: number
@@ -62,7 +61,6 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      // Contadores principais
       const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
@@ -89,7 +87,6 @@ export default function DashboardPage() {
         ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
         : 0
 
-      // Breakdown de performance: média mensal dos últimos 6 meses
       const end = new Date()
       const start = new Date(end.getFullYear(), end.getMonth() - 5, 1)
 
@@ -122,17 +119,14 @@ export default function DashboardPage() {
       const monthlyData = iterMonths.map((m, idx) => {
         const scores = buckets[m.key]
         const avg10 = scores && scores.length ? (scores.reduce((a,b)=>a+b,0) / scores.length) : 0
-        const value = Math.round(avg10 * 10) // converte média 0-10 para %
-        // meta = valor do mês anterior; sem fallback
+        const value = Math.round(avg10 * 10) 
         return { month: m.label, value, target: undefined as unknown as number | undefined }
       })
-      // Preenche metas baseadas no mês anterior (sem fallback)
       for (let i = 1; i < monthlyData.length; i++) {
         const prevVal = monthlyData[i-1].value
         monthlyData[i].target = typeof prevVal === 'number' ? prevVal : undefined
       }
 
-      // Mapa de cores fixo (classes e hex para o gráfico)
       const palette = [
         { class: 'bg-yinmn-blue-500', hex: '#3B82F6' },
         { class: 'bg-silver-lake-blue-500', hex: '#06B6D4' },
@@ -166,7 +160,6 @@ export default function DashboardPage() {
           }]
         })
 
-      // Avaliações recentes (nome do colaborador e departamento)
       const { data: recentEvalsRaw } = await supabase
         .from('evaluations')
         .select('id, employee_id, overall_score, submitted_at, created_at')
@@ -211,8 +204,7 @@ export default function DashboardPage() {
           change: null as number | null,
         }
       })
-
-      // Próximos prazos (ciclos de avaliação e metas)
+      
       const today = new Date()
       const next60 = new Date()
       next60.setDate(today.getDate() + 60)
@@ -353,11 +345,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header com título e controles */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-tight">Visão geral de desempenho e métricas</h1>
-
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -377,7 +367,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Cards de métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {statsCards.map((stat, index) => (
           <div key={index} className={`bg-white rounded-lg border-l-4 ${stat.color} p-5 shadow-sm hover:shadow-md transition-shadow duration-300`}>
@@ -409,7 +398,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Seção principal com gráficos */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Breakdown de Performance */}
         <div className="xl:col-span-2 bg-white rounded-lg shadow-sm border border-platinum-200 h-full flex flex-col">
@@ -457,7 +445,6 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {/* Gráfico de barras simulado */}
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs font-roboto font-medium text-oxford-blue-400 uppercase tracking-wider">
                 <span>0</span>
@@ -511,7 +498,6 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="p-6 flex-1">
-            {/* Gráfico de pizza dinâmico */}
             <div className="relative w-48 h-48 mx-auto mb-6">
               {(() => {
                 const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
@@ -539,7 +525,6 @@ export default function DashboardPage() {
               })()}
             </div>
             
-            {/* Legenda */}
             <div className="space-y-3">
               {(() => {
                 const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
@@ -566,10 +551,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Avaliações Recentes e Próximos Prazos */}
       <div className="grid grid-cols-1 gap-6">
-        {/* Avaliações Recentes */}
         <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
@@ -631,8 +613,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        {/* Próximos Prazos */}
         <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
@@ -695,8 +675,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Ações rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link href="/requests" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
           <div className="flex items-center gap-4">

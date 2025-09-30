@@ -22,24 +22,18 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (formData.password !== formData.confirmPassword) {
       toast.error('As senhas não coincidem')
       return
     }
-
     if (formData.password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres')
       return
     }
-
     setLoading(true)
-
     try {
-      // Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -50,14 +44,11 @@ export default function RegisterPage() {
           }
         }
       })
-
       if (authError) {
         toast.error('Erro ao criar conta: ' + authError.message)
         return
       }
-
       if (authData.user) {
-        // Criar perfil na tabela profiles
         type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
         const newProfile: ProfileInsert = {
           id: authData.user.id,
@@ -66,13 +57,10 @@ export default function RegisterPage() {
           position: formData.position,
           role: 'employee',
         }
-
         const { error: profileError } = await (supabase.from('profiles') as any)
           .insert([newProfile])
-
         if (profileError) {
         }
-
         toast.success('Conta criada com sucesso! Verifique seu email.')
         router.push('/login')
       }
@@ -103,10 +91,8 @@ export default function RegisterPage() {
         }}
       />
       
-      {/* Left Panel - Form */}
       <div className="w-1/2 flex items-center justify-center px-8 py-12" style={{ backgroundColor: '#f8fafc' }}>
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-8 text-center">
             <img 
               src="/logo-brasão-preto.png" 
@@ -118,8 +104,6 @@ export default function RegisterPage() {
               Preencha os dados para criar sua conta
             </p>
           </div>
-
-          {/* Register Form */}
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-8">
             <form onSubmit={handleRegister} className="space-y-6">
               <div>
@@ -141,7 +125,6 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-
               <div>
                 <label htmlFor="email" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Email
@@ -161,7 +144,6 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-
               <div>
                 <label htmlFor="position" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Cargo
@@ -181,7 +163,6 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              
               <div>
                 <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Senha
@@ -213,7 +194,6 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </div>
-
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Confirmar Senha
@@ -245,7 +225,6 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -262,7 +241,6 @@ export default function RegisterPage() {
                 )}
               </button>
             </form>
-
             <div className="mt-6 text-center">
               <span className="text-sm font-roboto font-light text-oxford-blue-600">
                 Já tem uma conta?{' '}
@@ -274,8 +252,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-
-      {/* Right Panel - Logo InvestMoney */}
       <div className="w-1/2 flex items-center justify-center px-8" style={{ backgroundColor: '#1B263B' }}>
         <div className="text-center">
           <img 

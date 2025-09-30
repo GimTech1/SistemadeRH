@@ -114,7 +114,6 @@ export default function ViewEvaluationPage() {
           .eq('evaluation_id', params.id)
 
         if (skillsError) {
-          console.error('Erro ao carregar competências:', skillsError)
         }
 
         const mapped: EvaluationSkillRow[] = (skillRows || []).map((r: any) => ({
@@ -152,7 +151,6 @@ export default function ViewEvaluationPage() {
   }, [items])
 
   const categoryAverage = (rows: EvaluationSkillRow[], cat: 'conhecimento'|'habilidade'|'atitude') => {
-    // Prioriza valores vindos do banco (knowledge/skill/attitude_score)
     if (header) {
       if (cat === 'conhecimento' && typeof header.knowledge_score === 'number') return header.knowledge_score.toFixed(1)
       if (cat === 'habilidade' && typeof header.skill_score === 'number') return header.skill_score.toFixed(1)
@@ -187,7 +185,6 @@ export default function ViewEvaluationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/evaluations">
@@ -200,10 +197,8 @@ export default function ViewEvaluationPage() {
             <p className="text-sm text-oxford-blue-600">{header.employee_name} • {header.cycle_name}</p>
           </div>
         </div>
-        {/* edição desabilitada */}
       </div>
 
-      {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
           <div className="flex items-center gap-3">
@@ -234,7 +229,6 @@ export default function ViewEvaluationPage() {
         </div>
       </div>
 
-      {/* Forças, Melhorias, Metas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
           <h3 className="text-sm font-roboto font-medium text-rich-black-900 mb-2">Forças</h3>
@@ -250,7 +244,6 @@ export default function ViewEvaluationPage() {
         </div>
       </div>
 
-      {/* Competências por categoria com média */}
       {(['conhecimento','habilidade','atitude'] as const).map(cat => {
         const Icon = categoryIcon[cat]
         const rows = groupedByCategory[cat]

@@ -60,8 +60,6 @@ export default function EmployeesPage() {
         toast.error('Erro ao carregar funcionários: ' + error.message)
         throw error
       }
-
-      // Buscar nomes dos departamentos para cada funcionário
       const mapped: Employee[] = await Promise.all((data || []).map(async (e: any) => {
         let departmentName = '—'
         
@@ -109,7 +107,6 @@ export default function EmployeesPage() {
   }
 
   const departments = ['all', ...new Set(employees.map(e => e.department))]
-
   const filteredEmployees = employees
     .filter(employee => {
       const matchesSearch = 
@@ -136,7 +133,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e visualize o desempenho de todos os colaboradores</h1>
@@ -148,8 +145,7 @@ export default function EmployeesPage() {
           </button>
         </Link>
                 </div>
-                
-      {/* Cards de métricas */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
@@ -209,11 +205,9 @@ export default function EmployeesPage() {
           </div>
         </div>
       </div>
-
-      {/* Filtros e busca */}
+      
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
         <div className="flex flex-col gap-4">
-          {/* Barra de busca */}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
@@ -227,7 +221,6 @@ export default function EmployeesPage() {
             </div>
           </div>
           
-          {/* Controles */}
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-roboto font-medium text-rich-black-900">Ver por:</label>
@@ -287,9 +280,7 @@ export default function EmployeesPage() {
           </div>
         </div>
       </div>
-
-
-      {/* Visualização de funcionários */}
+      
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -359,7 +350,7 @@ export default function EmployeesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (
             <div key={employee.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 hover:shadow-md transition-all duration-200">
-              {/* Header do card */}
+              
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center space-x-4">
                   <div className="h-12 w-12 rounded-full overflow-hidden bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
@@ -388,7 +379,7 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
-              {/* Informações do colaborador */}
+              
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-oxford-blue-400" />
@@ -402,7 +393,7 @@ export default function EmployeesPage() {
                   </span>
                 </div>
 
-                {/* Performance */}
+                
                 <div className="bg-platinum-50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-roboto font-medium text-oxford-blue-500">Performance</span>
@@ -419,7 +410,7 @@ export default function EmployeesPage() {
                   </div>
                 </div>
 
-                {/* Estatísticas */}
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gradient-to-br from-platinum-50 to-platinum-100 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">

@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-
 interface Cycle {
   id: string
   name: string
@@ -34,7 +33,6 @@ export default function CyclesPage() {
     end_date: '',
   })
   const supabase = createClient()
-
   useEffect(() => {
     loadCycles()
   }, [])
@@ -46,7 +44,6 @@ export default function CyclesPage() {
         .from('evaluation_cycles')
         .select('*')
         .order('start_date', { ascending: false })
-
       if (error) {
         toast.error('Erro ao carregar ciclos')
         return
@@ -65,18 +62,15 @@ export default function CyclesPage() {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
-
     if (new Date(newCycle.start_date) >= new Date(newCycle.end_date)) {
       toast.error('A data de início deve ser anterior à data de fim')
       return
     }
-
     setLoading(true)
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-
       const { error } = await supabase
         .from('evaluation_cycles')
         .insert({
@@ -87,9 +81,7 @@ export default function CyclesPage() {
           is_active: true,
           created_by: user?.id,
         } as any)
-
       if (error) {
-        console.error('Erro ao criar ciclo:', error)
         if (error.message?.includes('permission denied') || error.message?.includes('403')) {
           toast.error('Você não tem permissão para criar ciclos. Apenas administradores e gerentes podem criar ciclos.')
         } else {
@@ -151,7 +143,6 @@ export default function CyclesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
@@ -170,15 +161,12 @@ export default function CyclesPage() {
           Novo Ciclo
         </button>
       </div>
-
-      {/* Create Form Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-roboto font-medium text-rich-black-900 mb-6">
               Criar Novo Ciclo
             </h2>
-            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -192,7 +180,6 @@ export default function CyclesPage() {
                   placeholder="Ex: Avaliação 2024 Q1"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Descrição
@@ -205,7 +192,6 @@ export default function CyclesPage() {
                   placeholder="Descrição do ciclo de avaliação..."
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -231,7 +217,6 @@ export default function CyclesPage() {
                 </div>
               </div>
             </div>
-
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowCreateForm(false)}
@@ -251,8 +236,6 @@ export default function CyclesPage() {
           </div>
         </div>
       )}
-
-      {/* Cycles List */}
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">

@@ -33,7 +33,6 @@ interface Skill {
 }
 
 const defaultSkills: Skill[] = [
-  // Conhecimentos
   {
     id: '1',
     name: 'Conhecimento Técnico',
@@ -58,7 +57,6 @@ const defaultSkills: Skill[] = [
     score: 0,
     comments: '',
   },
-  // Habilidades
   {
     id: '4',
     name: 'Comunicação',
@@ -83,7 +81,6 @@ const defaultSkills: Skill[] = [
     score: 0,
     comments: '',
   },
-  // Atitudes
   {
     id: '7',
     name: 'Proatividade',
@@ -209,9 +206,6 @@ export default function NewEvaluationPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-
-      // Mapeia as skills da UI para os IDs reais da tabela `skills`
-      // Busca por nome e categoria para obter os IDs corretos
       const { data: dbSkills, error: skillsLookupError } = await supabase
         .from('skills')
         .select('id, name, category')
@@ -284,7 +278,6 @@ export default function NewEvaluationPage() {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center space-x-4">
           <Link href="/evaluations">
@@ -304,8 +297,7 @@ export default function NewEvaluationPage() {
         </div>
         <div className="flex items-center space-x-3"></div>
       </div>
-
-      {/* Cards de resumo */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-purple-500">
           <div className="flex items-center justify-between">

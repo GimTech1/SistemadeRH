@@ -93,7 +93,6 @@ export default function EditEvaluationPage() {
           .eq('evaluation_id', params.id)
 
         if (evalSkillsError) {
-          console.error('Erro ao carregar competências da avaliação:', evalSkillsError)
         }
 
         const mapped = (evalSkills || []).map((r: any) => ({
@@ -134,7 +133,7 @@ export default function EditEvaluationPage() {
         if (error) throw error
       }
 
-      // Recalcula médias por categoria e geral no cliente para persistir
+      
       const numericScores = rows
         .map(r => (typeof r.score === 'number' ? r.score : null))
         .filter((n): n is number => typeof n === 'number')
@@ -154,7 +153,7 @@ export default function EditEvaluationPage() {
       const sAvg = avg(withCat.filter(x => x.category === 'habilidade').map(x => x.score ?? null))
       const aAvg = avg(withCat.filter(x => x.category === 'atitude').map(x => x.score ?? null))
 
-      // Atualiza campos de texto e médias na avaliação
+      
       const { error: evalError } = await (supabase as any)
         .from('evaluations')
         .update({
@@ -253,7 +252,7 @@ export default function EditEvaluationPage() {
         </div>
       ))}
 
-      {/* Campos adicionais: Forças, Melhorias, Metas */}
+      
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
         <div className="p-6 border-b border-platinum-200">
           <h2 className="text-lg font-roboto font-medium text-rich-black-900">Análises e Metas</h2>

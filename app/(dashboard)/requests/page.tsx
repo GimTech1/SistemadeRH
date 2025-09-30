@@ -69,7 +69,6 @@ export default function RequestsPage() {
     loadDepartments()
   }, [supabase])
 
-  // Carregar colaboradores quando o setor for selecionado
   useEffect(() => {
     const loadEmployeesByDepartment = async () => {
       if (!departmentId) {
@@ -97,7 +96,6 @@ export default function RequestsPage() {
       }
     }
 
-    // ao trocar de setor, limpa seleção de colaborador
     setSelectedEmployee('')
     loadEmployeesByDepartment()
   }, [departmentId, supabase])
@@ -131,7 +129,6 @@ export default function RequestsPage() {
         .single()
 
       if (insert.error) {
-        console.error('Erro insert requests:', insert.error)
         toast.error('Erro ao salvar no banco: ' + insert.error.message)
         throw insert.error
       }
@@ -166,7 +163,6 @@ export default function RequestsPage() {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r))
   }
 
-  // Carregar solicitações do banco
   useEffect(() => {
     const loadRequests = async () => {
       try {
@@ -200,14 +196,12 @@ export default function RequestsPage() {
         }))
         setRequests(mapped)
       } catch (err) {
-        console.error('Erro load requests:', err)
         toast.error('Não foi possível carregar solicitações')
       } finally {
         setLoadingRequests(false)
       }
     }
 
-    // só carrega quando já temos deps básicos
     if (departments.length > 0) {
       loadRequests()
     }
@@ -217,7 +211,7 @@ export default function RequestsPage() {
     try {
       const current = requests.find(r => r.id === id)
       if (current?.status === 'done') {
-        toast.error('Não é possível alterar o status de um pedido concluído.')
+        toast.error('Não é possível alterar o status de um pedido concluído')
         return
       }
       const { error } = await (supabase as any)

@@ -18,18 +18,15 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-
       if (error) {
         toast.error(error.message)
         return
       }
-
       if (data.user) {
         toast.success('Login realizado com sucesso')
         router.push('/dashboard')
@@ -52,12 +49,10 @@ export default function LoginPage() {
             border: '1px solid #E0E1DD',
           },
         }}
-      />
-      
-      {/* Left Panel - Form */}
+      />    
       <div className="w-1/2 flex items-center justify-center px-8 py-12" style={{ backgroundColor: '#f8fafc' }}>
         <div className="w-full max-w-md">
-          {/* Logo */}
+          
           <div className="mb-8 text-center">
             <img 
               src="/logo-brasão-preto.png" 
@@ -65,9 +60,7 @@ export default function LoginPage() {
               className="h-20 w-auto object-contain mx-auto mb-6"
             />
             <h1 className="text-2xl font-roboto font-light text-rich-black-600 tracking-wide">Gestão de Desempenho e Pessoas</h1>
-          </div>
-
-          {/* Login Form */}
+          </div>        
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-8">
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
@@ -88,7 +81,6 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-
               <div>
                 <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Senha
@@ -119,7 +111,6 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-
               <div className="flex items-center justify-between">
                 <label className="flex items-center">
                   <input 
@@ -135,7 +126,6 @@ export default function LoginPage() {
                   Esqueceu a senha?
                 </Link>
               </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -152,7 +142,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
             <div className="mt-6 text-center">
               <span className="text-sm font-roboto font-light text-oxford-blue-600">
                 Não tem uma conta?{' '}
@@ -164,8 +153,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      {/* Right Panel - Logo InvestMoney */}
       <div className="w-1/2 flex items-center justify-center px-8" style={{ backgroundColor: '#1B263B' }}>
         <div className="text-center">
           <img 

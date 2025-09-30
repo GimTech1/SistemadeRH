@@ -51,7 +51,6 @@ import { Button } from '@/components/ui/button'
 import { validateCPF, formatCPF, validateRG, formatRG, searchAddressByCEP, formatCEP } from '@/lib/validations'
 
 interface EmployeeProfile {
-  // Informações Pessoais
   id: string
   full_name: string
   cpf: string
@@ -60,16 +59,12 @@ interface EmployeeProfile {
   gender: string
   marital_status: string
   nationality: string
-  
-  // Contatos
   email: string
   personal_email: string
   phone: string
   mobile: string
   emergency_contact: string
   emergency_phone: string
-  
-  // Endereço (normalizado)
   address: string
   number?: string
   complement?: string
@@ -77,8 +72,6 @@ interface EmployeeProfile {
   city: string
   state: string
   zip_code: string
-  
-  // Informações Profissionais
   employee_id: string
   position: string
   department: string
@@ -86,20 +79,14 @@ interface EmployeeProfile {
   contract_type: string
   work_schedule: string
   salary: number
-  
-  // Documentos (fotos URLs)
   rg_photo?: string | null
   cpf_photo?: string | null
   ctps_photo?: string | null
   diploma_photo?: string | null
-
-  // Benefícios (normalizados)
   meal_voucher: number
   transport_voucher: number
   health_plan: boolean
   dental_plan: boolean
-  
-  // Família (até 3 dependentes agregados para exibição)
   children_count: number
   dependents: Array<{
     name: string
@@ -107,23 +94,17 @@ interface EmployeeProfile {
     birth_date: string
     cpf?: string
   }>
-  
-  // Educação (normalizado)
   education_level: string
   institution: string
   course: string
   graduation_year: string
   certifications: string[]
   languages: string[]
-  
-  // Banco (normalizado)
   bank: string
   agency: string
   account: string
   account_type: string
-  pix_key?: string
-  
-  // Performance
+  pix_key?: string  
   overall_score: number
   total_evaluations: number
   cha_scores: {
@@ -134,8 +115,6 @@ interface EmployeeProfile {
   recent_feedbacks: any[]
   goals: any[]
   evaluations_history: any[]
-  
-  // Outros
   avatar_url: string
   status: 'active' | 'vacation' | 'leave' | 'inactive'
   notes: string
@@ -162,7 +141,7 @@ export default function EmployeeProfilePage() {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
   const [capturing, setCapturing] = useState(false)
   
-  // Estados para validações no modal de edição
+  
   const [validationErrors, setValidationErrors] = useState<{
     cpf?: string;
     rg?: string;
@@ -170,18 +149,17 @@ export default function EmployeeProfilePage() {
   }>({})
   const [isValidatingCEP, setIsValidatingCEP] = useState(false)
 
-  // Estados para departamentos no modal de edição
+  
   const [departments, setDepartments] = useState<Array<{ id: string; name: string; description?: string }>>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [departmentName, setDepartmentName] = useState<string>('')
   
   const [editData, setEditData] = useState({
-    // Básico
+    
     name: '',
     email: '',
     position: '',
     department: '',
-    // Pessoal
     cpf: '',
     rg: '',
     birth_date: '',
@@ -190,23 +168,16 @@ export default function EmployeeProfilePage() {
     nationality: '',
     contacts: { personal_email: '', phone: '', cellphone: '', emergency_contact: '' },
     address: { street: '', neighborhood: '', city: '', zip: '', state: '' },
-    // Profissional
     employee_code: '',
     admission_date: '',
     contract_type: '',
     work_schedule: '',
     salary: '',
-    // Documentos
     documents: { ctps: '', pis: '', voter_id: '', driver_license: '', military_cert: '' },
-    // Benefícios
     benefits: { health_plan: '', dental_plan: '', life_insurance: '', meal_voucher: '', transport_voucher: '' },
-    // Dependentes
     dependents: [] as Array<{ name: string; relationship: string; birth_date: string; cpf?: string }>,
-    // Formação
     education: { level: '', institution: '', course: '', graduation_year: '', certifications: '', languages: '' },
-    // Bancário
     bank: { bank_name: '', agency: '', account: '', account_type: '', pix_key: '' },
-    // Observações
     notes: '',
   })
   const supabase = createClient()
@@ -215,8 +186,7 @@ export default function EmployeeProfilePage() {
     loadEmployeeData()
   }, [params.id])
 
-  useEffect(() => {
-    // abrir modal se vier com ?edit=1
+  useEffect(() => {   
     if (searchParams.get('edit')) {
       setIsEditOpen(true)
     }
@@ -240,8 +210,6 @@ export default function EmployeeProfilePage() {
         return
       }
 
-  
-      // Montar dependentes a partir dos campos normalizados (até 3)
       const deps: Array<{ name: string; relationship: string; birth_date: string; cpf?: string }> = []
       const d1 = {
         name: (data as any).dependent_name_1,
@@ -364,16 +332,16 @@ export default function EmployeeProfilePage() {
         account_type: (data as any).account_type || '',
         pix_key: '',
         
-        overall_score: 8.7, // Placeholder - calcular baseado em avaliações
-        total_evaluations: 0, // Placeholder
+        overall_score: 8.7, 
+        total_evaluations: 0, 
         cha_scores: {
-          conhecimento: 8.5, // Placeholder
-          habilidade: 9.0, // Placeholder
-          atitude: 8.6, // Placeholder
+          conhecimento: 8.5, 
+          habilidade: 9.0, 
+          atitude: 8.6, 
         },
-        recent_feedbacks: [], // Placeholder
-        goals: [], // Placeholder
-        evaluations_history: [], // Placeholder
+        recent_feedbacks: [], 
+        goals: [], 
+        evaluations_history: [], 
         
         avatar_url: (data as any).avatar_url || '',
         status: 'active',
@@ -381,7 +349,6 @@ export default function EmployeeProfilePage() {
         updated_at: (data as any).updated_at,
       })
 
-      // Buscar nome do departamento
       if ((data as any).department) {
         try {
           const { data: deptData } = await supabase
@@ -394,14 +361,12 @@ export default function EmployeeProfilePage() {
             setDepartmentName((deptData as any).name || '—')
           }
         } catch (error) {
-          console.error('Erro ao buscar departamento:', error)
           setDepartmentName('—')
         }
       } else {
         setDepartmentName('—')
       }
 
-      // Preencher dados de edição
       const dataAny = data as any
       setEditData({
         name: dataAny.full_name || '',
@@ -442,7 +407,6 @@ export default function EmployeeProfilePage() {
     if (error) throw error
     const { data } = supabase.storage.from('employee-documents').getPublicUrl(filename)
     const publicUrl = data.publicUrl
-    // usar fetch na API para evitar tipos rígidos do client tipado
     await fetch(`/api/employees/${employee?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -789,7 +753,7 @@ export default function EmployeeProfilePage() {
 
       toast.success('Colaborador atualizado com sucesso')
       setIsEditOpen(false)
-      await loadEmployeeData() // Recarregar dados (para atualizar URLs)
+      await loadEmployeeData() 
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar colaborador')
     } finally {
@@ -801,7 +765,6 @@ export default function EmployeeProfilePage() {
     if (!employee) return
     
     try {
-      // Criar elemento temporário para renderizar o PDF
       const tempDiv = document.createElement('div')
       tempDiv.style.position = 'absolute'
       tempDiv.style.left = '-9999px'
@@ -941,19 +904,16 @@ export default function EmployeeProfilePage() {
       `
       
       document.body.appendChild(tempDiv)
-      
-      // Capturar o elemento como canvas
+            
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff'
       })
-      
-      // Remover elemento temporário
+
       document.body.removeChild(tempDiv)
       
-      // Criar PDF
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
       const imgWidth = 210
@@ -973,7 +933,6 @@ export default function EmployeeProfilePage() {
         heightLeft -= pageHeight
       }
       
-      // Salvar PDF
       const fileName = `ficha-${employee.full_name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`
       pdf.save(fileName)
       
@@ -1135,12 +1094,10 @@ export default function EmployeeProfilePage() {
         await navigator.share(shareData)
         toast.success('Compartilhado com sucesso')
       } else {
-        // Fallback para navegadores que não suportam Web Share API
         await navigator.clipboard.writeText(shareData.url)
         toast.success('Link copiado para a área de transferência')
       }
     } catch (error) {
-      // Fallback final - copiar URL
       try {
         await navigator.clipboard.writeText(shareData.url)
         toast.success('Link copiado para a área de transferência')
@@ -1167,7 +1124,6 @@ export default function EmployeeProfilePage() {
       toast.success('Colaborador excluído com sucesso')
       setIsDeleteOpen(false)
       
-      // Redirecionar para a lista de colaboradores
       window.location.href = '/employees'
     } catch (error: any) {
       toast.error('Erro ao excluir colaborador: ' + (error.message || 'Erro inesperado'))
@@ -1194,7 +1150,6 @@ export default function EmployeeProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <Card className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
@@ -1252,7 +1207,7 @@ export default function EmployeeProfilePage() {
         </div>
       </Card>
 
-      {/* Tabs */}
+      
       <div className="border-b border-neutral-200">
         <nav className="flex space-x-8 overflow-x-auto">
           {[
@@ -1284,12 +1239,12 @@ export default function EmployeeProfilePage() {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {activeTab === 'personal' && (
           <>
             <div className="lg:col-span-2 space-y-6">
-              {/* Informações Pessoais */}
+              
               <Card>
                 <CardHeader>
                   <CardTitle>Informações Pessoais</CardTitle>
@@ -1305,7 +1260,7 @@ export default function EmployeeProfilePage() {
                 </CardContent>
               </Card>
 
-              {/* Endereço */}
+              
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center"><MapPin className="h-4 w-4 mr-2" />Endereço</CardTitle>
@@ -1322,7 +1277,7 @@ export default function EmployeeProfilePage() {
               </Card>
             </div>
 
-            {/* Contatos */}
+            
             <Card>
               <CardHeader>
                 <CardTitle>Contatos</CardTitle>
@@ -1593,7 +1548,6 @@ export default function EmployeeProfilePage() {
         )}
       </div>
 
-      {/* Notes */}
       {employee.notes && (
         <Card>
           <CardHeader>
@@ -1605,7 +1559,6 @@ export default function EmployeeProfilePage() {
         </Card>
       )}
 
-      {/* Edit Modal */}
       <Dialog.Root open={isEditOpen} onOpenChange={setIsEditOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsEditOpen(false)} />
@@ -1623,7 +1576,6 @@ export default function EmployeeProfilePage() {
                 </Dialog.Description>
               </div>
               
-              {/* Tabs */}
               <div className="border-b border-slate-200 bg-white">
                 <nav className="flex space-x-8 px-6">
                   {[
@@ -1649,12 +1601,11 @@ export default function EmployeeProfilePage() {
                   ))}
                 </nav>
               </div>
-
-              {/* Tab Content */}
+              
               <div className="p-6 max-h-[60vh] overflow-y-auto bg-white">
                 {editTab === 'pessoal' && (
                   <div className="space-y-6">
-                    {/* Avatar upload */}
+                    
                     <div className="flex items-center gap-4">
                       <div className="h-20 w-20 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
                         {avatarPreview || (employee as any).avatar_url ? (
@@ -2358,7 +2309,7 @@ export default function EmployeeProfilePage() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* Delete Confirmation Modal */}
+      
       <Dialog.Root open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />

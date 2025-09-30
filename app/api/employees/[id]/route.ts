@@ -19,7 +19,6 @@ export async function PUT(
       gender?: string
       marital_status?: string
       nationality?: string
-      // campos normalizados vindos do frontend
       phone?: string | null
       emergency_contact?: string | null
       emergency_phone?: string | null
@@ -33,23 +32,19 @@ export async function PUT(
       contract_type?: string
       work_schedule?: string
       salary?: number
-      // educação
       education_level?: string | null
       course_name?: string | null
       institution_name?: string | null
       graduation_year?: string | null
-      // bancário
       bank_name?: string | null
       bank_agency?: string | null
       bank_account?: string | null
       account_type?: string | null
       pix_key?: string | null
-      // benefícios
       vale_refeicao?: number | null
       vale_transporte?: number | null
       plano_saude?: boolean | null
       plano_dental?: boolean | null
-      // dependentes (até 3)
       dependent_name_1?: string | null
       dependent_relationship_1?: string | null
       dependent_birth_date_1?: string | null
@@ -59,7 +54,6 @@ export async function PUT(
       dependent_name_3?: string | null
       dependent_relationship_3?: string | null
       dependent_birth_date_3?: string | null
-      // uploads
       avatar_url?: string | null
       rg_photo?: string | null
       cpf_photo?: string | null
@@ -71,7 +65,6 @@ export async function PUT(
     const { name } = body
 
     const supabase = await createServerClient()
-    // Monta update dinamicamente para não sobrescrever uploads com null
     const baseUpdate: Record<string, any> = {
       ...(name ? { full_name: name } : {}),
       email: body.email || null,
@@ -83,7 +76,6 @@ export async function PUT(
       gender: body.gender || null,
       marital_status: body.marital_status || null,
       nationality: body.nationality || null,
-      // Contatos e Endereço
       phone: body.phone ?? null,
       emergency_contact: body.emergency_contact ?? null,
       emergency_phone: body.emergency_phone ?? null,
@@ -97,23 +89,19 @@ export async function PUT(
       contract_type: body.contract_type || null,
       work_schedule: body.work_schedule || null,
       salary: body.salary ?? null,
-      // Educação
       education_level: body.education_level ?? null,
       course_name: body.course_name ?? null,
       institution_name: body.institution_name ?? null,
       graduation_year: body.graduation_year ?? null,
-      // Bancário
       bank_name: body.bank_name ?? null,
       bank_agency: body.bank_agency ?? null,
       bank_account: body.bank_account ?? null,
       account_type: body.account_type ?? null,
       pix_key: body.pix_key ?? null,
-      // Benefícios
       vale_refeicao: body.vale_refeicao ?? null,
       vale_transporte: body.vale_transporte ?? null,
       plano_saude: body.plano_saude ?? null,
       plano_dental: body.plano_dental ?? null,
-      // Dependentes (até 3)
       dependent_name_1: body.dependent_name_1 ?? null,
       dependent_relationship_1: body.dependent_relationship_1 ?? null,
       dependent_birth_date_1: body.dependent_birth_date_1 ?? null,
@@ -123,12 +111,10 @@ export async function PUT(
       dependent_name_3: body.dependent_name_3 ?? null,
       dependent_relationship_3: body.dependent_relationship_3 ?? null,
       dependent_birth_date_3: body.dependent_birth_date_3 ?? null,
-      // Outros
       notes: body.notes || null,
       updated_at: new Date().toISOString(),
     }
 
-    // Campos de upload: só aplica se vierem definidos
     if (typeof body.avatar_url !== 'undefined') baseUpdate.avatar_url = body.avatar_url
     if (typeof body.rg_photo !== 'undefined') baseUpdate.rg_photo = body.rg_photo
     if (typeof body.cpf_photo !== 'undefined') baseUpdate.cpf_photo = body.cpf_photo
@@ -182,8 +168,6 @@ export async function DELETE(
   try {
     const { id } = await context.params
     const supabase = await createServerClient()
-
-    // Verificar se o colaborador existe
     const { data: employee, error: fetchError } = await supabase
       .from('employees')
       .select('id, full_name')
@@ -197,7 +181,6 @@ export async function DELETE(
       )
     }
 
-    // Excluir o colaborador
     const { error: deleteError } = await supabase
       .from('employees')
       .delete()

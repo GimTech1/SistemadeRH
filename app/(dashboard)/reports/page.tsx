@@ -48,7 +48,6 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
 
-  // Dados simulados
   const performanceData = [
     { month: 'Jan', vendas: 85, marketing: 88, ti: 82, rh: 90, financeiro: 87 },
     { month: 'Fev', vendas: 87, marketing: 86, ti: 84, rh: 91, financeiro: 85 },
@@ -115,7 +114,6 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-black-50">Relatórios e Análises - PAGINA EM DESENVOLVIMENTO DESCONSIDERAR</h1>
@@ -143,7 +141,6 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Report Type Selector */}
       <div className="flex flex-wrap gap-2">
         {reportTypes.map((type) => {
           const Icon = type.icon
@@ -164,7 +161,6 @@ export default function ReportsPage() {
         })}
       </div>
 
-      {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <select
@@ -192,10 +188,8 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Overview Report */}
       {selectedReport === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Performance Trend */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-neutral-200 mb-4">Tendência de Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -218,7 +212,6 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* Department Distribution */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-neutral-200 mb-4">Distribuição por Departamento</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -245,7 +238,6 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* Top Performers Table */}
           <div className="card p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold text-neutral-200 mb-4">Top Performers</h3>
             <div className="overflow-x-auto">
@@ -282,7 +274,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Performance Report */}
       {selectedReport === 'performance' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6 lg:col-span-2">
@@ -308,7 +299,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* CHA Report */}
       {selectedReport === 'cha' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
@@ -346,7 +336,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Goals Report */}
       {selectedReport === 'goals' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6 lg:col-span-2">
@@ -369,7 +358,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Departments Report */}
       {selectedReport === 'departments' && (
         <div className="grid grid-cols-1 gap-6">
           <div className="card p-6">

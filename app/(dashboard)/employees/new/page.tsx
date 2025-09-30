@@ -22,9 +22,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
 interface FormData {
-  // Informações básicas
   name: string
   email: string
   position: string
@@ -35,39 +33,27 @@ interface FormData {
   gender: string
   marital_status: string
   nationality: string
-  
-  // Contatos
   phone: string
   emergency_contact: string
-  emergency_phone: string
-  
-  // Endereço
+  emergency_phone: string  
   address: string
   neighborhood: string
   city: string
   state: string
-  zip_code: string
-  
-  // Dados profissionais
+  zip_code: string 
   employee_code: string
   admission_date: string
   contract_type: string
   work_schedule: string
   salary: string
-  
-  // Documentos (fotos)
   rg_photo: string
   cpf_photo: string
   ctps_photo: string
-  diploma_photo: string
-  
-  // Benefícios
+  diploma_photo: string 
   vale_refeicao: string
   vale_transporte: string
   plano_saude: boolean
   plano_dental: boolean
-  
-  // Dependentes
   dependent_name_1: string
   dependent_relationship_1: string
   dependent_birth_date_1: string
@@ -77,21 +63,15 @@ interface FormData {
   dependent_name_3: string
   dependent_relationship_3: string
   dependent_birth_date_3: string
-  
-  // Educação
   education_level: string
   course_name: string
   institution_name: string
   graduation_year: string
-  
-  // Dados bancários
   bank_name: string
   bank_agency: string
   bank_account: string
   account_type: string
   pix_key: string
-  
-  // Observações
   notes: string
 }
 
@@ -100,8 +80,6 @@ export default function NewEmployeePage() {
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const supabase = createClient()
-
-  // Estados para avatar
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
@@ -109,25 +87,18 @@ export default function NewEmployeePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
   const [capturing, setCapturing] = useState(false)
-
-  // Estados para validações
   const [validationErrors, setValidationErrors] = useState<{
     cpf?: string;
     rg?: string;
     cep?: string;
   }>({})
   const [isValidatingCEP, setIsValidatingCEP] = useState(false)
-
-  // Estados para departamentos
   const [departments, setDepartments] = useState<Array<{ id: string; name: string; description?: string }>>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
-
-  // Refs para os campos de arquivo
   const rgPhotoRef = useRef<HTMLInputElement>(null)
   const cpfPhotoRef = useRef<HTMLInputElement>(null)
   const ctpsPhotoRef = useRef<HTMLInputElement>(null)
   const diplomaPhotoRef = useRef<HTMLInputElement>(null)
-
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -189,7 +160,6 @@ export default function NewEmployeePage() {
     }))
   }
 
-  // Função para validar CPF
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatCPF(value)
@@ -199,7 +169,6 @@ export default function NewEmployeePage() {
       cpf: formattedValue
     }))
 
-    // Validar CPF se tiver 11 dígitos
     if (value.replace(/\D/g, '').length === 11) {
       const validation = validateCPF(value)
       setValidationErrors(prev => ({
@@ -214,17 +183,14 @@ export default function NewEmployeePage() {
     }
   }
 
-  // Função para validar RG
   const handleRGChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatRG(value)
-    
     setFormData(prev => ({
       ...prev,
       rg: formattedValue
     }))
-
-    // Validar RG se tiver pelo menos 7 caracteres
+    
     if (value.replace(/[^\dA-Za-z]/g, '').length >= 7) {
       const validation = validateRG(value)
       setValidationErrors(prev => ({
@@ -238,28 +204,23 @@ export default function NewEmployeePage() {
       }))
     }
   }
-
-  // Função para buscar endereço por CEP
+  
   const handleCEPChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatCEP(value)
-    
     setFormData(prev => ({
       ...prev,
       zip_code: formattedValue
     }))
 
-    // Buscar endereço se CEP tiver 8 dígitos
     if (value.replace(/\D/g, '').length === 8) {
       setIsValidatingCEP(true)
       setValidationErrors(prev => ({
         ...prev,
         cep: undefined
       }))
-
       try {
         const result = await searchAddressByCEP(value)
-        
         if (result.success && result.data) {
           setFormData(prev => ({
             ...prev,
@@ -289,14 +250,12 @@ export default function NewEmployeePage() {
       }))
     }
   }
-
-  // Função para buscar departamentos
+  
   const fetchDepartments = async () => {
     try {
       setLoadingDepartments(true)
       const response = await fetch('/api/departments')
       const data = await response.json()
-      
       if (response.ok) {
         setDepartments(data.departments || [])
       } else {
@@ -308,8 +267,7 @@ export default function NewEmployeePage() {
       setLoadingDepartments(false)
     }
   }
-
-  // Carregar departamentos quando o componente montar
+  
   useEffect(() => {
     fetchDepartments()
   }, [])
@@ -326,7 +284,6 @@ export default function NewEmployeePage() {
     const { data: { publicUrl } } = supabase.storage
       .from('employee-documents')
       .getPublicUrl(path)
-    
     return publicUrl
   }
 
@@ -356,18 +313,14 @@ export default function NewEmployeePage() {
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
-    
     setCapturing(true)
     const video = videoRef.current
     const canvas = canvasRef.current
     const context = canvas.getContext('2d')
-    
     if (!context) return
-    
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     context.drawImage(video, 0, 0)
-    
     canvas.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], `avatar-${Date.now()}.png`, { type: 'image/png' })
@@ -378,37 +331,26 @@ export default function NewEmployeePage() {
       setCapturing(false)
     }, 'image/png')
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Só permite submit se estiver no último passo
     if (currentStep < steps.length) {
       return
     }
-    
     if (!formData.name) {
       toast.error('Nome é obrigatório')
       return
     }
-
     setLoading(true)
-
     try {
-      // Upload das fotos se existirem
       let avatarUrl = null
       let rgPhotoUrl = null
       let cpfPhotoUrl = null
       let ctpsPhotoUrl = null
       let diplomaPhotoUrl = null
-
-      // Upload do avatar se existir
       if (avatarFile) {
         const fileName = `avatar-${Date.now()}-${avatarFile.name}`
         avatarUrl = await uploadFile(avatarFile, fileName)
       }
-
-      // Upload das fotos selecionadas usando refs
       if (rgPhotoRef.current?.files?.[0]) {
         const file = rgPhotoRef.current.files[0]
         const fileName = `rg-${Date.now()}-${file.name}`
@@ -491,7 +433,6 @@ export default function NewEmployeePage() {
       if (error) {
         throw error
       }
-
       toast.success('Colaborador adicionado com sucesso!')
       router.push('/employees')
     } catch (error: any) {
@@ -500,7 +441,6 @@ export default function NewEmployeePage() {
       setLoading(false)
     }
   }
-
   const steps = [
     { id: 1, title: 'Informações Básicas', icon: User },
     { id: 2, title: 'Contatos e Endereço', icon: MapPin },
@@ -530,7 +470,6 @@ export default function NewEmployeePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -549,15 +488,12 @@ export default function NewEmployeePage() {
           </div>
         </div>
       </div>
-
-      {/* Progress Steps */}
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const Icon = step.icon
             const isActive = currentStep === step.id
             const isCompleted = currentStep > step.id
-            
             return (
               <div key={step.id} className="flex items-center">
                 <button
@@ -592,18 +528,13 @@ export default function NewEmployeePage() {
           })}
         </div>
       </div>
-
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 1: Informações Básicas */}
         {currentStep === 1 && (
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
               <User className="h-5 w-5" />
               Informações Básicas
             </h2>
-            
-            {/* Avatar Upload */}
             <div className="mb-6 p-4 bg-platinum-50 rounded-lg border border-platinum-200">
               <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-3">
                 Foto de Perfil
@@ -844,7 +775,7 @@ export default function NewEmployeePage() {
           </div>
         )}
 
-        {/* Step 2: Contatos e Endereço */}
+        
         {currentStep === 2 && (
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
@@ -991,7 +922,7 @@ export default function NewEmployeePage() {
           </div>
         )}
 
-        {/* Step 3: Dados Profissionais */}
+        
         {currentStep === 3 && (
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
@@ -1079,7 +1010,6 @@ export default function NewEmployeePage() {
           </div>
         )}
 
-        {/* Step 4: Documentos e Benefícios */}
         {currentStep === 4 && (
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
@@ -1087,7 +1017,6 @@ export default function NewEmployeePage() {
               Documentos e Benefícios
             </h2>
             <div className="space-y-6">
-              {/* Documentos (Fotos) */}
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Documentos (Fotos)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1181,7 +1110,7 @@ export default function NewEmployeePage() {
                 </div>
               </div>
 
-              {/* Benefícios */}
+              
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Benefícios</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1244,14 +1173,14 @@ export default function NewEmployeePage() {
                 </div>
               </div>
 
-              {/* Dependentes */}
+              
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4 flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   Dependentes
                 </h3>
                 <div className="space-y-4">
-                  {/* Dependente 1 */}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-platinum-50 rounded-lg">
                     <div>
                       <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -1293,7 +1222,7 @@ export default function NewEmployeePage() {
                     </div>
                   </div>
 
-                  {/* Dependente 2 */}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-platinum-50 rounded-lg">
                     <div>
                       <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -1335,7 +1264,7 @@ export default function NewEmployeePage() {
                     </div>
                   </div>
 
-                  {/* Dependente 3 */}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-platinum-50 rounded-lg">
                     <div>
                       <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
@@ -1379,7 +1308,7 @@ export default function NewEmployeePage() {
                 </div>
               </div>
 
-              {/* Educação */}
+              
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4 flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />
@@ -1452,7 +1381,7 @@ export default function NewEmployeePage() {
                 </div>
               </div>
 
-              {/* Dados Bancários */}
+              
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4 flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
@@ -1534,7 +1463,7 @@ export default function NewEmployeePage() {
                 </div>
               </div>
 
-              {/* Observações */}
+              
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Observações
@@ -1550,12 +1479,12 @@ export default function NewEmployeePage() {
               </div>
             </div>
             
-            {/* Espaçamento vertical no final */}
+            
             <div className="h-8"></div>
           </div>
         )}
 
-        {/* Navigation Buttons */}
+        
         <div className="flex justify-between px-6 py-8">
           <button
             type="button"

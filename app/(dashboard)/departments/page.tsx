@@ -76,13 +76,11 @@ export default function DepartmentsPage() {
     setLoadingManagers(true)
     try {
       
-      // Primeiro, vamos ver todos os profiles
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('id, full_name, position, role, is_active')
 
 
-      // Agora buscar apenas admin e gerente
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, position, role, is_active')
@@ -121,7 +119,6 @@ export default function DepartmentsPage() {
         throw new Error(data.error || 'Erro ao carregar departamentos')
       }
 
-      // Buscar dados dos gerentes para cada departamento
       const departmentsWithManagers = await Promise.all(
         data.departments.map(async (dept: any) => {
           let managerName = 'Gerente não definido'
@@ -141,7 +138,6 @@ export default function DepartmentsPage() {
             }
           }
 
-          // Contar colaboradores do departamento
           let employeeCount = 0
           try {
             const { count, error: countError } = await supabase
@@ -153,7 +149,6 @@ export default function DepartmentsPage() {
               employeeCount = count
             }
           } catch (error) {
-            console.error('Erro ao contar colaboradores:', error)
           }
 
           return {
@@ -162,12 +157,12 @@ export default function DepartmentsPage() {
             manager: managerName,
             managerId: dept.manager_id || '',
             employeeCount: employeeCount,
-            averageScore: 0, // Será calculado quando tivermos dados reais
+            averageScore: 0, 
             trend: 'stable' as const,
             description: dept.description || '',
-            goals: 0, // Será calculado quando tivermos dados reais
-            completedGoals: 0, // Será calculado quando tivermos dados reais
-            topPerformers: [], // Será preenchido quando tivermos dados reais
+            goals: 0, 
+            completedGoals: 0, 
+            topPerformers: [], 
           }
         })
       )
@@ -221,7 +216,7 @@ export default function DepartmentsPage() {
       toast.success('Departamento criado com sucesso!')
       setIsModalOpen(false)
       setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
-      await loadDepartments() // Recarregar a lista
+      await loadDepartments() 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao criar departamento')
     } finally {
@@ -252,7 +247,6 @@ export default function DepartmentsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e acompanhe o desempenho de cada departamento</h1>
@@ -267,7 +261,7 @@ export default function DepartmentsPage() {
         </button>
       </div>
 
-      {/* Cards de métricas */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
@@ -331,10 +325,10 @@ export default function DepartmentsPage() {
         </div>
       </div>
 
-      {/* Filtros e busca */}
+      
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
         <div className="flex flex-col gap-4">
-          {/* Barra de busca */}
+          
           <div className="flex-1">
         <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
@@ -348,7 +342,7 @@ export default function DepartmentsPage() {
         </div>
       </div>
 
-          {/* Controles */}
+          
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
@@ -394,7 +388,7 @@ export default function DepartmentsPage() {
         </div>
       </div>
 
-      {/* Visualização de departamentos */}
+      
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -482,7 +476,7 @@ export default function DepartmentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDepartments.map((dept) => (
             <div key={dept.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 hover:shadow-md transition-all duration-200">
-              {/* Header do card */}
+              
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center space-x-4">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
@@ -505,10 +499,10 @@ export default function DepartmentsPage() {
                 </div>
               </div>
 
-              {/* Descrição */}
+              
               <p className="text-sm font-roboto font-light text-oxford-blue-600 mb-6 leading-relaxed">{dept.description}</p>
 
-              {/* Estatísticas */}
+              
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gradient-to-br from-platinum-50 to-platinum-100 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -528,7 +522,7 @@ export default function DepartmentsPage() {
                 </div>
               </div>
 
-              {/* Progresso das Metas */}
+              
               <div className="mb-6">
                 <div className="flex items-center justify-between text-sm mb-3">
                   <span className="text-oxford-blue-600 font-roboto font-medium">Progresso das Metas</span>
@@ -545,7 +539,7 @@ export default function DepartmentsPage() {
                 </p>
               </div>
 
-              {/* Top Performers */}
+              
               <div className="border-t border-platinum-200 pt-4">
                 <p className="text-xs text-oxford-blue-500 font-roboto font-medium uppercase tracking-wider mb-4">Melhores Desempenhos</p>
                 <div className="flex items-center justify-between">
@@ -577,7 +571,7 @@ export default function DepartmentsPage() {
       </div>
       )}
 
-      {/* Empty State */}
+      
       {filteredDepartments.length === 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-16 text-center">
           <div className="h-20 w-20 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
@@ -597,7 +591,7 @@ export default function DepartmentsPage() {
         </div>
       )}
 
-      {/* Modal de Novo Departamento */}
+      
       <Dialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsModalOpen(false)} />
@@ -608,7 +602,7 @@ export default function DepartmentsPage() {
             onEscapeKeyDown={() => setIsModalOpen(false)}
           >
             <div className="w-[min(100vw-2rem,32rem)] bg-white rounded-2xl shadow-2xl border border-platinum-200 overflow-hidden">
-              {/* Header */}
+              
               <div className="p-6 border-b border-platinum-200 bg-white">
                 <div className="flex items-center justify-between">
                   <div>
@@ -626,9 +620,9 @@ export default function DepartmentsPage() {
                 </div>
               </div>
               
-              {/* Form */}
+              
               <div className="p-6 space-y-6">
-                {/* Nome do Departamento */}
+                
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                     Nome do Departamento *
@@ -643,7 +637,7 @@ export default function DepartmentsPage() {
                   />
                 </div>
 
-                {/* Descrição */}
+                
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                     Descrição
@@ -657,7 +651,7 @@ export default function DepartmentsPage() {
                   />
                 </div>
 
-                {/* Gerente */}
+                
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                     Gerente do Departamento
@@ -698,7 +692,7 @@ export default function DepartmentsPage() {
                   )}
                 </div>
 
-                {/* Departamento Pai */}
+                
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                     Departamento Pai
@@ -734,7 +728,7 @@ export default function DepartmentsPage() {
                 </div>
               </div>
               
-              {/* Footer */}
+              
               <div className="p-6 border-t border-platinum-200 bg-platinum-50 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}

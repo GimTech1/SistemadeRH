@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
 interface EvaluationInsert {
   cycle_id: string
   employee_id: string
@@ -17,11 +16,9 @@ interface EvaluationInsert {
   attitude_score?: number | null
 }
 
-// GET /api/evaluations -> lista avaliações com joins básicos
 export async function GET() {
   try {
     const supabase = await createClient()
-
     const { data, error } = await supabase
       .from('evaluations')
       .select(
@@ -59,7 +56,6 @@ export async function GET() {
   }
 }
 
-// POST /api/evaluations -> cria avaliação e itens de competências (evaluation_skills)
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -73,7 +69,7 @@ export async function POST(req: Request) {
       improvements = null,
       goals = null,
       overall_score = null,
-      skills = [], // [{ skill_id, score, comments, category? }]
+      skills = [],
       submitted = false,
       knowledge_score: knowledgeScoreFromClient,
       skill_score: skillScoreFromClient,
@@ -87,8 +83,6 @@ export async function POST(req: Request) {
     const supabase = await createClient()
 
     const submitted_at = submitted ? new Date().toISOString() : null
-
-    // Calcula média geral no servidor a partir das skills (se enviadas)
     let computedOverall: number | null = null
     let computedKnowledge: number | null = null
     let computedSkill: number | null = null
@@ -140,7 +134,6 @@ export async function POST(req: Request) {
       .single() as { data: { id: string } | null, error: any }
 
     if (insertError || !created) {
-      console.error('POST /api/evaluations insert error:', insertError)
       const status = insertError?.message?.toLowerCase().includes('permission denied') ? 403 : 500
       return NextResponse.json({ message: 'Erro ao criar avaliação', error: insertError?.message }, { status })
     }
@@ -155,14 +148,12 @@ export async function POST(req: Request) {
 
       const { error: skillsError } = await supabase.from('evaluation_skills').insert(rows as any)
       if (skillsError) {
-        console.error('POST /api/evaluations skills insert error:', skillsError)
         return NextResponse.json({ message: 'Avaliação criada, mas falhou ao salvar competências', error: skillsError.message }, { status: 207 })
       }
     }
 
     return NextResponse.json({ id: created.id }, { status: 201 })
   } catch (e: any) {
-    console.error('POST /api/evaluations unexpected error:', e)
     return NextResponse.json({ message: 'Falha inesperada', error: e?.message }, { status: 500 })
   }
 }

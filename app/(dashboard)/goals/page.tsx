@@ -103,7 +103,6 @@ export default function GoalsPage() {
     return () => document.body.classList.remove('overflow-hidden')
   }, [showNewGoalModal])
 
-  // Fechar detalhes e edição com ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -229,14 +228,12 @@ export default function GoalsPage() {
     }
   }
 
-  // Preenche formulário de edição ao abrir
   useEffect(() => {
     if (editGoal) {
       setEditForm({
         title: editGoal.title,
         description: editGoal.description,
         deadline: (() => {
-          // tentar reverter dd/mm/aaaa para yyyy-mm-dd
           const p = editGoal.deadline.split('/')
           if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
           return ''
@@ -334,7 +331,6 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Plano de Desenvolvimento Individual e metas de performance </h1>
@@ -345,7 +341,6 @@ export default function GoalsPage() {
         </button>
       </div>
 
-      {/* Cards de métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
@@ -408,10 +403,8 @@ export default function GoalsPage() {
         </div>
       </div>
 
-      {/* Filtros e busca */}
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
         <div className="flex flex-col gap-4">
-          {/* Barra de busca */}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
@@ -424,8 +417,7 @@ export default function GoalsPage() {
               />
             </div>
           </div>
-          
-          {/* Controles */}
+                  
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-roboto font-medium text-rich-black-900">Status:</label>
@@ -525,7 +517,6 @@ export default function GoalsPage() {
         ))}
       </div>
 
-      {/* Visualização de metas */}
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -609,7 +600,6 @@ export default function GoalsPage() {
             const CategoryIcon = getCategoryIcon(goal.category)
             return (
               <div key={goal.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 hover:shadow-md transition-all duration-200">
-                {/* Header do card */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${getCategoryColor(goal.category)}`}>
@@ -637,7 +627,6 @@ export default function GoalsPage() {
                   </div>
                 </div>
 
-                {/* Informações da meta */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-oxford-blue-400" />
@@ -649,7 +638,6 @@ export default function GoalsPage() {
                     <span className="text-sm font-roboto font-light text-oxford-blue-600">Prazo: {goal.deadline}</span>
                   </div>
 
-                  {/* Progresso */}
                   <div className="bg-platinum-50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-roboto font-medium text-oxford-blue-500">Progresso</span>
@@ -665,7 +653,6 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Status e Categoria */}
                   <div className="flex items-center justify-between">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-roboto font-medium ${getStatusColor(goal.status)}`}>
                       {getStatusText(goal.status)}
@@ -675,7 +662,6 @@ export default function GoalsPage() {
                     </span>
                   </div>
 
-                  {/* Key Results */}
                   {goal.keyResults.length > 0 && (
                     <div className="border-t border-platinum-200 pt-4">
                       <p className="text-xs text-oxford-blue-500 font-roboto font-medium uppercase tracking-wider mb-3">Resultados-chave</p>
@@ -695,7 +681,6 @@ export default function GoalsPage() {
                     </div>
                   )}
 
-                  {/* Ações */}
                   <div className="flex items-center justify-between pt-4 border-t border-platinum-200">
                     <div className="flex gap-2">
                       <button onClick={() => setDetailsGoal(goal)} className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
@@ -726,7 +711,6 @@ export default function GoalsPage() {
               onSubmit={async (e) => {
                 e.preventDefault()
                 if (!editGoal) return
-                // validação básica
                 if (!editForm.title || !editForm.deadline) {
                   toast.error('Preencha título e prazo')
                   return
@@ -744,7 +728,6 @@ export default function GoalsPage() {
                     .eq('id', (editGoal as any).id)
                   if (error) throw error
 
-                  // atualiza estado local
                   setGoals(prev => prev.map(g => g.id === (editGoal as any).id ? {
                     ...g,
                     title: editForm.title,
@@ -814,7 +797,6 @@ export default function GoalsPage() {
         </div>
       )}
 
-      {/* Empty State */}
       {filteredGoals.length === 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-16 text-center">
           <div className="h-20 w-20 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
@@ -847,7 +829,6 @@ export default function GoalsPage() {
                     toast.error('Preencha título, prazo e responsável')
                     return
                   }
-                  // bloquear datas no passado
                   const picked = new Date(newGoal.deadline + 'T00:00:00')
                   const today = new Date()
                   today.setHours(0,0,0,0)
@@ -855,7 +836,6 @@ export default function GoalsPage() {
                     toast.error('O prazo não pode ser uma data no passado')
                     return
                   }
-                  // salvar no Supabase
                   try {
                     const { data: userData } = await supabase.auth.getUser()
                     const insert = await (supabase as any)
@@ -873,7 +853,6 @@ export default function GoalsPage() {
                       .single()
                     if (insert.error) throw insert.error
                   } catch (e: any) {
-                    console.error('Erro ao salvar meta:', e)
                     toast.error('Erro ao salvar meta no banco')
                     return
                   }
