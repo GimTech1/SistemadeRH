@@ -30,9 +30,9 @@ function OrgCard({
   setEditing,
 }: {
   node: OrgNode
-  assigned?: EmployeeItem | null
+  assigned?: EmployeeItem | EmployeeItem[] | null
   onDropEmployee: (nodeId: string, employeeId: string) => void
-  onUnassign: (nodeId: string) => void
+  onUnassign: (nodeId: string, employeeId?: string) => void
   onAddChild: (parentId: string) => void
   onRemoveNode: (nodeId: string) => void
   onMoveNodeDrop: (targetId: string, sourceId: string) => void
@@ -41,6 +41,7 @@ function OrgCard({
   setEditing: (nodeId: string, editing: boolean) => void
 }) {
   const [dragOver, setDragOver] = useState(false)
+  const allowMulti = node.id === 'ceo'
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -97,19 +98,46 @@ function OrgCard({
           </>
         )}
 
-        {assigned ? (
-          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <div className="text-sm font-medium text-gray-900">{assigned.full_name}</div>
-            <div className="text-xs text-gray-600">{assigned.position || 'Sem cargo'}</div>
-            <button
-              onClick={() => onUnassign(node.id)}
-              className="mt-2 text-xs text-red-600 hover:underline"
-            >
-              Remover
-            </button>
+        {allowMulti ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {[0,1].map((slot) => {
+              const list = Array.isArray(assigned) ? assigned : (assigned ? [assigned] : [])
+              const emp = list[slot]
+              return (
+                <div key={slot} className={`rounded-lg border ${emp ? 'border-gray-200 bg-gray-50' : 'border-dashed border-gray-300'} p-3`}>
+                  {emp ? (
+                    <>
+                      <div className="text-sm font-medium text-gray-900">{emp.full_name}</div>
+                      <div className="text-xs text-gray-600">{emp.position || 'Sem cargo'}</div>
+                      <button
+                        onClick={() => onUnassign(node.id, emp.id)}
+                        className="mt-2 text-xs text-red-600 hover:underline"
+                      >
+                        Remover
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-xs text-gray-500">Solte aqui</div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         ) : (
-          <div className="mt-3 text-xs text-gray-500">Arraste um colaborador para este card</div>
+          assigned ? (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="text-sm font-medium text-gray-900">{(assigned as EmployeeItem).full_name}</div>
+              <div className="text-xs text-gray-600">{(assigned as EmployeeItem).position || 'Sem cargo'}</div>
+              <button
+                onClick={() => onUnassign(node.id)}
+                className="mt-2 text-xs text-red-600 hover:underline"
+              >
+                Remover
+              </button>
+            </div>
+          ) : (
+            <div className="mt-3 text-xs text-gray-500">Arraste um colaborador para este card</div>
+          )
         )}
 
         <div className="mt-3 flex gap-2">
@@ -153,9 +181,9 @@ function OrgTree({
   setEditing,
 }: {
   node: OrgNode
-  assignments: Record<string, EmployeeItem | undefined>
+  assignments: Record<string, EmployeeItem | EmployeeItem[] | undefined>
   onDropEmployee: (nodeId: string, employeeId: string) => void
-  onUnassign: (nodeId: string) => void
+  onUnassign: (nodeId: string, employeeId?: string) => void
   onAddChild: (parentId: string) => void
   onRemoveNode: (nodeId: string) => void
   onMoveNodeDrop: (targetId: string, sourceId: string) => void
@@ -165,7 +193,7 @@ function OrgTree({
 }) {
   const hasChildren = (node.children?.length || 0) > 0
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
       <OrgCard
         node={node}
         assigned={assignments[node.id] || null}
@@ -181,9 +209,17 @@ function OrgTree({
       {hasChildren && (
         <>
           <div className="h-6 w-px bg-gray-300" />
-          <div className="flex items-start gap-6">
-            {node.children!.map((child) => (
-              <div key={child.id} className="flex flex-col items-center">
+          <div className="flex items-center justify-center gap-6 relative">
+            {/* Linha horizontal conectando os filhos - apenas entre os cards */}
+            {node.children!.length > 1 && (
+              <div className="absolute top-0 h-px bg-gray-300" style={{
+                left: `${100 / (node.children!.length * 2)}%`,
+                right: `${100 / (node.children!.length * 2)}%`
+              }} />
+            )}
+            {node.children!.map((child, index) => (
+              <div key={child.id} className="flex flex-col items-center relative">
+                {/* Linha vertical do filho */}
                 <div className="h-6 w-px bg-gray-300" />
                 <OrgTree
                   node={child}
@@ -210,7 +246,7 @@ export default function OrganogramaPage() {
   const supabase = createClient()
   const [employees, setEmployees] = useState<EmployeeItem[]>([])
   const [search, setSearch] = useState('')
-  const [assignments, setAssignments] = useState<Record<string, EmployeeItem | undefined>>({})
+  const [assignments, setAssignments] = useState<Record<string, EmployeeItem | EmployeeItem[] | undefined>>({})
   const [tree, setTree] = useState<OrgNode>(() => ({
     id: 'ceo',
     name: 'Diretoria Geral',
@@ -366,19 +402,42 @@ export default function OrganogramaPage() {
   const handleDropEmployee = useCallback((nodeId: string, employeeId: string) => {
     const emp = employees.find(e => String(e.id) === String(employeeId))
     if (!emp) return
-    setAssignments(prev => ({ ...prev, [nodeId]: emp }))
+    setAssignments(prev => {
+      const existing = prev[nodeId]
+      if (nodeId === 'ceo') {
+        const list = Array.isArray(existing) ? existing.slice(0, 2) : (existing ? [existing] : [])
+        if (list.find(e => String(e.id) === String(emp.id))) return prev
+        if (list.length >= 2) return prev
+        const nextList = [...list, emp]
+        return { ...prev, [nodeId]: nextList }
+      }
+      return { ...prev, [nodeId]: emp }
+    })
     setEmployees(prev => prev.filter(e => String(e.id) !== String(employeeId)))
   }, [employees])
 
-  const handleUnassign = useCallback((nodeId: string) => {
+  const handleUnassign = useCallback((nodeId: string, employeeId?: string) => {
     setAssignments(prev => {
-      const emp = prev[nodeId]
+      const current = prev[nodeId]
       const next = { ...prev }
+      if (nodeId === 'ceo') {
+        const list = Array.isArray(current) ? current : (current ? [current] : [])
+        let removed: EmployeeItem | undefined
+        const remaining = employeeId
+          ? list.filter(e => {
+              const match = String(e.id) === String(employeeId)
+              if (match) removed = e
+              return !match
+            })
+          : []
+        if (remaining.length > 0) next[nodeId] = remaining
+        else delete next[nodeId]
+        if (removed) setEmployees(prevEmployees => dedupeById([...prevEmployees, removed!]).sort((a, b) => a.full_name.localeCompare(b.full_name)))
+        return next
+      }
+      const emp = current as EmployeeItem | undefined
       delete next[nodeId]
-      if (emp) setEmployees(prevEmployees => {
-        const merged = dedupeById([...prevEmployees, emp])
-        return merged.sort((a, b) => a.full_name.localeCompare(b.full_name))
-      })
+      if (emp) setEmployees(prevEmployees => dedupeById([...prevEmployees, emp]).sort((a, b) => a.full_name.localeCompare(b.full_name)))
       return next
     })
   }, [dedupeById])
@@ -405,7 +464,11 @@ export default function OrganogramaPage() {
           delete cp[nodeId]
           return cp
         })
-        setEmployees(prevEmployees => dedupeById([...prevEmployees, assigned]).sort((a, b) => a.full_name.localeCompare(b.full_name)))
+        setEmployees(prevEmployees => {
+          const toAdd = Array.isArray(assigned) ? assigned : [assigned]
+          const merged = dedupeById([...prevEmployees, ...toAdd])
+          return merged.sort((a, b) => a.full_name.localeCompare(b.full_name))
+        })
       }
       return removeNode(prev, nodeId)
     })
