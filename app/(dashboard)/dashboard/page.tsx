@@ -27,6 +27,7 @@ import Link from 'next/link'
 
 interface DashboardData {
   totalEmployees: number
+  openRequests: number
   activeEvaluations: number
   completedGoals: number
   averageScore: number
@@ -40,6 +41,7 @@ interface DashboardData {
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData>({
     totalEmployees: 0,
+    openRequests: 0,
     activeEvaluations: 0,
     completedGoals: 0,
     averageScore: 0,
@@ -60,23 +62,45 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      // Simular dados
-      setData({
-        totalEmployees: 145,
-        activeEvaluations: 23,
-        completedGoals: 89,
-        averageScore: 8.7,
+      // Contadores principais
+      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes] = await Promise.all([
+        supabase.from('employees').select('id', { count: 'exact', head: true }),
+        supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
+        supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
+        supabase.from('goals').select('id', { count: 'exact', head: true }).eq('is_completed', true),
+        supabase.from('evaluations').select('overall_score').not('overall_score', 'is', null),
+      ])
+
+      const totalEmployees = employeesRes.count || 0
+      const openRequests = requestsRes.count || 0
+      const activeEvaluations = activeEvalRes.count || 0
+      const completedGoals = completedGoalsRes.count || 0
+
+      const scores = (scoresRes.data as { overall_score: number | null }[] | null) || []
+      const validScores = scores.map(s => s.overall_score).filter((n): n is number => typeof n === 'number')
+      const averageScore = validScores.length > 0
+        ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
+        : 0
+
+      // Mantém dados de apoio simulados para gráficos não conectados ainda
+      setData(prev => ({
+        ...prev,
+        totalEmployees,
+        openRequests,
+        activeEvaluations,
+        completedGoals,
+        averageScore,
         recentEvaluations: [],
         upcomingDeadlines: [],
-        performanceTrend: 15.3,
-        departmentBreakdown: [
+        performanceTrend: prev.performanceTrend || 0,
+        departmentBreakdown: prev.departmentBreakdown.length ? prev.departmentBreakdown : [
           { name: 'Vendas', value: 35, color: 'bg-yinmn-blue-500' },
           { name: 'TI', value: 25, color: 'bg-silver-lake-blue-500' },
           { name: 'Marketing', value: 20, color: 'bg-emerald-500' },
           { name: 'RH', value: 12, color: 'bg-amber-500' },
           { name: 'Outros', value: 8, color: 'bg-purple-500' },
         ],
-        monthlyData: [
+        monthlyData: prev.monthlyData.length ? prev.monthlyData : [
           { month: 'Jan', value: 65, target: 60 },
           { month: 'Fev', value: 70, target: 65 },
           { month: 'Mar', value: 75, target: 70 },
@@ -84,7 +108,7 @@ export default function DashboardPage() {
           { month: 'Mai', value: 88, target: 80 },
           { month: 'Jun', value: 95, target: 85 },
         ],
-      })
+      }))
     } catch (error) {
     } finally {
       setLoading(false)
@@ -94,10 +118,10 @@ export default function DashboardPage() {
   const statsCards = [
     {
       title: 'Colaboradores',
-      value: '145',
+      value: String(data.totalEmployees),
       subtitle: 'Total de funcionários',
-      change: '+8%',
-      changeText: 'do mês anterior',
+      change: '',
+      changeText: '',
       positive: true,
       color: 'border-l-[#415A77]',
       icon: Users,
@@ -106,10 +130,10 @@ export default function DashboardPage() {
     },
     {
       title: 'Solicitações',
-      value: '12',
+      value: String(data.openRequests),
       subtitle: 'Pedidos abertos',
-      change: '+2',
-      changeText: 'na última semana',
+      change: '',
+      changeText: '',
       positive: true,
       color: 'border-l-[#415A77]',
       icon: FileText,
@@ -118,10 +142,10 @@ export default function DashboardPage() {
     },
     {
       title: 'Avaliações',
-      value: '23',
+      value: String(data.activeEvaluations),
       subtitle: 'Avaliações ativas',
-      change: '+12%',
-      changeText: 'do mês anterior',
+      change: '',
+      changeText: '',
       positive: true,
       color: 'border-l-[#415A77]',
       icon: ClipboardCheck,
@@ -130,10 +154,10 @@ export default function DashboardPage() {
     },
     {
       title: 'Metas',
-      value: '89',
+      value: String(data.completedGoals),
       subtitle: 'Metas concluídas',
-      change: '+5%',
-      changeText: 'do mês anterior',
+      change: '',
+      changeText: '',
       positive: true,
       color: 'border-l-[#415A77]',
       icon: Target,
@@ -142,10 +166,10 @@ export default function DashboardPage() {
     },
     {
       title: 'Performance',
-      value: '8.7',
+      value: String(data.averageScore || 0),
       subtitle: 'Média geral',
-      change: '+3%',
-      changeText: 'do mês anterior',
+      change: '',
+      changeText: '',
       positive: true,
       color: 'border-l-[#415A77]',
       icon: Award,
@@ -215,12 +239,14 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-roboto font-light text-oxford-blue-500">{stat.subtitle}</p>
-                  <div className="flex items-center gap-1">
-                    <span className={`text-xs font-roboto font-medium ${stat.positive ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {stat.change}
-                    </span>
-                    <span className="text-xs font-roboto font-light text-oxford-blue-400">{stat.changeText}</span>
-                  </div>
+                  {(stat.change && stat.changeText) ? (
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xs font-roboto font-medium ${stat.positive ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {stat.change}
+                      </span>
+                      <span className="text-xs font-roboto font-light text-oxford-blue-400">{stat.changeText}</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
