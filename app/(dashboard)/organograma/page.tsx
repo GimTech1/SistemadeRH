@@ -570,12 +570,10 @@ export default function OrganogramaPage() {
     toast.success('Organograma resetado')
   }, [])
 
-  // auto-carregar ao montar e quando o userId mudar (carrega localStorage e depois sobrescreve com API se logado)
   useEffect(() => {
     loadOrganograma()
   }, [userId, loadOrganograma])
 
-  // auto-salvar em localStorage a cada mudança (snapshot local)
   useEffect(() => {
     try {
       const key = userId ? `organograma:${userId}` : 'organograma:anon'
