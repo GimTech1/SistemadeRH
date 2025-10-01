@@ -258,3 +258,13 @@ select option {
   background-position: initial !important;
   padding-right: 0 !important;
 }
+
+/* Scrollbar hide para abas do modal */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

@@ -1577,7 +1577,16 @@ export default function EmployeeProfilePage() {
               </div>
               
               <div className="border-b border-slate-200 bg-white">
-                <nav className="flex space-x-8 px-6">
+                {/* Indicador de scroll horizontal para mobile */}
+                <div className="lg:hidden px-4 py-2 bg-slate-50 border-b border-slate-200">
+                  <div className="flex items-center justify-center text-xs font-medium text-slate-500">
+                    <span className="flex items-center gap-1">
+                      ← Deslize para ver mais abas →
+                    </span>
+                  </div>
+                </div>
+                
+                <nav className="flex space-x-4 sm:space-x-6 lg:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
                   {[
                     { id: 'pessoal', label: 'Pessoal' },
                     { id: 'profissional', label: 'Profissional' },
@@ -1590,7 +1599,7 @@ export default function EmployeeProfilePage() {
                     <button
                       key={tab.id}
                       onClick={() => setEditTab(tab.id)}
-                      className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                         editTab === tab.id
                           ? 'border-blue-600 text-blue-600'
                           : 'border-transparent text-slate-600 hover:text-slate-800'

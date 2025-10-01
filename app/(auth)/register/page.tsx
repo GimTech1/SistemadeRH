@@ -79,7 +79,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       <Toaster 
         position="top-center"
         toastOptions={{
@@ -91,21 +91,25 @@ export default function RegisterPage() {
         }}
       />
       
-      <div className="w-1/2 flex items-center justify-center px-8 py-12" style={{ backgroundColor: '#f8fafc' }}>
+      {/* Seção principal - Desktop: esquerda, Mobile: topo */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12" style={{ backgroundColor: '#f8fafc' }}>
         <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
+          <div className="mb-6 lg:mb-8 text-center">
             <img 
               src="/logo-brasão-preto.png" 
               alt="Logo" 
-              className="h-20 w-auto object-contain mx-auto mb-6"
+              className="h-16 sm:h-20 w-auto object-contain mx-auto mb-4 lg:mb-6"
             />
-            <h1 className="text-2xl font-roboto font-light text-rich-black-600 tracking-wide">Criar Conta</h1>
-            <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-2">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-roboto font-light text-rich-black-600 tracking-wide leading-tight">
+              Criar Conta
+            </h1>
+            <p className="text-xs sm:text-sm font-roboto font-light text-oxford-blue-600 mt-2">
               Preencha os dados para criar sua conta
             </p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-8">
-            <form onSubmit={handleRegister} className="space-y-6">
+          
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 sm:p-8">
+            <form onSubmit={handleRegister} className="space-y-5 lg:space-y-6">
               <div>
                 <label htmlFor="fullName" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Nome Completo
@@ -118,13 +122,14 @@ export default function RegisterPage() {
                     type="text"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base"
                     placeholder="João Silva"
                     required
                     disabled={loading}
                   />
                 </div>
               </div>
+              
               <div>
                 <label htmlFor="email" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Email
@@ -137,13 +142,14 @@ export default function RegisterPage() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base"
                     placeholder="seu@email.com"
                     required
                     disabled={loading}
                   />
                 </div>
               </div>
+              
               <div>
                 <label htmlFor="position" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Cargo
@@ -156,13 +162,14 @@ export default function RegisterPage() {
                     type="text"
                     value={formData.position}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base"
                     placeholder="Analista de RH"
                     required
                     disabled={loading}
                   />
                 </div>
               </div>
+              
               <div>
                 <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Senha
@@ -175,7 +182,7 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -183,7 +190,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors p-1"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -194,6 +201,7 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </div>
+              
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Confirmar Senha
@@ -206,7 +214,7 @@ export default function RegisterPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -214,7 +222,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-oxford-blue-400 hover:text-yinmn-blue-600 transition-colors p-1"
                     tabIndex={-1}
                   >
                     {showConfirmPassword ? (
@@ -225,10 +233,11 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </div>
+              
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+                className="w-full text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center text-base"
                 style={{ backgroundColor: '#1B263B' }}
               >
                 {loading ? (
@@ -241,6 +250,7 @@ export default function RegisterPage() {
                 )}
               </button>
             </form>
+            
             <div className="mt-6 text-center">
               <span className="text-sm font-roboto font-light text-oxford-blue-600">
                 Já tem uma conta?{' '}
@@ -252,13 +262,20 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-      <div className="w-1/2 flex items-center justify-center px-8" style={{ backgroundColor: '#1B263B' }}>
-        <div className="text-center">
+      
+      {/* Seção secundária - Desktop: direita, Mobile: embaixo */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 lg:py-12" style={{ backgroundColor: '#1B263B' }}>
+        <div className="text-center w-full">
           <img 
             src="/logo-full-horizontal-branco.png" 
             alt="InvestMoney Logo" 
-            className="h-32 w-auto object-contain mx-auto mb-8"
+            className="h-20 sm:h-24 lg:h-32 w-auto object-contain mx-auto mb-4 lg:mb-8 max-w-xs sm:max-w-sm"
           />
+          <div className="hidden sm:block">
+            <p className="text-white/80 font-roboto font-light text-sm lg:text-base">
+              InvestMoney SA
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -221,7 +221,7 @@ export default function EmployeesPage() {
         </div>
       </div>
       
-      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -230,43 +230,43 @@ export default function EmployeesPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 sm:py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Buscar por nome, email ou cargo..."
               />
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-roboto font-medium text-rich-black-900">Ver por:</label>
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-          >
-            {departments.map(dept => (
-              <option key={dept} value={dept}>
-                {dept === 'all' ? 'Todos os Departamentos' : dept}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900">Ver por:</label>
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="appearance-none bg-white border border-platinum-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+              >
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>
+                    {dept === 'all' ? 'Todos os Departamentos' : dept}
+                  </option>
+                ))}
+              </select>
             </div>
             
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none bg-white border border-platinum-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
               >
                 <option value="name">Nome</option>
                 <option value="score">Pontuação</option>
                 <option value="department">Departamento</option>
-          </select>
+              </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-roboto font-medium text-rich-black-900">Visualizar:</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900">Visualizar:</label>
               <div className="flex bg-platinum-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('table')}
@@ -298,71 +298,80 @@ export default function EmployeesPage() {
       
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+          {/* Indicador de scroll horizontal para mobile */}
+          <div className="lg:hidden px-4 py-2 bg-platinum-50 border-b border-platinum-200">
+            <div className="flex items-center justify-center text-xs font-roboto font-medium text-oxford-blue-500">
+              <span className="flex items-center gap-1">
+                ← Deslize para ver mais colunas →
+              </span>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-platinum-50 border-b border-platinum-200">
                 <tr className="text-left text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">
-                  <th className="px-6 py-4">Colaborador</th>
-                  <th className="px-6 py-4">Cargo</th>
-                  <th className="px-6 py-4">Departamento</th>
-                  <th className="px-6 py-4 text-center">Performance</th>
-                  <th className="px-6 py-4 text-center">Ações</th>
-              </tr>
-            </thead>
+                  <th className="px-3 sm:px-6 py-4 min-w-[200px]">Colaborador</th>
+                  <th className="px-3 sm:px-6 py-4 min-w-[150px]">Cargo</th>
+                  <th className="px-3 sm:px-6 py-4 min-w-[120px]">Departamento</th>
+                  <th className="px-3 sm:px-6 py-4 text-center min-w-[100px]">Performance</th>
+                  <th className="px-3 sm:px-6 py-4 text-center min-w-[100px]">Ações</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-platinum-200">
-              {filteredEmployees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <tr key={employee.id} className="hover:bg-platinum-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
-                        {employee.avatarUrl ? (
-                          <img src={employee.avatarUrl} alt={employee.name} className="h-full w-full object-cover" />
-                        ) : (
-                          employee.avatar
-                        )}
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full overflow-hidden bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-xs sm:text-sm font-roboto font-semibold text-white">
+                          {employee.avatarUrl ? (
+                            <img src={employee.avatarUrl} alt={employee.name} className="h-full w-full object-cover" />
+                          ) : (
+                            employee.avatar
+                          )}
+                        </div>
+                        <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                          <p className="font-roboto font-medium text-rich-black-900 text-sm sm:text-base truncate">{employee.name}</p>
+                          <p className="text-xs sm:text-sm font-roboto font-light text-oxford-blue-600 truncate">{employee.email}</p>
+                        </div>
                       </div>
-                      <div className="ml-3">
-                          <p className="font-roboto font-medium text-rich-black-900">{employee.name}</p>
-                          <p className="text-sm font-roboto font-light text-oxford-blue-600">{employee.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-roboto font-medium text-rich-black-900">{employee.position}</span>
-                  </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-roboto font-medium bg-platinum-100 text-oxford-blue-700">
-                    {employee.department}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900 block truncate max-w-[140px]">{employee.position}</span>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-roboto font-medium bg-platinum-100 text-oxford-blue-700 truncate max-w-[100px]">
+                        {employee.department}
                       </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="font-roboto font-semibold text-rich-black-900">{employee.score}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-center">
+                      <div className="flex items-center justify-center space-x-1">
+                        <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 fill-yellow-500" />
+                        <span className="font-roboto font-semibold text-rich-black-900 text-sm sm:text-base">{employee.score}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-center">
                       {userRole === 'admin' && (
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
                           <Link href={`/employees/${employee.id}`}>
-                            <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                              <Eye className="h-4 w-4" />
+                            <button className="p-1.5 sm:p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                             </button>
                           </Link>
                           <Link href={`/employees/${employee.id}?edit=1`}>
-                            <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                              <Edit className="h-4 w-4" />
+                            <button className="p-1.5 sm:p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                             </button>
                           </Link>
                         </div>
                       )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (
