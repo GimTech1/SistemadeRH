@@ -154,7 +154,7 @@ export default function CyclesPage() {
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 hover:opacity-90"
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md inline-flex items-center gap-2 w-fit hover:opacity-90"
           style={{ backgroundColor: '#1B263B' }}
         >
           <Plus className="h-4 w-4" />
@@ -261,75 +261,94 @@ export default function CyclesPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-platinum-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-roboto font-medium text-oxford-blue-600">
-                    Nome
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-roboto font-medium text-oxford-blue-600">
-                    Período
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-roboto font-medium text-oxford-blue-600">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-roboto font-medium text-oxford-blue-600">
-                    Criado em
-                  </th>
-                  <th className="px-6 py-4 text-right text-sm font-roboto font-medium text-oxford-blue-600">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-platinum-200">
-                {cycles.map((cycle) => (
-                  <tr key={cycle.id} className="hover:bg-platinum-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-roboto font-medium text-rich-black-900">
-                          {cycle.name}
-                        </div>
-                        {cycle.description && (
-                          <div className="text-sm text-oxford-blue-600 mt-1">
-                            {cycle.description}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-rich-black-900">
-                        {formatDate(cycle.start_date)} - {formatDate(cycle.end_date)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(cycle.is_active)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-oxford-blue-600">
-                        {formatDate(cycle.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => toggleCycleStatus(cycle.id, cycle.is_active)}
-                          className="p-2 hover:bg-platinum-100 rounded-lg transition-colors"
-                          title={cycle.is_active ? 'Desativar ciclo' : 'Ativar ciclo'}
-                        >
-                          {cycle.is_active ? (
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Cards - Mobile */}
+            <div className="grid grid-cols-1 gap-4 sm:hidden p-4">
+              {cycles.map((cycle) => (
+                <div key={cycle.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-roboto font-medium text-rich-black-900 truncate">{cycle.name}</h3>
+                      {cycle.description && (
+                        <p className="text-xs font-roboto font-light text-oxford-blue-600 mt-1 line-clamp-2">{cycle.description}</p>
+                      )}
+                    </div>
+                    <div className="ml-3 flex-shrink-0">{getStatusBadge(cycle.is_active)}</div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-oxford-blue-700">
+                    <div className="bg-platinum-50 rounded-xl p-2">
+                      <span className="block font-roboto font-medium">Período</span>
+                      <span className="block font-roboto">{formatDate(cycle.start_date)} - {formatDate(cycle.end_date)}</span>
+                    </div>
+                    <div className="bg-platinum-50 rounded-xl p-2">
+                      <span className="block font-roboto font-medium">Criado em</span>
+                      <span className="block font-roboto">{formatDate(cycle.created_at)}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-end">
+                    <button
+                      onClick={() => toggleCycleStatus(cycle.id, cycle.is_active)}
+                      className="px-3 py-2 rounded-xl text-xs font-roboto font-medium hover:bg-platinum-100 transition-colors"
+                      title={cycle.is_active ? 'Desativar ciclo' : 'Ativar ciclo'}
+                    >
+                      {cycle.is_active ? (
+                        <span className="text-red-600">Desativar</span>
+                      ) : (
+                        <span className="text-green-600">Ativar</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabela - Desktop/Tablet */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full min-w-[720px]">
+                <thead className="bg-platinum-50">
+                  <tr>
+                    <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-roboto font-medium text-oxford-blue-600">Nome</th>
+                    <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-roboto font-medium text-oxford-blue-600">Período</th>
+                    <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-roboto font-medium text-oxford-blue-600">Status</th>
+                    <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-roboto font-medium text-oxford-blue-600">Criado em</th>
+                    <th className="px-4 sm:px-6 py-4 text-right text-xs sm:text-sm font-roboto font-medium text-oxford-blue-600">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-platinum-200">
+                  {cycles.map((cycle) => (
+                    <tr key={cycle.id} className="hover:bg-platinum-50">
+                      <td className="px-4 sm:px-6 py-4">
+                        <div>
+                          <div className="text-sm sm:text-base font-roboto font-medium text-rich-black-900">{cycle.name}</div>
+                          {cycle.description && (
+                            <div className="text-xs sm:text-sm text-oxford-blue-600 mt-1 truncate max-w-[220px] sm:max-w-none">{cycle.description}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="text-sm sm:text-base text-rich-black-900">{formatDate(cycle.start_date)} - {formatDate(cycle.end_date)}</div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">{getStatusBadge(cycle.is_active)}</td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="text-sm sm:text-base text-oxford-blue-600">{formatDate(cycle.created_at)}</div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-1 sm:space-x-2">
+                          <button onClick={() => toggleCycleStatus(cycle.id, cycle.is_active)} className="p-2 hover:bg-platinum-100 rounded-lg transition-colors" title={cycle.is_active ? 'Desativar ciclo' : 'Ativar ciclo'}>
+                            {cycle.is_active ? (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
