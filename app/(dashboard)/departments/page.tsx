@@ -57,6 +57,7 @@ export default function DepartmentsPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [editingDepartmentId, setEditingDepartmentId] = useState<string>('')
   const [newDepartment, setNewDepartment] = useState({
     name: '',
     description: '',
@@ -182,6 +183,7 @@ export default function DepartmentsPage() {
   }
 
   const handleCreateDepartment = async () => {
+    // Deprecated in favor of handleSaveDepartment, kept for safety if referenced
     if (!newDepartment.name.trim()) {
       toast.error('Nome do departamento é obrigatório')
       return
@@ -224,6 +226,69 @@ export default function DepartmentsPage() {
     }
   }
 
+  const handleSaveDepartment = async () => {
+    if (!newDepartment.name.trim()) {
+      toast.error('Nome do departamento é obrigatório')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const isEditing = Boolean(editingDepartmentId)
+      const url = isEditing ? `/api/departments/${editingDepartmentId}` : '/api/departments'
+      const method = isEditing ? 'PATCH' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newDepartment.name.trim(),
+          description: newDepartment.description.trim() || null,
+          manager_id: newDepartment.manager_id || null,
+          parent_department_id: newDepartment.parent_department_id || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error(data.error || 'Você não tem permissão para salvar departamentos')
+        } else {
+          throw new Error(data.error || 'Erro ao salvar departamento')
+        }
+        return
+      }
+
+      toast.success(isEditing ? 'Departamento atualizado com sucesso!' : 'Departamento criado com sucesso!')
+      setIsModalOpen(false)
+      setEditingDepartmentId('')
+      setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
+      await loadDepartments()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar departamento')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const openCreateDepartment = () => {
+    setEditingDepartmentId('')
+    setNewDepartment({ name: '', description: '', manager_id: '', parent_department_id: '' })
+    setIsModalOpen(true)
+  }
+
+  const openEditDepartment = (dept: Department) => {
+    setEditingDepartmentId(dept.id)
+    setNewDepartment({
+      name: dept.name || '',
+      description: dept.description || '',
+      manager_id: dept.managerId || '',
+      parent_department_id: ''
+    })
+    setIsModalOpen(true)
+  }
+
   const filteredDepartments = departments
     .filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -252,8 +317,8 @@ export default function DepartmentsPage() {
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e acompanhe o desempenho de cada departamento</h1>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
-          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" 
+          onClick={openCreateDepartment}
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md inline-flex items-center gap-2 w-fit" 
           style={{ backgroundColor: '#1B263B' }}
         >
           <Plus className="h-4 w-4" />
@@ -458,7 +523,11 @@ export default function DepartmentsPage() {
                             <Eye className="h-4 w-4" />
                           </button>
                         </Link>
-                        <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
+                        <button
+                          onClick={() => openEditDepartment(dept)}
+                          className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200"
+                          title="Editar departamento"
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
@@ -493,9 +562,6 @@ export default function DepartmentsPage() {
                       <Eye className="h-4 w-4" />
                     </button>
                   </Link>
-                  <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                    <Edit className="h-4 w-4" />
-                </button>
                 </div>
               </div>
 
@@ -606,9 +672,9 @@ export default function DepartmentsPage() {
               <div className="p-6 border-b border-platinum-200 bg-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Dialog.Title className="text-xl font-roboto font-semibold text-rich-black-900">Novo Departamento</Dialog.Title>
+                    <Dialog.Title className="text-xl font-roboto font-semibold text-rich-black-900">{editingDepartmentId ? 'Editar Departamento' : 'Novo Departamento'}</Dialog.Title>
                     <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
-                      Crie um novo departamento para organizar sua equipe
+                      {editingDepartmentId ? 'Atualize as informações do departamento' : 'Crie um novo departamento para organizar sua equipe'}
                     </Dialog.Description>
                   </div>
                   <button
@@ -738,7 +804,7 @@ export default function DepartmentsPage() {
                   Cancelar
                 </button>
                 <button
-                  onClick={handleCreateDepartment}
+                  onClick={handleSaveDepartment}
                   disabled={isCreating || !newDepartment.name.trim()}
                   className="px-6 py-3 bg-yinmn-blue-600 hover:bg-yinmn-blue-700 disabled:bg-oxford-blue-300 text-white rounded-xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 disabled:cursor-not-allowed"
                 >
@@ -750,7 +816,7 @@ export default function DepartmentsPage() {
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      Criar Departamento
+                      {editingDepartmentId ? 'Salvar Alterações' : 'Criar Departamento'}
                     </>
                   )}
                 </button>
