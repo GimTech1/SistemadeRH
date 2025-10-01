@@ -110,7 +110,35 @@ export default function UsersPage() {
           <CardTitle>Gerenciar Usuários</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Cards - Mobile */}
+          <div className="grid grid-cols-1 gap-4 sm:hidden">
+            {users.map((u) => (
+              <div key={u.id} className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-roboto font-medium text-rich-black-900 truncate">{u.full_name}</h3>
+                    <p className="text-xs font-roboto font-light text-oxford-blue-600 mt-1 truncate">{u.email}</p>
+                    <p className="text-xs font-roboto font-light text-oxford-blue-600 mt-1">{u.position || '-'}</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-roboto font-medium text-rich-black-900 mb-1">Role</label>
+                  <select
+                    className="w-full border border-platinum-300 rounded-lg px-3 py-2 text-sm appearance-none bg-white pr-10 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500"
+                    value={u.role}
+                    onChange={(e) => updateRole(u.id, e.target.value as Role)}
+                  >
+                    <option value="employee">employee</option>
+                    <option value="gerente">gerente</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabela - Desktop/Tablet */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
