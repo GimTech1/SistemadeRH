@@ -95,7 +95,6 @@ export default function DashboardHeader({
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          {/* Dropdown do perfil */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -121,7 +120,6 @@ export default function DashboardHeader({
               <ChevronDown className="w-4 h-4 text-oxford-blue-600" />
             </button>
 
-            {/* Dropdown menu */}
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-platinum-200 py-2 z-50">
                 <Link
