@@ -102,7 +102,7 @@ export default function ProfilePage() {
       if (error) throw error
 
       toast.success('Perfil atualizado com sucesso!')
-      await loadProfile() // Recarregar dados
+      await loadProfile()
     } catch (error) {
       toast.error('Erro ao salvar perfil')
     } finally {
@@ -120,12 +120,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-oxford-blue-600 hover:text-yinmn-blue-700">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+            <ArrowLeft className="h-5 w-5" />
           </Link>
         </div>
         <button

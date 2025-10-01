@@ -1154,7 +1154,7 @@ export default function EmployeeProfilePage() {
       <div>
         <Link href="/employees">
           <Button variant="ghost" size="sm" className="px-2 py-2 rounded-xl text-slate-500 hover:text-slate-700" aria-label="Voltar" title="Voltar">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
       </div>
