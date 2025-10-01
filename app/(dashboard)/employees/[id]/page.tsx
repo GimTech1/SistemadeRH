@@ -17,6 +17,7 @@ import {
   Star,
   TrendingUp,
   TrendingDown,
+  ArrowLeft,
   ChevronRight,
   Edit,
   MoreVertical,
@@ -1150,6 +1151,13 @@ export default function EmployeeProfilePage() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <Link href="/employees">
+          <Button variant="ghost" size="sm" className="px-2 py-2 rounded-xl text-slate-500 hover:text-slate-700" aria-label="Voltar" title="Voltar">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
       <Card className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex items-start space-x-6 flex-1 min-w-0">

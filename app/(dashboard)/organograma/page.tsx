@@ -597,35 +597,24 @@ export default function OrganogramaPage() {
 
   return (
     <div className="pb-10">
-      <div className="mb-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h1 className="text-2xl font-semibold text-gray-900">Visão hierárquica da estrutura organizacional</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={loadOrganograma}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              Carregar
-            </button>
-            <button
-              onClick={resetOrganograma}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              Resetar
-            </button>
-            <button
-              onClick={saveOrganograma}
-              className="rounded-md bg-yinmn-blue-600 text-white px-3 py-2 text-sm hover:bg-yinmn-blue-700"
-            >
-              Salvar
-            </button>
+      <div className="mb-6 px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Visão hierárquica da estrutura organizacional</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={loadOrganograma} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100">Carregar</button>
+            <button onClick={resetOrganograma} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100">Resetar</button>
+            <button onClick={saveOrganograma} className="rounded-md bg-yinmn-blue-600 text-white px-3 py-2 text-sm hover:bg-yinmn-blue-700">Salvar</button>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-6">
-        <div className="flex-1 w-0 overflow-auto">
-          <div className="min-w-[720px] flex justify-center">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 px-4 sm:px-0">
+        <div className="flex-1 w-full overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          {/* Indicador de scroll para mobile */}
+          <div className="md:hidden px-4 py-2 border-b border-gray-200 bg-gray-50 text-center text-xs text-gray-600">
+            ← Deslize para navegar pelo organograma →
+          </div>
+          <div className="w-max min-w-full flex justify-center p-4">
             <OrgTree
               node={tree}
               assignments={assignments}
@@ -641,8 +630,8 @@ export default function OrganogramaPage() {
           </div>
         </div>
 
-        <aside className="w-full md:w-80 flex-shrink-0">
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 sticky top-6">
+        <aside className="w-full md:w-80 flex-shrink-0 px-0 md:px-0">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 md:sticky md:top-6">
             <div className="mb-3">
               <div className="text-base font-semibold text-gray-900">Colaboradores</div>
               <div className="text-xs text-gray-500">Arraste para um card do organograma</div>
@@ -653,7 +642,7 @@ export default function OrganogramaPage() {
               placeholder="Buscar por nome ou cargo"
               className="w-full mb-3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500"
             />
-            <div className="max-h-[480px] overflow-auto pr-1">
+            <div className="max-h-[360px] md:max-h-[480px] overflow-auto pr-1">
               {filteredEmployees.length === 0 && (
                 <div className="text-sm text-gray-500">Nenhum colaborador disponível</div>
               )}
