@@ -1150,66 +1150,80 @@ export default function EmployeeProfilePage() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-4">
-            <div className="h-24 w-24 rounded-full bg-neutral-200 overflow-hidden flex items-center justify-center text-3xl font-medium text-white/90">
+      <Card className="p-6 sm:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="flex items-start space-x-6 flex-1 min-w-0">
+            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-neutral-200 overflow-hidden flex items-center justify-center text-2xl sm:text-3xl font-medium text-white/90 flex-shrink-0">
               {employee.avatar_url ? (
                 <img src={withVersion(employee.avatar_url, employee.updated_at)} alt="Avatar" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-slate-500">{employee.full_name.split(' ').map(n => n[0]).join('')}</span>
               )}
             </div>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-semibold text-slate-900">{employee.full_name}</h1>
-                <span className={`px-2 py-1 rounded-full text-xs text-white ${getStatusColor(employee.status)}`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 mb-4">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-900">{employee.full_name}</h1>
+                <span className={`px-3 py-1 rounded-full text-xs text-white w-fit ${getStatusColor(employee.status)}`}>
                   {employee.status === 'active' && 'Ativo'}
                   {employee.status === 'vacation' && 'Férias'}
                   {employee.status === 'leave' && 'Afastado'}
                   {employee.status === 'inactive' && 'Inativo'}
                 </span>
               </div>
-              <p className="text-slate-600 mt-1">{employee.position}</p>
-              <div className="flex items-center space-x-4 mt-3 text-sm text-slate-600">
+              <p className="text-slate-600 text-base sm:text-lg mb-4">{employee.position}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6 text-sm sm:text-base text-slate-600">
                 <span className="flex items-center">
-                  <Building className="h-4 w-4 mr-1" />
-                  {departmentName}
+                  <Building className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>{departmentName}</span>
                 </span>
                 <span className="flex items-center">
-                  <CreditCard className="h-4 w-4 mr-1" />
-                  {employee.employee_id}
+                  <CreditCard className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>{employee.employee_id}</span>
                 </span>
                 <span className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Desde {employee.admission_date}
+                  <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>Desde {employee.admission_date}</span>
                 </span>
               </div>
             </div>
           </div>
-           <div className="flex space-x-2">
-             <Button variant="secondary" size="sm" onClick={handleDownload} title="Baixar ficha">
-               <Download className="h-4 w-4" />
-             </Button>
-             <Button variant="secondary" size="sm" onClick={handlePrint} title="Imprimir ficha">
-               <Printer className="h-4 w-4" />
-             </Button>
-             <Button variant="secondary" size="sm" onClick={handleShare} title="Compartilhar">
-               <Share2 className="h-4 w-4" />
-             </Button>
-             <Button variant="secondary" size="sm" onClick={() => setIsDeleteOpen(true)} title="Excluir colaborador" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-               <Trash2 className="h-4 w-4" />
-             </Button>
-             <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90" onClick={() => setIsEditOpen(true)}>
-               <span className="flex items-center"><Edit className="h-4 w-4 mr-2" />Editar</span>
-             </Button>
-           </div>
+          
+          {/* Botões de ação - com mais espaço */}
+          <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end lg:space-y-3 lg:space-x-0">
+            <div className="flex items-center space-x-2">
+              <Button variant="secondary" size="sm" onClick={handleDownload} title="Baixar ficha" className="p-3">
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handlePrint} title="Imprimir ficha" className="p-3">
+                <Printer className="h-4 w-4" />
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleShare} title="Compartilhar" className="p-3">
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setIsDeleteOpen(true)} title="Excluir colaborador" className="p-3 text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button variant="primary" size="md" className="!bg-[#1B263B] hover:opacity-90 px-6 py-3" onClick={() => setIsEditOpen(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
         </div>
       </Card>
 
       
       <div className="border-b border-neutral-200">
-        <nav className="flex space-x-8 overflow-x-auto">
+        {/* Indicador de scroll horizontal para mobile */}
+        <div className="lg:hidden px-4 py-2 bg-slate-50 border-b border-slate-200">
+          <div className="flex items-center justify-center text-xs font-medium text-slate-500">
+            <span className="flex items-center gap-1">
+              ← Deslize para ver mais abas →
+            </span>
+          </div>
+        </div>
+        
+        <nav className="flex space-x-4 sm:space-x-6 lg:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
           {[
             { id: 'personal', label: 'Dados Pessoais', icon: User },
             { id: 'professional', label: 'Profissional', icon: Briefcase },
@@ -1225,13 +1239,13 @@ export default function EmployeeProfilePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 px-1 border-b-2 text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 text-xs sm:text-sm font-medium transition-colors flex items-center space-x-1 sm:space-x-2 whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>{tab.label}</span>
               </button>
             )
@@ -1240,16 +1254,16 @@ export default function EmployeeProfilePage() {
       </div>
 
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {activeTab === 'personal' && (
           <>
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               
               <Card>
-                <CardHeader>
-                  <CardTitle>Informações Pessoais</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Informações Pessoais</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-6">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6">
                   <Field label="Nome Completo" value={employee.full_name} />
                   <Field label="CPF" value={employee.cpf} />
                   <Field label="RG" value={employee.rg} />
@@ -1262,10 +1276,10 @@ export default function EmployeeProfilePage() {
 
               
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center"><MapPin className="h-4 w-4 mr-2" />Endereço</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg"><MapPin className="h-4 w-4 mr-2" />Endereço</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-6">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6">
                   <div className="col-span-2">
                     <Field label="Logradouro" value={<>{employee.address}{employee.number ? `, ${employee.number}` : ''} {employee.complement}</>} />
                   </div>
@@ -1279,11 +1293,11 @@ export default function EmployeeProfilePage() {
 
             
             <Card>
-              <CardHeader>
-                <CardTitle>Contatos</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Contatos</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-6">
-                <div className="grid grid-cols-2 gap-6">
+              <CardContent className="grid grid-cols-1 gap-4 sm:gap-6 p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <Field label="E-mail Corporativo" value={employee.email} />
                   <Field label="E-mail Pessoal" value={employee.personal_email} />
                   <Field label="Telefone" value={employee.phone} />

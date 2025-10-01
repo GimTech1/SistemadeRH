@@ -488,17 +488,22 @@ export default function NewEmployeePage() {
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
+        {/* Indicador de scroll para mobile */}
+        <div className="sm:hidden px-2 py-1 -mt-2 -mb-1 text-center text-xs text-oxford-blue-500">
+          ← Deslize para ver as etapas →
+        </div>
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex items-center justify-between min-w-[560px] sm:min-w-0">
           {steps.map((step, index) => {
             const Icon = step.icon
             const isActive = currentStep === step.id
             const isCompleted = currentStep > step.id
             return (
-              <div key={step.id} className="flex items-center">
+              <div key={step.id} className="flex items-center flex-shrink-0">
                 <button
                   onClick={() => setCurrentStep(step.id)}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
                     isActive 
                       ? 'border-yinmn-blue-500 bg-yinmn-blue-500 text-white' 
                       : isCompleted
@@ -506,31 +511,32 @@ export default function NewEmployeePage() {
                       : 'border-platinum-300 bg-white text-oxford-blue-400 hover:border-yinmn-blue-300 hover:bg-yinmn-blue-50'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
                 <button
                   onClick={() => setCurrentStep(step.id)}
                   className="ml-3 cursor-pointer hover:opacity-80 transition-opacity duration-200"
                 >
-                  <p className={`text-sm font-roboto font-medium ${
+                  <p className={`text-xs sm:text-sm font-roboto font-medium ${
                     isActive ? 'text-yinmn-blue-600' : isCompleted ? 'text-green-600' : 'text-oxford-blue-400'
                   }`}>
                     {step.title}
                   </p>
                 </button>
                 {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-4 ${
+                  <div className={`w-10 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
                     isCompleted ? 'bg-green-500' : 'bg-platinum-300'
                   }`} />
                 )}
               </div>
             )
           })}
+          </div>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         {currentStep === 1 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
               <User className="h-5 w-5" />
               Informações Básicas
@@ -599,7 +605,7 @@ export default function NewEmployeePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Nome Completo *
@@ -777,7 +783,7 @@ export default function NewEmployeePage() {
 
         
         {currentStep === 2 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Contatos e Endereço
@@ -785,7 +791,7 @@ export default function NewEmployeePage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Contatos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       <Phone className="h-4 w-4 inline mr-2" />
@@ -833,7 +839,7 @@ export default function NewEmployeePage() {
 
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Endereço</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       CEP
@@ -924,12 +930,12 @@ export default function NewEmployeePage() {
 
         
         {currentStep === 3 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
               <Building className="h-5 w-5" />
               Dados Profissionais
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Código do Funcionário
@@ -1011,7 +1017,7 @@ export default function NewEmployeePage() {
         )}
 
         {currentStep === 4 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-4 sm:p-6">
             <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6 flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Documentos e Benefícios
@@ -1019,7 +1025,7 @@ export default function NewEmployeePage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Documentos (Fotos)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       Foto do RG
@@ -1113,7 +1119,7 @@ export default function NewEmployeePage() {
               
               <div>
                 <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4">Benefícios</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       <Banknote className="h-4 w-4 inline mr-2" />
@@ -1175,10 +1181,11 @@ export default function NewEmployeePage() {
 
               
               <div>
-                <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-4 flex items-center gap-2">
+                <h3 className="text-md font-roboto font-medium text-rich-black-900 mb-1 flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Dependentes
+                  Dependentes (opcional)
                 </h3>
+                <p className="text-xs text-oxford-blue-500 mb-3">Preencha somente se o colaborador possuir dependentes.</p>
                 <div className="space-y-4">
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-platinum-50 rounded-lg">
@@ -1314,7 +1321,7 @@ export default function NewEmployeePage() {
                   <GraduationCap className="h-4 w-4" />
                   Educação
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       Nível de Escolaridade
@@ -1387,7 +1394,7 @@ export default function NewEmployeePage() {
                   <CreditCard className="h-4 w-4" />
                   Dados Bancários
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                       Nome do Banco
@@ -1485,7 +1492,7 @@ export default function NewEmployeePage() {
         )}
 
         
-        <div className="flex justify-between px-6 py-8">
+        <div className="flex justify-between px-4 sm:px-6 py-6 sm:py-8">
           <button
             type="button"
             onClick={(e) => prevStep(e)}
