@@ -341,16 +341,16 @@ export default function EmployeeProfilePage() {
         account_type: (data as any).account_type || '',
         pix_key: '',
         
-        overall_score: 8.7, 
-        total_evaluations: 0, 
+        overall_score: (data as any).overall_score || null, 
+        total_evaluations: (data as any).total_evaluations || 0, 
         cha_scores: {
-          conhecimento: 8.5, 
-          habilidade: 9.0, 
-          atitude: 8.6, 
+          conhecimento: (data as any).cha_conhecimento || null, 
+          habilidade: (data as any).cha_habilidade || null, 
+          atitude: (data as any).cha_atitude || null, 
         },
-        recent_feedbacks: [], 
-        goals: [], 
-        evaluations_history: [], 
+        recent_feedbacks: (data as any).recent_feedbacks || [], 
+        goals: (data as any).goals || [], 
+        evaluations_history: (data as any).evaluations_history || [], 
         
         avatar_url: (data as any).avatar_url || '',
         status: ((data as any).is_active !== false) ? 'active' : 'inactive',
@@ -766,7 +766,6 @@ export default function EmployeeProfilePage() {
           .from('employees')
           .update(uploadedBacks)
           .eq('id', params.id as string)
-        if (backUpdateError) console.error('Erro ao salvar versos em employees:', backUpdateError)
       }
 
       toast.success('Colaborador atualizado com sucesso')
@@ -1334,7 +1333,6 @@ export default function EmployeeProfilePage() {
               </CardContent>
             </Card>
             
-            {/* Espaçamento vertical no final da aba dados pessoais */}
             <div className="h-8"></div>
           </>
         )}
@@ -1589,54 +1587,28 @@ export default function EmployeeProfilePage() {
 
         {activeTab === 'performance' && (
           <div className="lg:col-span-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumo de Desempenho</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <Field label="Pontuação Geral" value={employee.overall_score?.toFixed ? employee.overall_score.toFixed(1) : employee.overall_score} />
-                  <Field label="Total de Avaliações" value={employee.total_evaluations ?? 0} />
-                  <div>
-                    <p className="text-sm tracking-wide text-slate-700">CHA (C-H-A)</p>
-                    <div className="mt-1 grid grid-cols-3 gap-2 text-slate-950 font-semibold">
-                      <span>C {employee.cha_scores?.conhecimento ?? '-'}</span>
-                      <span>H {employee.cha_scores?.habilidade ?? '-'}</span>
-                      <span>A {employee.cha_scores?.atitude ?? '-'}</span>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Desempenho</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <div className="text-slate-400 mb-4">
+                    <Activity className="h-12 w-12 mx-auto" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Feedbacks Recentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {employee.recent_feedbacks && employee.recent_feedbacks.length > 0 ? (
-                    <div className="space-y-4">
-                      {employee.recent_feedbacks.map((feedback: any) => (
-                        <div key={feedback.id} className="pb-4 border-b border-neutral-200 last:border-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-slate-950">{feedback.from}</p>
-                              <p className="text-sm text-slate-700">{feedback.role} • {feedback.date}</p>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span className="font-medium">{feedback.score}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-slate-800">{feedback.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-600">Nenhum feedback recente.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Dados de Desempenho</h3>
+                  <p className="text-slate-600 mb-4">
+                    Os dados de desempenho serão exibidos aqui quando estiverem disponíveis.
+                  </p>
+                  <div className="text-sm text-slate-500">
+                    <p>• Avaliações de desempenho</p>
+                    <p>• Feedbacks e comentários</p>
+                    <p>• Metas e objetivos</p>
+                    <p>• Histórico de avaliações</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
@@ -1670,7 +1642,6 @@ export default function EmployeeProfilePage() {
               </div>
               
               <div className="border-b border-slate-200 bg-white">
-                {/* Indicador de scroll horizontal para mobile */}
                 <div className="lg:hidden px-4 py-2 bg-slate-50 border-b border-slate-200">
                   <div className="flex items-center justify-center text-xs font-medium text-slate-500">
                     <span className="flex items-center gap-1">
