@@ -19,8 +19,13 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     
     try {
+      // Determina a URL base baseada no ambiente
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://rh.investmoneysa.com.br'
+        : 'http://localhost:3000'
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://rh.investmoneysa.com.br/reset-password`,
+        redirectTo: `${baseUrl}/reset-password`,
       })
       
       if (error) {
