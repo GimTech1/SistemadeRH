@@ -50,6 +50,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { validateCPF, formatCPF, validateRG, formatRG, searchAddressByCEP, formatCEP } from '@/lib/validations'
+import { useDepartmentAccess } from '@/lib/hooks/useDepartmentAccess'
 
 interface EmployeeProfile {
   id: string
@@ -76,6 +77,7 @@ interface EmployeeProfile {
   employee_id: string
   position: string
   department: string
+  department_id: string
   admission_date: string
   contract_type: string
   work_schedule: string
@@ -143,8 +145,6 @@ export default function EmployeeProfilePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
   const [capturing, setCapturing] = useState(false)
-  
-  
   const [validationErrors, setValidationErrors] = useState<{
     cpf?: string;
     rg?: string;
@@ -185,6 +185,7 @@ export default function EmployeeProfilePage() {
     is_active: true,
   })
   const supabase = createClient()
+  const { canViewEmployeeSalary, loading: accessLoading } = useDepartmentAccess()
 
   useEffect(() => {
     loadEmployeeData()
@@ -234,7 +235,6 @@ export default function EmployeeProfilePage() {
         if (d.name) deps.push({ name: d.name, relationship: d.relationship, birth_date: d.birth_date })
       })
 
-      // Estruturas compatíveis com o formulário de edição existente
       const contacts = {
         personal_email: (data as any).personal_email || '',
         phone: (data as any).phone || '',
@@ -307,6 +307,7 @@ export default function EmployeeProfilePage() {
         employee_id: (data as any).employee_code || '',
         position: (data as any).position || '',
         department: (data as any).department || '',
+        department_id: (data as any).department_id || (data as any).department || '',
         admission_date: (data as any).admission_date || '',
         contract_type: (data as any).contract_type || '',
         work_schedule: (data as any).work_schedule || '',
@@ -438,10 +439,8 @@ export default function EmployeeProfilePage() {
   const startCamera = async () => {
     try {
       setShowCamera(true)
-      // Garante que o elemento <video> esteja montado antes de anexar o stream
       await new Promise(resolve => requestAnimationFrame(() => resolve(null)))
       const constraints: MediaStreamConstraints = { video: { facingMode: 'user' }, audio: false }
-      // Encerra stream anterior, se houver
       if (mediaStream) {
         mediaStream.getTracks().forEach(t => t.stop())
       }
@@ -470,7 +469,6 @@ export default function EmployeeProfilePage() {
     setShowCamera(false)
   }
 
-  // Ao fechar o modal de edição, garanta que a câmera seja desligada
   useEffect(() => {
     if (!isEditOpen) {
       stopCamera()
@@ -500,7 +498,6 @@ export default function EmployeeProfilePage() {
     }, 'image/png')
   }
 
-  // Remover documento salvo (frente/verso) diretamente do registro do colaborador
   const handleRemoveDocument = async (column: 'rg_photo' | 'cpf_photo' | 'rg_back_photo' | 'cpf_back_photo' | 'ctps_photo' | 'diploma_photo') => {
     if (!employee) return
     try {
@@ -559,7 +556,6 @@ export default function EmployeeProfilePage() {
     return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${map[color]}`}>{children}</span>
   }
 
-  // Função para validar CPF no modal de edição
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatCPF(value)
@@ -569,7 +565,6 @@ export default function EmployeeProfilePage() {
       cpf: formattedValue
     }))
 
-    // Validar CPF se tiver 11 dígitos
     if (value.replace(/\D/g, '').length === 11) {
       const validation = validateCPF(value)
       setValidationErrors(prev => ({
@@ -584,7 +579,6 @@ export default function EmployeeProfilePage() {
     }
   }
 
-  // Função para validar RG no modal de edição
   const handleRGChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatRG(value)
@@ -594,7 +588,6 @@ export default function EmployeeProfilePage() {
       rg: formattedValue
     }))
 
-    // Validar RG se tiver pelo menos 7 caracteres
     if (value.replace(/[^\dA-Za-z]/g, '').length >= 7) {
       const validation = validateRG(value)
       setValidationErrors(prev => ({
@@ -609,7 +602,6 @@ export default function EmployeeProfilePage() {
     }
   }
 
-  // Função para buscar endereço por CEP no modal de edição
   const handleCEPChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const formattedValue = formatCEP(value)
@@ -622,7 +614,6 @@ export default function EmployeeProfilePage() {
       }
     }))
 
-    // Buscar endereço se CEP tiver 8 dígitos
     if (value.replace(/\D/g, '').length === 8) {
       setIsValidatingCEP(true)
       setValidationErrors(prev => ({
@@ -666,7 +657,6 @@ export default function EmployeeProfilePage() {
     }
   }
 
-  // Função para buscar departamentos no modal de edição
   const fetchDepartments = async () => {
     try {
       setLoadingDepartments(true)
@@ -685,7 +675,6 @@ export default function EmployeeProfilePage() {
     }
   }
 
-  // Carregar departamentos quando o modal abrir
   useEffect(() => {
     if (isEditOpen) {
       fetchDepartments()
@@ -695,7 +684,6 @@ export default function EmployeeProfilePage() {
   const handleSaveEdit = async () => {
     try {
       setSaving(true)
-      // Upload de documentos se o usuário tiver selecionado
       const uploaded: Record<string, string | undefined> = {}
       const uploadFile = async (file: File, prefix: string) => {
         const filename = `${prefix}-${params.id}-${Date.now()}-${file.name}`
@@ -711,9 +699,7 @@ export default function EmployeeProfilePage() {
       if (docFiles.ctps) uploaded.ctps_photo = await uploadFile(docFiles.ctps, 'ctps')
       if (docFiles.diploma) uploaded.diploma_photo = await uploadFile(docFiles.diploma, 'diploma')
 
-      // Monta payload compatível com colunas normalizadas (evita objetos como 'bank')
       const payload: Record<string, any> = {
-        // só atualiza nome se informado; evita erro de obrigatoriedade
         ...(editData.name && editData.name.trim() ? { full_name: editData.name.trim() } : {}),
         email: editData.email,
         position: editData.position,
@@ -724,26 +710,21 @@ export default function EmployeeProfilePage() {
         gender: editData.gender || null,
         marital_status: editData.marital_status || null,
         nationality: editData.nationality || null,
-        // contatos
         phone: editData.contacts?.phone || null,
         emergency_contact: editData.contacts?.emergency_contact || null,
-        // endereço
         address: editData.address?.street || null,
         city: editData.address?.city || null,
         state: editData.address?.state || null,
         zip_code: editData.address?.zip || null,
-        // profissional
         employee_code: editData.employee_code || null,
         admission_date: editData.admission_date || null,
         contract_type: editData.contract_type || null,
         work_schedule: editData.work_schedule || null,
         salary: editData.salary ? Number(editData.salary) : null,
-        // educação
         education_level: (editData as any).education?.level || null,
         course_name: (editData as any).education?.course || null,
         institution_name: (editData as any).education?.institution || null,
         graduation_year: (editData as any).education?.graduation_year || null,
-        // dependentes (até 3)
         dependent_name_1: editData.dependents?.[0]?.name || null,
         dependent_relationship_1: editData.dependents?.[0]?.relationship || null,
         dependent_birth_date_1: editData.dependents?.[0]?.birth_date || null,
@@ -753,20 +734,16 @@ export default function EmployeeProfilePage() {
         dependent_name_3: editData.dependents?.[2]?.name || null,
         dependent_relationship_3: editData.dependents?.[2]?.relationship || null,
         dependent_birth_date_3: editData.dependents?.[2]?.birth_date || null,
-        // bancário
         bank_name: (editData as any).bank?.bank_name || null,
         bank_agency: (editData as any).bank?.agency || null,
         bank_account: (editData as any).bank?.account || null,
         account_type: (editData as any).bank?.account_type || null,
         pix_key: (editData as any).bank?.pix_key || null,
-        // benefícios
         vale_refeicao: (editData as any).benefits?.meal_voucher ?? null,
         vale_transporte: (editData as any).benefits?.transport_voucher ?? null,
         plano_saude: (editData as any).benefits?.health_plan ?? null,
         plano_dental: (editData as any).benefits?.dental_plan ?? null,
-        // status
         is_active: (editData as any).is_active ?? true,
-        // uploads feitos agora
         ...uploaded,
       }
 
@@ -780,9 +757,7 @@ export default function EmployeeProfilePage() {
         throw new Error(json.message || 'Falha ao salvar')
       }
 
-      // Salva ou atualiza versos
       const backs: Array<{ employee_id: string; doc_type: 'rg' | 'cpf'; back_url: string }> = []
-      // Upload versos e salvar direto no employees
       const uploadedBacks: Record<string, string> = {}
       if (docFiles.rg_back) uploadedBacks.rg_back_photo = await uploadFile(docFiles.rg_back, 'rg-verso')
       if (docFiles.cpf_back) uploadedBacks.cpf_back_photo = await uploadFile(docFiles.cpf_back, 'cpf-verso')
@@ -881,7 +856,7 @@ export default function EmployeeProfilePage() {
             <div style="margin-bottom: 8px;"><strong>Início de Contrato:</strong> ${employee.admission_date || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Tipo de Contrato:</strong> ${employee.contract_type || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Jornada de Trabalho:</strong> ${employee.work_schedule || '-'}</div>
-            <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</div>
+            <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> ${canViewEmployeeSalary(employee.department_id || '') ? 'R$ ' + (employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00') : '*** Acesso restrito ***'}</div>
           </div>
           
           <div>
@@ -1052,7 +1027,7 @@ export default function EmployeeProfilePage() {
             <div class="field"><span class="label">Início de Contrato:</span><span class="value">${employee.admission_date || '-'}</span></div>
             <div class="field"><span class="label">Tipo de Contrato:</span><span class="value">${employee.contract_type || '-'}</span></div>
             <div class="field"><span class="label">Jornada de Trabalho:</span><span class="value">${employee.work_schedule || '-'}</span></div>
-            <div class="field"><span class="label">Salário Base:</span><span class="value">R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
+            <div class="field"><span class="label">Salário Base:</span><span class="value">${canViewEmployeeSalary(employee.department_id || '') ? 'R$ ' + (employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00') : '*** Acesso restrito ***'}</span></div>
           </div>
 
           <div class="section">
@@ -1200,6 +1175,7 @@ export default function EmployeeProfilePage() {
           </Button>
         </Link>
       </div>
+      
       <Card className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex items-start space-x-6 flex-1 min-w-0">
@@ -1238,7 +1214,6 @@ export default function EmployeeProfilePage() {
             </div>
           </div>
           
-          {/* Botões de ação - com mais espaço */}
           <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end lg:space-y-3 lg:space-x-0">
             <div className="flex items-center space-x-2">
               <Button variant="secondary" size="sm" onClick={handleDownload} title="Baixar ficha" className="p-3">
@@ -1264,7 +1239,6 @@ export default function EmployeeProfilePage() {
 
       
       <div className="border-b border-neutral-200">
-        {/* Indicador de scroll horizontal para mobile */}
         <div className="lg:hidden px-4 py-2 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center justify-center text-xs font-medium text-slate-500">
             <span className="flex items-center gap-1">
@@ -1377,7 +1351,11 @@ export default function EmployeeProfilePage() {
                 <Field label="Jornada de Trabalho" value={employee.work_schedule} />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">Salário Base</p>
-                  <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  {canViewEmployeeSalary(employee.department_id || '') ? (
+                    <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  ) : (
+                    <p className="text-slate-500 font-semibold mt-0.5">Acesso restrito</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
