@@ -13,7 +13,8 @@ interface DepartmentAccess {
 const DEPARTMENT_IDS = {
   ADMINISTRATIVO: 'b127dd11-4b56-4d1f-9999-fa9341034b0e',
   COMERCIAL_INCORPORADORA: 'e2d60485-fdfa-4230-ba1f-c1a786eeb5c5',
-  MARKETING: 'e2d60485-fdfa-4230-ba1f-c1a786eeb5c5'
+  MARKETING: 'e2d60485-fdfa-4230-ba1f-c1a786eeb5c5',
+  LIMPEZA: 'baefd673-5dcf-4c55-abce-2e13e7af351b',
 }
 
 export function useDepartmentAccess() {
@@ -94,7 +95,8 @@ export function useDepartmentAccess() {
         allowedDepartments = [
           DEPARTMENT_IDS.ADMINISTRATIVO,
           DEPARTMENT_IDS.COMERCIAL_INCORPORADORA,
-          DEPARTMENT_IDS.MARKETING
+          DEPARTMENT_IDS.MARKETING,
+          DEPARTMENT_IDS.LIMPEZA
         ]
       } else if (userDepartmentId) {
         canViewSalary = true
