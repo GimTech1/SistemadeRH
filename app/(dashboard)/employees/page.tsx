@@ -161,12 +161,12 @@ export default function EmployeesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-oxford-blue-600 font-roboto font-light">Carregando colaboradores...</div>
-      </div>
+      </div>  
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
