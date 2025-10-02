@@ -104,6 +104,7 @@ export type Database = {
           bank_agency: string | null
           bank_account: string | null
           account_type: string | null
+          pix_key: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -158,6 +159,7 @@ export type Database = {
           bank_agency?: string | null
           bank_account?: string | null
           account_type?: string | null
+          pix_key?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -212,6 +214,7 @@ export type Database = {
           bank_agency?: string | null
           bank_account?: string | null
           account_type?: string | null
+          pix_key?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

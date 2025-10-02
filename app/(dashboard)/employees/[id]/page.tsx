@@ -758,6 +758,7 @@ export default function EmployeeProfilePage() {
         bank_agency: (editData as any).bank?.agency || null,
         bank_account: (editData as any).bank?.account || null,
         account_type: (editData as any).bank?.account_type || null,
+        pix_key: (editData as any).bank?.pix_key || null,
         // benefícios
         vale_refeicao: (editData as any).benefits?.meal_voucher ?? null,
         vale_transporte: (editData as any).benefits?.transport_voucher ?? null,
