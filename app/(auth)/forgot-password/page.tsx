@@ -19,7 +19,6 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     
     try {
-      // Força a URL de produção
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: 'https://rh.investmoneysa.com.br/reset-password',
       })
