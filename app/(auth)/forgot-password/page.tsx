@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `https://rh.investmoneysa.com.br/reset-password`,
       })
       
       if (error) {
@@ -51,7 +51,6 @@ export default function ForgotPasswordPage() {
           }}
         />
         
-        {/* Seção principal - Desktop: esquerda, Mobile: topo */}
         <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12" style={{ backgroundColor: '#f8fafc' }}>
           <div className="w-full max-w-md">
             
@@ -108,7 +107,6 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
         
-        {/* Seção secundária - Desktop: direita, Mobile: embaixo */}
         <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 lg:py-12" style={{ backgroundColor: '#1B263B' }}>
           <div className="text-center w-full">
             <img 
@@ -135,7 +133,6 @@ export default function ForgotPasswordPage() {
         }}
       />
       
-      {/* Seção principal - Desktop: esquerda, Mobile: topo */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12" style={{ backgroundColor: '#f8fafc' }}>
         <div className="w-full max-w-md">
           
