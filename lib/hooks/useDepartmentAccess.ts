@@ -13,7 +13,7 @@ interface DepartmentAccess {
 const DEPARTMENT_IDS = {
   ADMINISTRATIVO: 'b127dd11-4b56-4d1f-9999-fa9341034b0e',
   COMERCIAL_INCORPORADORA: 'e2d60485-fdfa-4230-ba1f-c1a786eeb5c5',
-  MARKETING: 'e2d60485-fdfa-4230-ba1f-c1a786eeb5c5',
+  MARKETING: 'ee060d02-a0a4-44a1-9dc5-6d1a8c0fee02',
   LIMPEZA: 'baefd673-5dcf-4c55-abce-2e13e7af351b',
 }
 
