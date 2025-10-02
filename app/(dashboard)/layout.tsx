@@ -6,6 +6,9 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Toaster } from 'react-hot-toast'
+import { InactivityModal } from '@/components/ui/inactivity-modal'
+import { InactivityIndicator } from '@/components/ui/inactivity-indicator'
+import { useInactivity } from '@/lib/hooks/useInactivity'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 
@@ -23,6 +26,12 @@ export default function DashboardLayout({
   const [userName, setUserName] = useState('')
   const [userPosition, setUserPosition] = useState('')
   const pathname = usePathname()
+
+  // Hook para gerenciar inatividade
+  const { timeLeft, isWarning, isLoggedOut, extendSession } = useInactivity({
+    warningTime: 5 * 60, // 5 minutos antes do logout
+    logoutTime: 30 * 60, // 30 minutos total
+  })
 
   const normalizeRole = (
     role: string | null | undefined
@@ -77,6 +86,17 @@ export default function DashboardLayout({
     }
   }, [router, supabase])
 
+  // Efeito para logout automático quando isLoggedOut for true
+  useEffect(() => {
+    if (isLoggedOut) {
+      const logout = async () => {
+        await supabase.auth.signOut()
+        router.push('/login')
+      }
+      logout()
+    }
+  }, [isLoggedOut, supabase, router])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8fafc' }}>
@@ -127,6 +147,20 @@ export default function DashboardLayout({
           </div>
         </div>
       </main>
+      
+      {/* Indicador de inatividade */}
+      <InactivityIndicator
+        timeLeft={timeLeft}
+        isWarning={isWarning}
+      />
+      
+      {/* Modal de inatividade */}
+      <InactivityModal
+        isOpen={isWarning}
+        onClose={() => {}} // Não permite fechar o modal
+        onExtend={extendSession}
+        timeRemaining={timeLeft}
+      />
     </div>
   )
 }
