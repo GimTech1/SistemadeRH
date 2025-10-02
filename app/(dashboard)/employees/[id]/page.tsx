@@ -50,6 +50,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { validateCPF, formatCPF, validateRG, formatRG, searchAddressByCEP, formatCEP } from '@/lib/validations'
+import { useDepartmentAccess } from '@/lib/hooks/useDepartmentAccess'
+import { DepartmentAccessDebug } from '@/components/debug/DepartmentAccessDebug'
 
 interface EmployeeProfile {
   id: string
@@ -76,6 +78,7 @@ interface EmployeeProfile {
   employee_id: string
   position: string
   department: string
+  department_id: string
   admission_date: string
   contract_type: string
   work_schedule: string
@@ -185,6 +188,7 @@ export default function EmployeeProfilePage() {
     is_active: true,
   })
   const supabase = createClient()
+  const { canViewEmployeeSalary, loading: accessLoading } = useDepartmentAccess()
 
   useEffect(() => {
     loadEmployeeData()
@@ -279,6 +283,15 @@ export default function EmployeeProfilePage() {
         pix_key: (data as any).pix_key || '',
       }
 
+      // Debug: Log dos dados carregados
+      console.log('🔍 Dados do funcionário carregados:', {
+        id: (data as any).id,
+        full_name: (data as any).full_name,
+        department: (data as any).department,
+        department_id: (data as any).department_id,
+        allFields: Object.keys(data as any)
+      })
+
       setEmployee({
         id: (data as any).id,
         full_name: (data as any).full_name || '',
@@ -307,6 +320,7 @@ export default function EmployeeProfilePage() {
         employee_id: (data as any).employee_code || '',
         position: (data as any).position || '',
         department: (data as any).department || '',
+        department_id: (data as any).department_id || (data as any).department || '',
         admission_date: (data as any).admission_date || '',
         contract_type: (data as any).contract_type || '',
         work_schedule: (data as any).work_schedule || '',
@@ -881,7 +895,7 @@ export default function EmployeeProfilePage() {
             <div style="margin-bottom: 8px;"><strong>Início de Contrato:</strong> ${employee.admission_date || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Tipo de Contrato:</strong> ${employee.contract_type || '-'}</div>
             <div style="margin-bottom: 8px;"><strong>Jornada de Trabalho:</strong> ${employee.work_schedule || '-'}</div>
-            <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</div>
+            <div style="margin-bottom: 8px;"><strong>Salário Base:</strong> ${canViewEmployeeSalary(employee.department_id || '') ? 'R$ ' + (employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00') : '*** Acesso restrito ***'}</div>
           </div>
           
           <div>
@@ -1052,7 +1066,7 @@ export default function EmployeeProfilePage() {
             <div class="field"><span class="label">Início de Contrato:</span><span class="value">${employee.admission_date || '-'}</span></div>
             <div class="field"><span class="label">Tipo de Contrato:</span><span class="value">${employee.contract_type || '-'}</span></div>
             <div class="field"><span class="label">Jornada de Trabalho:</span><span class="value">${employee.work_schedule || '-'}</span></div>
-            <div class="field"><span class="label">Salário Base:</span><span class="value">R$ ${employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
+            <div class="field"><span class="label">Salário Base:</span><span class="value">${canViewEmployeeSalary(employee.department_id || '') ? 'R$ ' + (employee.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00') : '*** Acesso restrito ***'}</span></div>
           </div>
 
           <div class="section">
@@ -1200,6 +1214,13 @@ export default function EmployeeProfilePage() {
           </Button>
         </Link>
       </div>
+      
+      {/* Debug - Remover em produção */}
+      <DepartmentAccessDebug 
+        employeeDepartmentId={employee.department_id} 
+        employeeDepartmentName={employee.department} 
+      />
+      
       <Card className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex items-start space-x-6 flex-1 min-w-0">
@@ -1377,7 +1398,11 @@ export default function EmployeeProfilePage() {
                 <Field label="Jornada de Trabalho" value={employee.work_schedule} />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">Salário Base</p>
-                  <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  {canViewEmployeeSalary(employee.department_id || '') ? (
+                    <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  ) : (
+                    <p className="text-slate-500 font-semibold mt-0.5">*** Acesso restrito ***</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
