@@ -1333,6 +1333,9 @@ export default function EmployeeProfilePage() {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Espaçamento vertical no final da aba dados pessoais */}
+            <div className="h-8"></div>
           </>
         )}
 
