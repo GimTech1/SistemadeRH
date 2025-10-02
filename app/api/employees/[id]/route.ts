@@ -13,6 +13,7 @@ export async function PUT(
       email?: string
       position?: string
       department?: string
+      is_active?: boolean
       cpf?: string
       rg?: string
       birth_date?: string
@@ -70,6 +71,7 @@ export async function PUT(
       email: body.email || null,
       position: body.position || null,
       department: body.department || null,
+      ...(typeof body.is_active !== 'undefined' ? { is_active: body.is_active } : {}),
       cpf: body.cpf || null,
       rg: body.rg || null,
       birth_date: body.birth_date || null,

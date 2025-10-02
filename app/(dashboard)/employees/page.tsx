@@ -19,6 +19,7 @@ import {
   List,
   Mail,
   Phone,
+  Power,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -34,6 +35,7 @@ interface Employee {
   feedbacks: number
   avatar: string
   avatarUrl?: string
+  isActive: boolean
 }
 
 export default function EmployeesPage() {
@@ -45,6 +47,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
 
   useEffect(() => {
     loadEmployees()
@@ -110,6 +113,7 @@ export default function EmployeesPage() {
             .join('')
             .toUpperCase(),
           avatarUrl: e.avatar_url || '',
+          isActive: e.is_active !== false,
         }
       }))
 
@@ -129,7 +133,8 @@ export default function EmployeesPage() {
         employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.position.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesDepartment = selectedDepartment === 'all' || employee.department === selectedDepartment
-      return matchesSearch && matchesDepartment
+      const matchesStatus = selectedStatus === 'all' || (selectedStatus === 'active' ? employee.isActive : !employee.isActive)
+      return matchesSearch && matchesDepartment && matchesStatus
     })
     .sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name)
@@ -137,6 +142,20 @@ export default function EmployeesPage() {
       if (sortBy === 'department') return a.department.localeCompare(b.department)
       return 0
     })
+  const toggleActive = async (employeeId: string, nextActive: boolean) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('employees')
+        .update({ is_active: nextActive } as any)
+        .eq('id', employeeId)
+
+      if (error) throw error
+      setEmployees(prev => prev.map(e => e.id === employeeId ? { ...e, isActive: nextActive } : e))
+      toast.success(`Colaborador ${nextActive ? 'ativado' : 'inativado'} com sucesso`)
+    } catch (e: any) {
+      toast.error('Não foi possível atualizar o status')
+    }
+  }
 
   if (loading) {
     return (
@@ -166,7 +185,7 @@ export default function EmployeesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Total de Colaboradores</p>
-              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{employees.length}</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{employees.filter(e => e.isActive).length}</p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">funcionários ativos</p>
                 </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
@@ -251,6 +270,19 @@ export default function EmployeesPage() {
                 ))}
               </select>
             </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900">Status:</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as any)}
+                className="appearance-none bg-white border border-platinum-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
             
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <label className="text-xs sm:text-sm font-roboto font-medium text-rich-black-900">Ordenar:</label>
@@ -314,6 +346,7 @@ export default function EmployeesPage() {
                   <th className="px-3 sm:px-6 py-4 min-w-[200px]">Colaborador</th>
                   <th className="px-3 sm:px-6 py-4 min-w-[150px]">Cargo</th>
                   <th className="px-3 sm:px-6 py-4 min-w-[120px]">Departamento</th>
+                  <th className="px-3 sm:px-6 py-4 min-w-[120px]">Status</th>
                   <th className="px-3 sm:px-6 py-4 text-center min-w-[100px]">Performance</th>
                   <th className="px-3 sm:px-6 py-4 text-center min-w-[100px]">Ações</th>
                 </tr>
@@ -344,6 +377,11 @@ export default function EmployeesPage() {
                         {employee.department}
                       </span>
                     </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className={`${employee.isActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-roboto font-medium`}>
+                        {employee.isActive ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <div className="flex items-center justify-center space-x-1">
                         <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 fill-yellow-500" />
@@ -363,6 +401,13 @@ export default function EmployeesPage() {
                               <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                             </button>
                           </Link>
+                          <button
+                            onClick={() => toggleActive(employee.id, !employee.isActive)}
+                            className={`${employee.isActive ? 'text-green-700 hover:bg-green-50' : 'text-red-700 hover:bg-red-50'} p-1.5 sm:p-2 rounded-lg transition-all duration-200`}
+                            title={employee.isActive ? 'Inativar' : 'Ativar'}
+                          >
+                            <Power className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
                         </div>
                       )}
                     </td>
@@ -387,7 +432,12 @@ export default function EmployeesPage() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-roboto font-medium text-rich-black-900 text-lg">{employee.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-roboto font-medium text-rich-black-900 text-lg">{employee.name}</h3>
+                      <span className={`${employee.isActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-roboto font-medium`}>
+                        {employee.isActive ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
                     <p className="text-sm font-roboto font-light text-oxford-blue-600">{employee.position}</p>
                   </div>
                 </div>

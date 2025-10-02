@@ -180,6 +180,7 @@ export default function EmployeeProfilePage() {
     education: { level: '', institution: '', course: '', graduation_year: '', certifications: '', languages: '' },
     bank: { bank_name: '', agency: '', account: '', account_type: '', pix_key: '' },
     notes: '',
+    is_active: true,
   })
   const supabase = createClient()
 
@@ -345,7 +346,7 @@ export default function EmployeeProfilePage() {
         evaluations_history: [], 
         
         avatar_url: (data as any).avatar_url || '',
-        status: 'active',
+        status: ((data as any).is_active !== false) ? 'active' : 'inactive',
         notes: (data as any).notes || '',
         updated_at: (data as any).updated_at,
       })
@@ -393,6 +394,7 @@ export default function EmployeeProfilePage() {
         education: education as any,
         bank: bank as any,
         notes: dataAny.notes || '',
+        is_active: (dataAny.is_active !== false),
       })
     } catch (error) {
       toast.error('Erro ao carregar dados do colaborador')
@@ -738,6 +740,8 @@ export default function EmployeeProfilePage() {
         vale_transporte: (editData as any).benefits?.transport_voucher ?? null,
         plano_saude: (editData as any).benefits?.health_plan ?? null,
         plano_dental: (editData as any).benefits?.dental_plan ?? null,
+        // status
+        is_active: (editData as any).is_active ?? true,
         // uploads feitos agora
         ...uploaded,
       }
@@ -1963,6 +1967,21 @@ export default function EmployeeProfilePage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-status">Status do Colaborador</Label>
+                        <select
+                          id="edit-status"
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 appearance-none"
+                          value={(editData as any).is_active ? 'active' : 'inactive'}
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            is_active: e.target.value === 'active'
+                          })}
+                        >
+                          <option value="active">Ativo</option>
+                          <option value="inactive">Inativo</option>
+                        </select>
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-contract">Tipo de Contrato</Label>
                         <select

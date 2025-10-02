@@ -73,6 +73,7 @@ interface FormData {
   account_type: string
   pix_key: string
   notes: string
+  is_active?: boolean
 }
 
 export default function NewEmployeePage() {
@@ -150,6 +151,7 @@ export default function NewEmployeePage() {
     account_type: '',
     pix_key: '',
     notes: '',
+    is_active: true,
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -379,6 +381,7 @@ export default function NewEmployeePage() {
           email: formData.email || null,
           position: formData.position || null,
           department: formData.department || null,
+          is_active: typeof formData.is_active === 'boolean' ? formData.is_active : true,
           avatar_url: avatarUrl,
           cpf: formData.cpf || null,
           rg: formData.rg || null,
@@ -936,6 +939,16 @@ export default function NewEmployeePage() {
               Dados Profissionais
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="flex items-center gap-2">
+                <input
+                  id="is_active"
+                  type="checkbox"
+                  checked={!!formData.is_active}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="is_active" className="text-sm font-roboto font-medium text-rich-black-900">Colaborador ativo</label>
+              </div>
               <div>
                 <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Código do Funcionário

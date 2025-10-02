@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       email?: string
       position?: string
       department?: string
+      is_active?: boolean
       cpf?: string
       rg?: string
       birth_date?: string
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
         email: email || null,
         position: position || null,
         department: body.department || null,
+        is_active: typeof body.is_active === 'boolean' ? body.is_active : true,
         cpf: body.cpf || null,
         rg: body.rg || null,
         birth_date: body.birth_date || null,
