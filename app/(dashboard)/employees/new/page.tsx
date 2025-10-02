@@ -98,6 +98,8 @@ export default function NewEmployeePage() {
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const rgPhotoRef = useRef<HTMLInputElement>(null)
   const cpfPhotoRef = useRef<HTMLInputElement>(null)
+  const rgBackPhotoRef = useRef<HTMLInputElement>(null)
+  const cpfBackPhotoRef = useRef<HTMLInputElement>(null)
   const ctpsPhotoRef = useRef<HTMLInputElement>(null)
   const diplomaPhotoRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState<FormData>({
@@ -347,6 +349,8 @@ export default function NewEmployeePage() {
       let avatarUrl = null
       let rgPhotoUrl = null
       let cpfPhotoUrl = null
+      let rgBackPhotoUrl = null
+      let cpfBackPhotoUrl = null
       let ctpsPhotoUrl = null
       let diplomaPhotoUrl = null
       if (avatarFile) {
@@ -362,6 +366,16 @@ export default function NewEmployeePage() {
         const file = cpfPhotoRef.current.files[0]
         const fileName = `cpf-${Date.now()}-${file.name}`
         cpfPhotoUrl = await uploadFile(file, fileName)
+      }
+      if (rgBackPhotoRef.current?.files?.[0]) {
+        const file = rgBackPhotoRef.current.files[0]
+        const fileName = `rg-verso-${Date.now()}-${file.name}`
+        rgBackPhotoUrl = await uploadFile(file, fileName)
+      }
+      if (cpfBackPhotoRef.current?.files?.[0]) {
+        const file = cpfBackPhotoRef.current.files[0]
+        const fileName = `cpf-verso-${Date.now()}-${file.name}`
+        cpfBackPhotoUrl = await uploadFile(file, fileName)
       }
       if (ctpsPhotoRef.current?.files?.[0]) {
         const file = ctpsPhotoRef.current.files[0]
@@ -404,6 +418,8 @@ export default function NewEmployeePage() {
           salary: formData.salary ? parseFloat(formData.salary) : null,
           rg_photo: rgPhotoUrl,
           cpf_photo: cpfPhotoUrl,
+          rg_back_photo: rgBackPhotoUrl,
+          cpf_back_photo: cpfBackPhotoUrl,
           ctps_photo: ctpsPhotoUrl,
           diploma_photo: diplomaPhotoUrl,
           vale_refeicao: formData.vale_refeicao ? parseFloat(formData.vale_refeicao) : null,
@@ -1041,7 +1057,7 @@ export default function NewEmployeePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
-                      Foto do RG
+                      RG (Frente)
                     </label>
                     <input
                       ref={rgPhotoRef}
@@ -1059,11 +1075,23 @@ export default function NewEmployeePage() {
                     {formData.rg_photo && (
                       <p className="text-sm text-oxford-blue-600 mt-1">Arquivo selecionado: {formData.rg_photo}</p>
                     )}
+                    <div className="mt-3">
+                      <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                        RG (Verso)
+                      </label>
+                      <input
+                        ref={rgBackPhotoRef}
+                        type="file"
+                        name="rg_back_photo"
+                        accept="image/*"
+                        className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yinmn-blue-50 file:text-yinmn-blue-700 hover:file:bg-yinmn-blue-100"
+                      />
+                    </div>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
-                      Foto do CPF
+                      CPF (Frente)
                     </label>
                     <input
                       ref={cpfPhotoRef}
@@ -1081,6 +1109,18 @@ export default function NewEmployeePage() {
                     {formData.cpf_photo && (
                       <p className="text-sm text-oxford-blue-600 mt-1">Arquivo selecionado: {formData.cpf_photo}</p>
                     )}
+                    <div className="mt-3">
+                      <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                        CPF (Verso)
+                      </label>
+                      <input
+                        ref={cpfBackPhotoRef}
+                        type="file"
+                        name="cpf_back_photo"
+                        accept="image/*"
+                        className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yinmn-blue-50 file:text-yinmn-blue-700 hover:file:bg-yinmn-blue-100"
+                      />
+                    </div>
                   </div>
 
                   <div>

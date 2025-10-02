@@ -58,6 +58,8 @@ export async function PUT(
       avatar_url?: string | null
       rg_photo?: string | null
       cpf_photo?: string | null
+      rg_back_photo?: string | null
+      cpf_back_photo?: string | null
       ctps_photo?: string | null
       diploma_photo?: string | null
       notes?: string
@@ -120,6 +122,8 @@ export async function PUT(
     if (typeof body.avatar_url !== 'undefined') baseUpdate.avatar_url = body.avatar_url
     if (typeof body.rg_photo !== 'undefined') baseUpdate.rg_photo = body.rg_photo
     if (typeof body.cpf_photo !== 'undefined') baseUpdate.cpf_photo = body.cpf_photo
+    if (typeof body.rg_back_photo !== 'undefined') baseUpdate.rg_back_photo = body.rg_back_photo
+    if (typeof body.cpf_back_photo !== 'undefined') baseUpdate.cpf_back_photo = body.cpf_back_photo
     if (typeof body.ctps_photo !== 'undefined') baseUpdate.ctps_photo = body.ctps_photo
     if (typeof body.diploma_photo !== 'undefined') baseUpdate.diploma_photo = body.diploma_photo
 

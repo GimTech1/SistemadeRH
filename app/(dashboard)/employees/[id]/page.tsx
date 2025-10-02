@@ -82,6 +82,8 @@ interface EmployeeProfile {
   salary: number
   rg_photo?: string | null
   cpf_photo?: string | null
+  rg_back_photo?: string | null
+  cpf_back_photo?: string | null
   ctps_photo?: string | null
   diploma_photo?: string | null
   meal_voucher: number
@@ -133,7 +135,7 @@ export default function EmployeeProfilePage() {
   const [saving, setSaving] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [docFiles, setDocFiles] = useState<{ rg?: File; cpf?: File; ctps?: File; diploma?: File }>({})
+  const [docFiles, setDocFiles] = useState<{ rg?: File; cpf?: File; rg_back?: File; cpf_back?: File; ctps?: File; diploma?: File }>({})
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
@@ -250,6 +252,8 @@ export default function EmployeeProfilePage() {
       const documents = {
         rg_photo: (data as any).rg_photo || null,
         cpf_photo: (data as any).cpf_photo || null,
+        rg_back_photo: (data as any).rg_back_photo || null,
+        cpf_back_photo: (data as any).cpf_back_photo || null,
         ctps_photo: (data as any).ctps_photo || null,
         diploma_photo: (data as any).diploma_photo || null,
       }
@@ -310,6 +314,8 @@ export default function EmployeeProfilePage() {
         
         rg_photo: (data as any).rg_photo || null,
         cpf_photo: (data as any).cpf_photo || null,
+        rg_back_photo: (data as any).rg_back_photo || null,
+        cpf_back_photo: (data as any).cpf_back_photo || null,
         ctps_photo: (data as any).ctps_photo || null,
         diploma_photo: (data as any).diploma_photo || null,
         
@@ -492,6 +498,23 @@ export default function EmployeeProfilePage() {
         setCapturing(false)
       }
     }, 'image/png')
+  }
+
+  // Remover documento salvo (frente/verso) diretamente do registro do colaborador
+  const handleRemoveDocument = async (column: 'rg_photo' | 'cpf_photo' | 'rg_back_photo' | 'cpf_back_photo' | 'ctps_photo' | 'diploma_photo') => {
+    if (!employee) return
+    try {
+      const updatePayload: Record<string, any> = { [column]: null }
+      const { error } = await (supabase as any)
+        .from('employees')
+        .update(updatePayload)
+        .eq('id', employee.id)
+      if (error) throw error
+      setEmployee(prev => prev ? ({ ...prev, [column]: null } as any) : prev)
+      toast.success('Documento removido')
+    } catch (e: any) {
+      toast.error('Não foi possível remover o documento')
+    }
   }
 
   const getCHAIcon = (type: string) => {
@@ -754,6 +777,20 @@ export default function EmployeeProfilePage() {
       const json = await res.json()
       if (!res.ok) {
         throw new Error(json.message || 'Falha ao salvar')
+      }
+
+      // Salva ou atualiza versos
+      const backs: Array<{ employee_id: string; doc_type: 'rg' | 'cpf'; back_url: string }> = []
+      // Upload versos e salvar direto no employees
+      const uploadedBacks: Record<string, string> = {}
+      if (docFiles.rg_back) uploadedBacks.rg_back_photo = await uploadFile(docFiles.rg_back, 'rg-verso')
+      if (docFiles.cpf_back) uploadedBacks.cpf_back_photo = await uploadFile(docFiles.cpf_back, 'cpf-verso')
+      if (Object.keys(uploadedBacks).length) {
+        const { error: backUpdateError } = await (supabase as any)
+          .from('employees')
+          .update(uploadedBacks)
+          .eq('id', params.id as string)
+        if (backUpdateError) console.error('Erro ao salvar versos em employees:', backUpdateError)
       }
 
       toast.success('Colaborador atualizado com sucesso')
@@ -1353,18 +1390,66 @@ export default function EmployeeProfilePage() {
                 <CardTitle>Documentação</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[{label:'RG', url: employee.rg_photo},{label:'CPF', url: employee.cpf_photo},{label:'CTPS', url: employee.ctps_photo},{label:'Diploma', url: employee.diploma_photo}].map((doc) => (
-                  <div key={doc.label}>
-                  <p className="text-sm text-slate-700 mb-2">{doc.label}</p>
-                    {doc.url ? (
-                      <a href={withVersion(doc.url as string, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
-                        <img src={withVersion(doc.url as string, employee.updated_at)} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
-                      </a>
-                    ) : (
-                      <p className="text-slate-700">Não enviado</p>
-                    )}
-              </div>
-                ))}
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">RG (Frente)</p>
+                  {employee.rg_photo ? (
+                    <a href={withVersion(employee.rg_photo as any, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion(employee.rg_photo as any, employee.updated_at)} alt="RG Frente" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">RG (Verso)</p>
+                  {(employee as any).rg_back_photo ? (
+                    <a href={withVersion((employee as any).rg_back_photo, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion((employee as any).rg_back_photo, employee.updated_at)} alt="RG Verso" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">CPF (Frente)</p>
+                  {employee.cpf_photo ? (
+                    <a href={withVersion(employee.cpf_photo as any, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion(employee.cpf_photo as any, employee.updated_at)} alt="CPF Frente" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">CPF (Verso)</p>
+                  {(employee as any).cpf_back_photo ? (
+                    <a href={withVersion((employee as any).cpf_back_photo, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion((employee as any).cpf_back_photo, employee.updated_at)} alt="CPF Verso" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">CTPS</p>
+                  {employee.ctps_photo ? (
+                    <a href={withVersion(employee.ctps_photo as any, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion(employee.ctps_photo as any, employee.updated_at)} alt="CTPS" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700 mb-2">Diploma</p>
+                  {employee.diploma_photo ? (
+                    <a href={withVersion(employee.diploma_photo as any, employee.updated_at)} target="_blank" rel="noreferrer" className="block">
+                      <img src={withVersion(employee.diploma_photo as any, employee.updated_at)} alt="Diploma" className="w-full h-28 object-cover rounded-lg border border-neutral-800" />
+                    </a>
+                  ) : (
+                    <p className="text-slate-700">Não enviado</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -2026,20 +2111,112 @@ export default function EmployeeProfilePage() {
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label>Foto do RG</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>RG (Frente)</Label>
+                          {(employee as any).rg_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('rg_photo')}>Remover</button>
+                          )}
+                        </div>
                         <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, rg: e.target.files?.[0] }))} />
+                        {docFiles.rg && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.rg)} alt="RG Frente Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).rg_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).rg_photo.split('/').pop()}</p>
+                        )}
+                        <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>RG (Verso)</Label>
+                          {(employee as any).rg_back_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('rg_back_photo')}>Remover</button>
+                          )}
+                        </div>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, rg_back: e.target.files?.[0] }))} />
+                        {docFiles.rg_back && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.rg_back)} alt="RG Verso Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).rg_back_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).rg_back_photo.split('/').pop()}</p>
+                        )}
+                        </div>
               </div>
                       <div className="space-y-2">
-                        <Label>Foto do CPF</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>CPF (Frente)</Label>
+                          {(employee as any).cpf_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('cpf_photo')}>Remover</button>
+                          )}
+                        </div>
                         <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, cpf: e.target.files?.[0] }))} />
+                        {docFiles.cpf && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.cpf)} alt="CPF Frente Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).cpf_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).cpf_photo.split('/').pop()}</p>
+                        )}
+                        <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>CPF (Verso)</Label>
+                          {(employee as any).cpf_back_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('cpf_back_photo')}>Remover</button>
+                          )}
+                        </div>
+                        <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, cpf_back: e.target.files?.[0] }))} />
+                        {docFiles.cpf_back && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.cpf_back)} alt="CPF Verso Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).cpf_back_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).cpf_back_photo.split('/').pop()}</p>
+                        )}
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Foto da CTPS</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>Foto da CTPS</Label>
+                          {(employee as any).ctps_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('ctps_photo')}>Remover</button>
+                          )}
+                        </div>
                         <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, ctps: e.target.files?.[0] }))} />
+                        {docFiles.ctps && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.ctps)} alt="CTPS Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).ctps_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).ctps_photo.split('/').pop()}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label>Foto do Diploma</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>Foto do Diploma</Label>
+                          {(employee as any).diploma_photo && (
+                            <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemoveDocument('diploma_photo')}>Remover</button>
+                          )}
+                        </div>
                         <input type="file" accept="image/*" className="block w-full text-sm text-slate-900 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1" onChange={(e) => setDocFiles(prev => ({ ...prev, diploma: e.target.files?.[0] }))} />
+                        {docFiles.diploma && (
+                          <div className="mt-2">
+                            <p className="text-xs text-slate-600 mb-1">Pré-visualização</p>
+                            <img src={URL.createObjectURL(docFiles.diploma)} alt="Diploma Preview" className="w-full h-24 object-cover rounded-lg border border-slate-300" />
+                          </div>
+                        )}
+                        {(employee as any).diploma_photo && (
+                          <p className="text-xs text-slate-600 mt-1 truncate">Salvo: {(employee as any).diploma_photo.split('/').pop()}</p>
+                        )}
                       </div>
                     </div>
                     <p className="text-sm text-slate-600">Selecione os arquivos. Eles serão enviados ao salvar.</p>

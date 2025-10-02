@@ -172,9 +172,6 @@ export default function LoginPage() {
             className="h-20 sm:h-24 lg:h-32 w-auto object-contain mx-auto mb-4 lg:mb-8 max-w-xs sm:max-w-sm"
           />
           <div className="hidden sm:block">
-            <p className="text-white/80 font-roboto font-light text-sm lg:text-base">
-              InvestMoney SA
-            </p>
           </div>
         </div>
       </div>
