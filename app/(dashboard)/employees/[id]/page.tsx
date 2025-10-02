@@ -1354,7 +1354,7 @@ export default function EmployeeProfilePage() {
                   {canViewEmployeeSalary(employee.department_id || '') ? (
                     <p className="text-slate-900 font-semibold mt-0.5">R$ {employee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   ) : (
-                    <p className="text-slate-500 font-semibold mt-0.5">*** Acesso restrito ***</p>
+                    <p className="text-slate-500 font-semibold mt-0.5">Acesso restrito</p>
                   )}
                 </div>
               </CardContent>
