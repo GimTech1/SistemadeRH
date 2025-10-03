@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Users,
@@ -54,6 +54,53 @@ export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('Este mês')
   const [selectedView, setSelectedView] = useState('Departamento')
   const supabase = createClient()
+  const [isDeadlinesMenuOpen, setIsDeadlinesMenuOpen] = useState(false)
+  const deadlinesMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (deadlinesMenuRef.current && !deadlinesMenuRef.current.contains(e.target as Node)) {
+        setIsDeadlinesMenuOpen(false)
+      }
+    }
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsDeadlinesMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [])
+
+  function exportDeadlinesAsCSV() {
+    const headers = ['Tarefa', 'Data', 'Tipo', 'Dias Restantes', 'Status']
+    const rows = data.upcomingDeadlines.map((d: any) => [
+      (d.title ?? '').toString().replaceAll(';', ','),
+      (d.date ?? '').toString(),
+      d.type === 'evaluation' ? 'Avaliação' : 'Meta',
+      String(d.daysLeft ?? ''),
+      (d.status ?? '').toString(),
+    ])
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n')
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'proximos_prazos.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  async function copyDeadlinesToClipboard() {
+    const lines = data.upcomingDeadlines.map((d: any) => `${d.title} • ${d.date} • ${d.type === 'evaluation' ? 'Avaliação' : 'Meta'} • ${d.daysLeft} dias • ${d.status}`)
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+    } catch {}
+  }
 
   useEffect(() => {
     loadDashboardData()
@@ -617,9 +664,29 @@ export default function DashboardPage() {
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-roboto font-medium text-rich-black-900">Próximos Prazos</h3>
-              <button className="p-1 hover:bg-platinum-50 rounded-lg transition-colors">
-                <MoreVertical className="w-4 h-4 text-oxford-blue-400" />
-              </button>
+              <div className="relative" ref={deadlinesMenuRef}>
+                <button
+                  className="p-1 hover:bg-platinum-50 rounded-lg transition-colors"
+                  onClick={() => setIsDeadlinesMenuOpen(v => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={isDeadlinesMenuOpen}
+                >
+                  <MoreVertical className="w-4 h-4 text-oxford-blue-400" />
+                </button>
+                {isDeadlinesMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-44 bg-white border border-platinum-200 rounded-md shadow-lg z-20 py-1"
+                  >
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm font-roboto text-rich-black-900 hover:bg-platinum-50"
+                      onClick={() => { exportDeadlinesAsCSV(); setIsDeadlinesMenuOpen(false) }}
+                    >
+                      Exportar CSV
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="p-6">
