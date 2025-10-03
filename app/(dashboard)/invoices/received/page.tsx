@@ -227,7 +227,7 @@ export default function ReceivedInvoicesPage() {
                     {getStatusText(invoice.status)}
                   </span>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => window.open(invoice.file_url, '_blank')}
                   >
@@ -235,7 +235,7 @@ export default function ReceivedInvoicesPage() {
                     Visualizar
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => window.open(invoice.file_url, '_blank')}
                   >
@@ -245,7 +245,7 @@ export default function ReceivedInvoicesPage() {
                   {invoice.status === 'pending' && (
                     <>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => handleStatusUpdate(invoice.id, 'approved')}
                         disabled={updating === invoice.id}
@@ -255,7 +255,7 @@ export default function ReceivedInvoicesPage() {
                         {updating === invoice.id ? 'Aprovando...' : 'Aprovar'}
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => handleStatusUpdate(invoice.id, 'rejected')}
                         disabled={updating === invoice.id}

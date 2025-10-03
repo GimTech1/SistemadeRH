@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -22,7 +22,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
-    const invoiceId = params.id
+    const { id: invoiceId } = await params
     const body = await request.json()
     const { status } = body
 
@@ -43,7 +43,7 @@ export async function PATCH(
     }
 
     // Atualizar o status da nota fiscal
-    const { data: updatedInvoice, error: updateError } = await supabase
+    const { data: updatedInvoice, error: updateError } = await (supabase as any)
       .from('invoice_files')
       .update({ status })
       .eq('id', invoiceId)

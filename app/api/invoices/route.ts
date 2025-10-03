@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(filePath)
 
     // Salvar metadados no banco de dados
-    const { data: invoice, error: dbError } = await supabase
+    const { data: invoice, error: dbError } = await (supabase as any)
       .from('invoice_files')
       .insert({
         employee_id: user.id,

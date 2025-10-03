@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const invoiceId = params.id
+    const { id: invoiceId } = await params
 
     // Buscar a nota fiscal para verificar se pertence ao usuário
     const { data: invoice, error: fetchError } = await supabase
@@ -29,13 +29,15 @@ export async function DELETE(
     }
 
     // Deletar do storage
-    const { error: storageError } = await supabase.storage
-      .from('invoice-files')
-      .remove([invoice.file_path])
+    if ((invoice as any).file_path) {
+      const { error: storageError } = await supabase.storage
+        .from('invoice-files')
+        .remove([(invoice as any).file_path])
 
-    if (storageError) {
-      console.error('Erro ao deletar do storage:', storageError)
-      // Continuar mesmo se houver erro no storage
+      if (storageError) {
+        console.error('Erro ao deletar do storage:', storageError)
+        // Continuar mesmo se houver erro no storage
+      }
     }
 
     // Deletar do banco de dados
@@ -59,7 +61,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -70,7 +72,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const invoiceId = params.id
+    const { id: invoiceId } = await params
     const body = await request.json()
     const { status, description } = body
 
@@ -81,7 +83,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single()
 
-    if (!profile || !['admin', 'manager'].includes(profile.role)) {
+    if (!profile || !['admin', 'manager'].includes((profile as any).role)) {
       return NextResponse.json({ error: 'Sem permissão para atualizar status' }, { status: 403 })
     }
 
@@ -90,7 +92,7 @@ export async function PATCH(
     if (status) updateData.status = status
     if (description !== undefined) updateData.description = description
 
-    const { data: invoice, error: updateError } = await supabase
+    const { data: invoice, error: updateError } = await (supabase as any)
       .from('invoice_files')
       .update(updateData)
       .eq('id', invoiceId)
