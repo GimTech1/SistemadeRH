@@ -28,6 +28,7 @@ import {
   Home,
   Calendar,
   GitBranch,
+  Receipt,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -83,6 +84,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Solicitações',
       icon: FilePlus2,
       href: '/requests',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Notas Fiscais',
+      icon: Receipt,
+      href: '/invoices',
       roles: ['admin', 'manager', 'employee'],
     },
     {

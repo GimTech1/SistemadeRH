@@ -118,6 +118,7 @@ export default function DashboardLayout({
       '/feedback/external': 'Feedback Externo',
       '/reports': 'Relatórios',
       '/requests': 'Solicitações',
+      '/invoices': 'Notas Fiscais',
       '/users': 'Usuários',
       '/organograma': 'Organograma',
     }

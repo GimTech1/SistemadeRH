@@ -564,6 +564,50 @@ export type Database = {
           created_at?: string
         }
       }
+      invoice_files: {
+        Row: {
+          id: string
+          employee_id: string
+          recipient_id: string | null
+          file_name: string
+          file_path: string
+          file_url: string
+          file_size: number
+          file_type: string
+          description: string | null
+          status: 'pending' | 'approved' | 'rejected'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          recipient_id?: string | null
+          file_name: string
+          file_path: string
+          file_url: string
+          file_size: number
+          file_type: string
+          description?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          recipient_id?: string | null
+          file_name?: string
+          file_path?: string
+          file_url?: string
+          file_size?: number
+          file_type?: string
+          description?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
