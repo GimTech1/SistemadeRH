@@ -51,8 +51,6 @@ export default function DashboardPage() {
     monthlyData: [],
   })
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState('Tempo todo')
-  const [selectedView, setSelectedView] = useState('Departamento')
   const supabase = createClient()
   const [isDeadlinesMenuOpen, setIsDeadlinesMenuOpen] = useState(false)
   const deadlinesMenuRef = useRef<HTMLDivElement | null>(null)
@@ -103,13 +101,13 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    loadDashboardData(selectedPeriod)
-  }, [selectedPeriod])
+    loadDashboardData()
+  }, [])
 
-  const loadDashboardData = async (period: string) => {
+  const loadDashboardData = async () => {
     try {
       const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
-        supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('employees').select('id', { count: 'exact', head: true }),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
         supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
         supabase.from('goals').select('id', { count: 'exact', head: true }).eq('is_completed', true),
@@ -117,7 +115,6 @@ export default function DashboardPage() {
         supabase
           .from('employees')
           .select('department')
-          .eq('is_active', true)
           .not('department', 'is', null),
         supabase
           .from('departments')
@@ -136,23 +133,7 @@ export default function DashboardPage() {
         : 0
 
       const end = new Date()
-      const { start, monthsToShow } = (() => {
-        const now = new Date()
-        if (period === 'Tempo todo') {
-          return { start: new Date(now.getFullYear() - 5, now.getMonth(), 1), monthsToShow: 12 }
-        }
-        if (period === 'Este mês') {
-          return { start: new Date(now.getFullYear(), now.getMonth(), 1), monthsToShow: 1 }
-        }
-        if (period === 'Último trimestre') {
-          return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), monthsToShow: 3 }
-        }
-        if (period === 'Este ano') {
-          const currentMonthIndex = now.getMonth() // 0-11
-          return { start: new Date(now.getFullYear(), 0, 1), monthsToShow: currentMonthIndex + 1 }
-        }
-        return { start: new Date(now.getFullYear(), now.getMonth() - 5, 1), monthsToShow: 6 }
-      })()
+      const start = new Date(end.getFullYear(), end.getMonth() - 5, 1)
 
       const { data: evalForMonths } = await supabase
         .from('evaluations')
@@ -164,7 +145,7 @@ export default function DashboardPage() {
       const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
       const buckets: Record<string, number[]> = {}
       const iterMonths: { key: string; label: string }[] = []
-      for (let i = 0; i < monthsToShow; i++) {
+      for (let i = 0; i < 6; i++) {
         const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
         buckets[key] = []
@@ -227,8 +208,6 @@ export default function DashboardPage() {
       const { data: recentEvalsRaw } = await supabase
         .from('evaluations')
         .select('id, employee_id, overall_score, submitted_at, created_at')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())
         .order('created_at', { ascending: false })
         .limit(10)
 
@@ -241,9 +220,8 @@ export default function DashboardPage() {
       if (employeeIds.length > 0) {
         const { data: employeesRows } = await supabase
           .from('employees')
-          .select('id, full_name, department, is_active')
+          .select('id, full_name, department')
           .in('id', employeeIds)
-          .eq('is_active', true)
         ;(employeesRows || []).forEach((e: any) => {
           employeesMap.set(e.id, { full_name: e.full_name, department: e.department })
         })
@@ -280,23 +258,23 @@ export default function DashboardPage() {
         supabase
           .from('evaluation_cycles')
           .select('id, name, end_date, is_active')
-          .gte('end_date', start.toISOString())
-          .lte('end_date', end.toISOString())
+          .gte('end_date', today.toISOString())
+          .lte('end_date', next60.toISOString())
           .order('end_date', { ascending: true }),
         supabase
           .from('goals')
           .select('id, title, target_date, is_completed')
           .eq('is_completed', false)
           .not('target_date', 'is', null)
-          .gte('target_date', start.toISOString())
-          .lte('target_date', end.toISOString())
+          .gte('target_date', today.toISOString())
+          .lte('target_date', next60.toISOString())
           .order('target_date', { ascending: true }),
       ])
 
       const deadlines: Array<{ title: string; date: string; type: 'evaluation' | 'goal'; daysLeft: number; status: string }> = []
       ;(cycles || []).forEach((c: any) => {
         const dt = new Date(c.end_date)
-        const diff = Math.ceil((dt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        const diff = Math.ceil((dt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
         const status = diff <= 7 ? 'Urgente' : diff <= 30 ? 'Em andamento' : 'Planejado'
         deadlines.push({
           title: c.name || 'Ciclo de Avaliação',
@@ -308,7 +286,7 @@ export default function DashboardPage() {
       })
       ;(goalsRows || []).forEach((g: any) => {
         const dt = new Date(g.target_date)
-        const diff = Math.ceil((dt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        const diff = Math.ceil((dt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
         const status = diff <= 7 ? 'Urgente' : diff <= 30 ? 'Em andamento' : 'Planejado'
         deadlines.push({
           title: g.title,
@@ -413,24 +391,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
+        <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-tight">Visão geral de desempenho e métricas</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative"></div>
-          <div className="relative">
-            <label className="block text-xs font-roboto font-medium text-oxford-blue-500 mb-1">Período</label>
-            <select 
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-            >
-              <option>Tempo todo</option>
-              <option>Este mês</option>
-              <option>Último trimestre</option>
-              <option>Este ano</option>
-            </select>
-          </div>
         </div>
       </div>
 
