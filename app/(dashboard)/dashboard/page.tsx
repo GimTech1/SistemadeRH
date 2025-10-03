@@ -107,7 +107,7 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
-        supabase.from('employees').select('id', { count: 'exact', head: true }),
+        supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
         supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
         supabase.from('goals').select('id', { count: 'exact', head: true }).eq('is_completed', true),
@@ -115,6 +115,7 @@ export default function DashboardPage() {
         supabase
           .from('employees')
           .select('department')
+          .eq('is_active', true)
           .not('department', 'is', null),
         supabase
           .from('departments')
@@ -132,21 +133,23 @@ export default function DashboardPage() {
         ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
         : 0
 
-      const end = new Date()
-      const start = new Date(end.getFullYear(), end.getMonth() - 5, 1)
+      const now = new Date()
+      const end = now
+      const bucketStart = new Date(now.getFullYear(), 0, 1) // Jan do ano atual
+      const monthsToShow = now.getMonth() + 1 // até o mês corrente (1..12)
 
       const { data: evalForMonths } = await supabase
         .from('evaluations')
         .select('overall_score, submitted_at, created_at')
-        .gte('created_at', start.toISOString())
+        .gte('created_at', bucketStart.toISOString())
         .lte('created_at', end.toISOString())
         .not('overall_score', 'is', null)
 
       const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
       const buckets: Record<string, number[]> = {}
       const iterMonths: { key: string; label: string }[] = []
-      for (let i = 0; i < 6; i++) {
-        const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
+      for (let i = 0; i < monthsToShow; i++) {
+        const d = new Date(bucketStart.getFullYear(), bucketStart.getMonth() + i, 1)
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
         buckets[key] = []
         iterMonths.push({ key, label: monthNames[d.getMonth()] })
