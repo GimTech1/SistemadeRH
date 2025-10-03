@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Users,
@@ -52,25 +52,7 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
-  const [isDeadlinesMenuOpen, setIsDeadlinesMenuOpen] = useState(false)
-  const deadlinesMenuRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (deadlinesMenuRef.current && !deadlinesMenuRef.current.contains(e.target as Node)) {
-        setIsDeadlinesMenuOpen(false)
-      }
-    }
-    function handleEsc(e: KeyboardEvent) {
-      if (e.key === 'Escape') setIsDeadlinesMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleEsc)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEsc)
-    }
-  }, [])
+  
 
   function exportDeadlinesAsCSV() {
     const headers = ['Tarefa', 'Data', 'Tipo', 'Dias Restantes', 'Status']
@@ -98,6 +80,36 @@ export default function DashboardPage() {
     try {
       await navigator.clipboard.writeText(lines.join('\n'))
     } catch {}
+  }
+
+  function exportPerformanceAsCSV() {
+    const headers = ['Mês', 'Performance', 'Meta']
+    const rows = data.monthlyData.map((m: any) => [m.month, String(m.value ?? ''), String(m.target ?? '')])
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n')
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'breakdown_performance.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function exportDepartmentsAsCSV() {
+    const headers = ['Departamento', 'Quantidade']
+    const rows = data.departmentBreakdown.map((d: any) => [d.name, String(d.value ?? 0)])
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n')
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'departamentos.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   useEffect(() => {
@@ -440,11 +452,11 @@ export default function DashboardPage() {
                 <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">Comparado ao período anterior</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="p-2 hover:bg-platinum-50 rounded-lg transition-colors">
+                <button
+                  className="p-2 hover:bg-platinum-50 rounded-lg transition-colors"
+                  onClick={exportPerformanceAsCSV}
+                >
                   <Download className="w-4 h-4 text-oxford-blue-400" />
-                </button>
-                <button className="p-2 hover:bg-platinum-50 rounded-lg transition-colors">
-                  <MoreVertical className="w-4 h-4 text-oxford-blue-400" />
                 </button>
               </div>
             </div>
@@ -524,8 +536,13 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-roboto font-medium text-rich-black-900">Departamentos</h3>
                 <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">Distribuição por área</p>
               </div>
-              <button className="p-2 hover:bg-platinum-50 rounded-lg transition-colors">
-                <MoreVertical className="w-4 h-4 text-oxford-blue-400" />
+              <button
+                className="p-2 hover:bg-platinum-50 rounded-lg transition-colors"
+                onClick={exportDepartmentsAsCSV}
+                aria-label="Exportar departamentos"
+                title="Exportar CSV"
+              >
+                <Download className="w-4 h-4 text-oxford-blue-400" />
               </button>
             </div>
           </div>
@@ -649,29 +666,14 @@ export default function DashboardPage() {
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-roboto font-medium text-rich-black-900">Próximos Prazos</h3>
-              <div className="relative" ref={deadlinesMenuRef}>
-                <button
-                  className="p-1 hover:bg-platinum-50 rounded-lg transition-colors"
-                  onClick={() => setIsDeadlinesMenuOpen(v => !v)}
-                  aria-haspopup="menu"
-                  aria-expanded={isDeadlinesMenuOpen}
-                >
-                  <MoreVertical className="w-4 h-4 text-oxford-blue-400" />
-                </button>
-                {isDeadlinesMenuOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 mt-2 w-44 bg-white border border-platinum-200 rounded-md shadow-lg z-20 py-1"
-                  >
-                    <button
-                      className="w-full text-left px-3 py-2 text-sm font-roboto text-rich-black-900 hover:bg-platinum-50"
-                      onClick={() => { exportDeadlinesAsCSV(); setIsDeadlinesMenuOpen(false) }}
-                    >
-                      Exportar CSV
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button
+                className="p-1 hover:bg-platinum-50 rounded-lg transition-colors"
+                onClick={exportDeadlinesAsCSV}
+                aria-label="Exportar prazos"
+                title="Exportar CSV"
+              >
+                <Download className="w-4 h-4 text-oxford-blue-400" />
+              </button>
             </div>
           </div>
           <div className="p-6">
