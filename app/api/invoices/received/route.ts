@@ -11,23 +11,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Verificar se o usuário é José ou Bianda
+    // Verificar se o usuário está autorizado a acessar recebidas
     const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
     const biandaId = '2005804d-9527-4300-aaf5-720d36e080a5'
+    const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
+    const allowedIds = [joseId, biandaId, newAllowedId]
     
-    if (user.id !== joseId && user.id !== biandaId) {
+    if (!allowedIds.includes(user.id)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
-    // Buscar notas fiscais destinadas ao usuário com informações do remetente
-    const { data: invoices, error } = await supabase
+    // Buscar notas fiscais: se for o novo ID, retorna todas as recebidas; senão, apenas as destinadas ao usuário
+    const baseQuery = supabase
       .from('invoice_files')
       .select(`
         *,
         sender:profiles!employee_id(full_name, position)
       `)
-      .eq('recipient_id', user.id)
       .order('created_at', { ascending: false })
+
+    const { data: invoices, error } = user.id === newAllowedId
+      ? await baseQuery
+      : await baseQuery.eq('recipient_id', user.id)
 
     if (error) {
       console.error('Erro ao buscar notas fiscais recebidas:', error)

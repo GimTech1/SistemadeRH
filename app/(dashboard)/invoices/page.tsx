@@ -32,7 +32,9 @@ interface InvoiceFile {
   status: 'pending' | 'approved' | 'rejected'
   description?: string | null
   recipient_id?: string | null
-  recipient_name?: string | null
+  recipient?: {
+    full_name: string
+  }
   sender?: {
     full_name: string
     position: string | null
@@ -57,14 +59,15 @@ export default function InvoicesPage() {
 
   // Destinatários fixos
   const recipients: Recipient[] = [
-    { id: 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José' },
-    { id: '2005804d-9527-4300-aaf5-720d36e080a5', name: 'Bianda' }
+    { id: 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José Fernando Cunha' },
+    { id: 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947', name: 'Bianca dos Santos Leandro' }
   ]
 
-  // IDs dos usuários especiais
+  // IDs dos usuários autorizados a visualizar a aba "Recebidas"
   const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
-  const biandaId = '2005804d-9527-4300-aaf5-720d36e080a5'
-  const isSpecialUser = currentUserId === joseId || currentUserId === biandaId
+  const biancaId = 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947'
+  const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
+  const isSpecialUser = [joseId, biancaId, newAllowedId].includes(currentUserId)
 
   // Carregar notas fiscais existentes
   useEffect(() => {
@@ -274,10 +277,9 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notas Fiscais</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
             {activeTab === 'sent' ? 'Envie e gerencie suas notas fiscais' : 'Gerencie as notas fiscais recebidas'}
-          </p>
+          </h1>
         </div>
       </div>
 
@@ -421,7 +423,7 @@ export default function InvoicesPage() {
                     </p>
                     <p className="text-xs text-gray-400">
                       {activeTab === 'sent' 
-                        ? `Para: ${file.recipient_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
+                        ? `Para: ${file.recipient?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
                         : `De: ${file.sender?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
                       }
                     </p>

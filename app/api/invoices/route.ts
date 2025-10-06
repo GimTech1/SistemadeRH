@@ -11,15 +11,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Buscar notas fiscais do usuário com informações do destinatário
-    const { data: invoices, error } = await supabase
+    // Buscar notas fiscais: todas se usuário for autorizado especial; caso contrário, apenas as do próprio usuário
+    const specialViewerId = '02088194-3439-411d-bdfb-05a255d8be24'
+    const baseQuery = supabase
       .from('invoice_files')
       .select(`
         *,
         recipient:profiles!recipient_id(full_name)
       `)
-      .eq('employee_id', user.id)
       .order('created_at', { ascending: false })
+
+    const { data: invoices, error } = user.id === specialViewerId
+      ? await baseQuery
+      : await baseQuery.eq('employee_id', user.id)
 
     if (error) {
       console.error('Erro ao buscar notas fiscais:', error)
@@ -54,6 +58,17 @@ export async function POST(request: NextRequest) {
 
     if (!recipient_id) {
       return NextResponse.json({ error: 'Destinatário é obrigatório' }, { status: 400 })
+    }
+
+    // Validar se o destinatário existe na tabela profiles
+    const { data: recipientProfile, error: recipientError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('id', recipient_id)
+      .single()
+
+    if (recipientError || !recipientProfile) {
+      return NextResponse.json({ error: 'Destinatário inválido. Usuário não encontrado.' }, { status: 400 })
     }
 
     // Validar tipo de arquivo

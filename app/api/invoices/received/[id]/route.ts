@@ -14,11 +14,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Verificar se o usuário é José ou Bianda
+    // Verificar se o usuário está autorizado a acessar recebidas
     const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
     const biandaId = '2005804d-9527-4300-aaf5-720d36e080a5'
+    const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
+    const allowedIds = [joseId, biandaId, newAllowedId]
     
-    if (user.id !== joseId && user.id !== biandaId) {
+    if (!allowedIds.includes(user.id)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
@@ -30,13 +32,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
     }
 
-    // Verificar se a nota fiscal é destinada ao usuário
-    const { data: invoice, error: fetchError } = await supabase
+    // Verificar se a nota fiscal existe e se o usuário pode atualizá-la
+    const baseFetch = supabase
       .from('invoice_files')
       .select('*')
       .eq('id', invoiceId)
-      .eq('recipient_id', user.id)
-      .single()
+
+    const { data: invoice, error: fetchError } = user.id === newAllowedId
+      ? await baseFetch.single()
+      : await baseFetch.eq('recipient_id', user.id).single()
 
     if (fetchError || !invoice) {
       return NextResponse.json({ error: 'Nota fiscal não encontrada' }, { status: 404 })

@@ -151,7 +151,7 @@ export default function ReceivedInvoicesPage() {
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <User className="w-4 h-4" />
-          <span>Área restrita para José e Bianda</span>
+          <span>Área restrita</span>
         </div>
       </div>
 
