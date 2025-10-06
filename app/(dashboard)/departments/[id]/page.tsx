@@ -17,6 +17,35 @@ type Department = {
   updated_at?: string
 }
 
+type EmployeeItem = {
+  id: string
+  full_name: string
+  email: string | null
+  position: string | null
+  is_active?: boolean | null
+  avatar_url?: string | null
+}
+
+type Manager = {
+  id: string
+  full_name: string
+  email: string | null
+  role: string
+} | null
+
+type ChildDepartment = {
+  id: string
+  name: string
+  description: string | null
+}
+
+type SkillItem = {
+  id: string
+  name: string
+  category: 'conhecimento' | 'habilidade' | 'atitude'
+  weight: number
+}
+
 export default function DepartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const supabase = createClient()
@@ -27,6 +56,10 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [department, setDepartment] = useState<Department | null>(null)
+  const [employees, setEmployees] = useState<EmployeeItem[]>([])
+  const [manager, setManager] = useState<Manager>(null)
+  const [children, setChildren] = useState<ChildDepartment[]>([])
+  const [skills, setSkills] = useState<SkillItem[]>([])
 
   const [form, setForm] = useState({
     name: '',
@@ -45,6 +78,10 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
 
         const dep: Department = json.department
         setDepartment(dep)
+        setEmployees(Array.isArray(json.employees) ? json.employees : [])
+        setManager(json.manager || null)
+        setChildren(Array.isArray(json.children) ? json.children : [])
+        setSkills(Array.isArray(json.skills) ? json.skills : [])
         setForm({
           name: dep.name,
           description: dep.description,
@@ -89,7 +126,7 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/departments" className="inline-flex items-center gap-2 text-oxford-blue-600 hover:text-yinmn-blue-700">
@@ -100,7 +137,7 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
         <button
           disabled={saving || loading}
           onClick={handleSave}
-          className="inline-flex items-center gap-2 bg-yinmn-blue-600 text-white px-5 py-2.5 rounded-xl disabled:opacity-50"
+          className="inline-flex items-center gap-2 bg-[#1b263b] text-white px-5 py-2.5 rounded-xl disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Salvar alterações
@@ -150,6 +187,81 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
               </div>
             </div>
           </div>
+
+          {/* Subdepartamentos */}
+          <div className="bg-white rounded-2xl border border-platinum-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 text-white flex items-center justify-center">
+                <Building className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-roboto font-medium text-rich-black-900">Subdepartamentos</h2>
+            </div>
+            {loading ? (
+              <div className="flex items-center gap-2 text-oxford-blue-600"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+            ) : children.length === 0 ? (
+              <p className="text-sm text-oxford-blue-600">Nenhum subdepartamento.</p>
+            ) : (
+              <ul className="list-disc list-inside space-y-1">
+                {children.map((c) => (
+                  <li key={c.id} className="text-sm text-rich-black-900">
+                    <Link className="text-yinmn-blue-600 hover:text-yinmn-blue-700" href={`/departments/${c.id}`}>{c.name}</Link>
+                    {c.description ? <span className="text-oxford-blue-500"> — {c.description}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Skills do departamento */}
+          <div className="bg-white rounded-2xl border border-platinum-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 text-white flex items-center justify-center">
+                <Users className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-roboto font-medium text-rich-black-900">Skills do Departamento</h2>
+            </div>
+            {loading ? (
+              <div className="flex items-center gap-2 text-oxford-blue-600"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+            ) : skills.length === 0 ? (
+              <p className="text-sm text-oxford-blue-600">Nenhuma skill cadastrada.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {skills.map((sk) => (
+                  <div key={sk.id} className="border border-platinum-200 rounded-xl p-3">
+                    <p className="text-sm font-medium text-rich-black-900">{sk.name}</p>
+                    <p className="text-xs text-oxford-blue-500">Categoria: {sk.category} • Peso: {sk.weight}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-platinum-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 text-white flex items-center justify-center">
+                <Users className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-roboto font-medium text-rich-black-900">Colaboradores do Departamento</h2>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center gap-2 text-oxford-blue-600"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+            ) : employees.length === 0 ? (
+              <p className="text-sm text-oxford-blue-600">Nenhum colaborador vinculado.</p>
+            ) : (
+              <ul className="divide-y divide-platinum-200">
+                {employees.map((emp) => (
+                  <li key={emp.id} className="py-3 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-rich-black-900 truncate">{emp.full_name}</p>
+                      <p className="text-xs text-oxford-blue-500 truncate">{([emp.position, emp.email].filter(Boolean).join(' • ') || '—')}</p>
+                    </div>
+                    <Link href={`/employees/${emp.id}`} className="text-yinmn-blue-600 hover:text-yinmn-blue-700 text-sm">ver</Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -160,6 +272,12 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
               </div>
               <h2 className="text-lg font-roboto font-medium text-rich-black-900">Gerência</h2>
             </div>
+            {manager ? (
+              <div className="mb-3">
+                <p className="text-sm text-rich-black-900">{manager.full_name}</p>
+                <p className="text-xs text-oxford-blue-500">{manager.email || '—'} • {manager.role}</p>
+              </div>
+            ) : null}
             <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-1">ID do Gerente</label>
             <input
               value={form.manager_id || ''}

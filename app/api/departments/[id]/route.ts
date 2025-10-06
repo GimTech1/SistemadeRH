@@ -18,7 +18,45 @@ export async function GET(
       return NextResponse.json({ message: error.message }, { status: 404 })
     }
 
-    return NextResponse.json({ department: data }, { status: 200 })
+    // Buscar colaboradores vinculados ao departamento
+    const { data: employees, error: employeesError } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
+      .from('employees')
+      .select('id, full_name, email, position, is_active, avatar_url')
+      .eq('department', id)
+      .order('full_name', { ascending: true })
+
+    // Buscar nome do gerente (profiles)
+    let manager: { id: string; full_name: string; email: string | null; role: string } | null = null
+    if (data?.manager_id) {
+      const { data: managerData } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
+        .from('profiles')
+        .select('id, full_name, email, role')
+        .eq('id', data.manager_id)
+        .single()
+      manager = managerData || null
+    }
+
+    // Buscar subdepartamentos
+    const { data: children, error: childrenError } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
+      .from('departments')
+      .select('id, name, description')
+      .eq('parent_department_id', id)
+      .order('name', { ascending: true })
+
+    // Buscar skills do departamento
+    const { data: skills, error: skillsError } = await (supabase as unknown as import('@supabase/supabase-js').SupabaseClient<any>)
+      .from('skills')
+      .select('id, name, category, weight')
+      .eq('department_id', id)
+      .order('weight', { ascending: false })
+
+    return NextResponse.json({
+      department: data,
+      employees: employeesError ? [] : employees,
+      manager,
+      children: childrenError ? [] : children,
+      skills: skillsError ? [] : skills,
+    }, { status: 200 })
   } catch (error: any) {
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 })
   }
