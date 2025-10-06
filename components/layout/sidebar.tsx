@@ -87,12 +87,6 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: ['admin', 'manager', 'employee'],
     },
     {
-      title: 'Notas Fiscais',
-      icon: Receipt,
-      href: '/invoices',
-      roles: ['admin', 'manager', 'employee'],
-    },
-    {
       title: 'Avaliações',
       icon: ClipboardCheck,
       href: '/evaluations',
@@ -103,6 +97,18 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       icon: Calendar,
       href: '/cycles',
       roles: ['admin', 'manager'],
+    },
+    {
+      title: 'Notas Fiscais',
+      icon: Receipt,
+      href: '/invoices',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Gastos',
+      icon: Receipt,
+      href: '/expenses',
+      roles: ['admin', 'manager', 'employee'],
     },
     {
       title: 'Habilidades CHA',
@@ -123,16 +129,16 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: [''],
     },
     {
-      title: 'Relatórios',
-      icon: BarChart3,
-      href: '/reports',
-      roles: ['admin', 'manager'],
-    },
-    {
       title: 'Organograma',
       icon: GitBranch,
       href: '/organograma',
       roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Relatórios',
+      icon: BarChart3,
+      href: '/reports',
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Usuários',
