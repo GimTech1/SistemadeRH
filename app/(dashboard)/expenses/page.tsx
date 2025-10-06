@@ -282,19 +282,40 @@ export default function ExpensesPage() {
           {createOpen && (
           <form className="grid grid-cols-1 md:grid-cols-6 gap-3" onSubmit={handleCreate}>
             <div className="md:col-span-2">
-              <Label htmlFor="title">Título</Label>
+              <Label htmlFor="title">Título <span className="text-red-600">*</span></Label>
               <Input id="title" name="title" required />
             </div>
             <div className="md:col-span-2">
-              <Label htmlFor="category2">Categoria</Label>
-              <Input id="category2" name="category" />
+              <Label htmlFor="category2">Categoria <span className="text-red-600">*</span></Label>
+              <select
+                id="category2"
+                name="category"
+                required
+                className="w-full h-14 rounded-2xl border border-slate-300 bg-white px-5 py-4 text-sm text-slate-900 appearance-none focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-100/40 hover:bg-white hover:border-slate-400 transition-all duration-300"
+                style={{
+                  backgroundImage: `url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e\")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.25em 1.25em',
+                  paddingRight: '2rem'
+                }}
+              >
+                <option value="">Selecione uma categoria</option>
+                <option value="Despesas Operacionais">Despesas Operacionais</option>
+                <option value="Despesas com Pessoal">Despesas com Pessoal</option>
+                <option value="Marketing e Vendas">Marketing e Vendas</option>
+                <option value="Financeiro e Contábil">Financeiro e Contábil</option>
+                <option value="Tecnologia e Infraestrutura">Tecnologia e Infraestrutura</option>
+                <option value="Diversos / Não Recorrentes">Diversos / Não Recorrentes</option>
+                <option value="Investimentos e Expansão">Investimentos e Expansão</option>
+              </select>
             </div>
             <div>
-              <Label htmlFor="amount">Valor</Label>
+              <Label htmlFor="amount">Valor <span className="text-red-600">*</span></Label>
               <Input id="amount" name="amount" type="number" step="0.01" required />
             </div>
             <div>
-              <Label htmlFor="date">Data</Label>
+              <Label htmlFor="date">Data <span className="text-red-600">*</span></Label>
               <Input id="date" name="date" type="date" required />
             </div>
             <div className="md:col-span-6">
