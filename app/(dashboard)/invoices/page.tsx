@@ -57,19 +57,16 @@ export default function InvoicesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase: SupabaseClient<Database> = createClient()
 
-  // Destinatários fixos
   const recipients: Recipient[] = [
     { id: 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José Fernando Cunha' },
     { id: 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947', name: 'Bianca dos Santos Leandro' }
   ]
 
-  // IDs dos usuários autorizados a visualizar a aba "Recebidas"
   const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
   const biancaId = 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947'
   const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
   const isSpecialUser = [joseId, biancaId, newAllowedId].includes(currentUserId)
 
-  // Carregar notas fiscais existentes
   useEffect(() => {
     loadCurrentUser()
     loadInvoices()
@@ -112,7 +109,6 @@ export default function InvoicesPage() {
     }
   }
 
-  // Recarregar quando mudar de aba
   useEffect(() => {
     loadInvoices()
   }, [activeTab])
@@ -274,7 +270,6 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
@@ -283,7 +278,6 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       {isSpecialUser && (
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
@@ -313,11 +307,9 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Upload Area - apenas na aba Enviadas */}
       {activeTab === 'sent' && (
         <Card className="p-6">
         <div className="space-y-6">
-          {/* Seleção de destinatário e descrição */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 flex flex-col">
               <Label htmlFor="recipient" className="text-sm font-medium text-gray-700">
@@ -360,7 +352,6 @@ export default function InvoicesPage() {
             </div>
           </div>
 
-          {/* Área de upload */}
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               dragActive 
@@ -402,7 +393,6 @@ export default function InvoicesPage() {
         </Card>
       )}
 
-      {/* Files List */}
       {files.length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -491,7 +481,6 @@ export default function InvoicesPage() {
         </Card>
       )}
 
-      {/* Empty State */}
       {files.length === 0 && !uploading && (
         <Card className="p-12 text-center">
           <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
