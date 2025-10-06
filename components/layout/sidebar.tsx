@@ -29,6 +29,7 @@ import {
   Calendar,
   GitBranch,
   Receipt,
+  Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -106,7 +107,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     },
     {
       title: 'Gastos',
-      icon: Receipt,
+      icon: Wallet,
       href: '/expenses',
       roles: ['admin', 'manager', 'employee'],
     },

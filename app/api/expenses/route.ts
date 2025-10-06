@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date')
     const departmentId = searchParams.get('department_id')
     const category = searchParams.get('category')
+    const status = searchParams.get('status')
     const q = searchParams.get('q')
     const minAmount = searchParams.get('min_amount')
     const maxAmount = searchParams.get('max_amount')
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
     if (category) query = query.ilike('category', `%${category}%`)
     if (minAmount) query = query.gte('amount', Number(minAmount))
     if (maxAmount) query = query.lte('amount', Number(maxAmount))
+    if (status) query = query.eq('status', status)
     if (q) {
       // simples busca por título/descrição
       query = query.or(
@@ -126,7 +128,8 @@ export async function POST(request: NextRequest) {
       category: category ?? null,
       department_id: departmentId,
       created_by: user.id,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      status: 'pending'
     }
 
     const { data: created, error: insertError } = await (supabase as any)

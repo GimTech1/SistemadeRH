@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Download, Filter, Plus, Search } from 'lucide-react'
+import { Download, Filter, Plus, Search, Check, X, Send, User, ChevronUp, ChevronDown } from 'lucide-react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 
@@ -23,6 +23,7 @@ interface ExpenseRow {
   department?: { id: string; name: string }
   created_by: string
   created_at: string
+  status: 'pending' | 'approved' | 'rejected'
 }
 
 export default function ExpensesPage() {
@@ -45,6 +46,11 @@ export default function ExpensesPage() {
 
   const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [canViewAll, setCanViewAll] = useState(false)
+  const [activeTab, setActiveTab] = useState<'list' | 'approve'>('list')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState(true)
+  const [createOpen, setCreateOpen] = useState(true)
 
   const isManagerOrAdmin = userRole === 'gerente' || userRole === 'admin'
 
@@ -91,6 +97,7 @@ export default function ExpensesPage() {
     if (endDate) params.set('end_date', endDate)
     if (minAmount) params.set('min_amount', minAmount)
     if (maxAmount) params.set('max_amount', maxAmount)
+    if (statusFilter) params.set('status', statusFilter)
     return params.toString()
   }
 
@@ -111,6 +118,13 @@ export default function ExpensesPage() {
       setLoading(false)
     }
   }
+
+  // Recarregar quando o filtro de status mudar na aba de aprovação
+  useEffect(() => {
+    if (activeTab === 'approve') {
+      loadExpenses()
+    }
+  }, [statusFilter, activeTab])
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -145,6 +159,7 @@ export default function ExpensesPage() {
   const totalByDepartment = useMemo(() => {
     const map = new Map<string, { name: string; total: number }>()
     for (const exp of expenses) {
+      if ((exp as any).status !== 'approved') continue
       const key = exp.department_id
       const name = exp.department?.name || 'Setor'
       const current = map.get(key)
@@ -155,12 +170,51 @@ export default function ExpensesPage() {
   }, [expenses])
 
   return (
-    <div className="space-y-6">
-      <Card className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-4 h-4" />
-          <span className="font-medium">Filtros</span>
+    <div className="space-y-8">
+      {canViewAll && (
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'list'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Send className="w-4 h-4 inline mr-2" />
+              Listagem
+            </button>
+            <button
+              onClick={() => setActiveTab('approve')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'approve'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <User className="w-4 h-4 inline mr-2" />
+              Aprovação
+            </button>
+          </nav>
         </div>
+      )}
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => setFiltersOpen(prev => !prev)}>
+            {filtersOpen ? (
+              <span className="flex items-center"><ChevronUp className="w-4 h-4 mr-1" /> Esconder</span>
+            ) : (
+              <span className="flex items-center"><ChevronDown className="w-4 h-4 mr-1" /> Mostrar</span>
+            )}
+          </Button>
+        </div>
+        {filtersOpen && (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-6">
             <Label htmlFor="q">Busca</Label>
@@ -207,14 +261,25 @@ export default function ExpensesPage() {
             <Input id="max" type="number" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} />
           </div>
         </div>
+        )}
       </Card>
 
-      {isManagerOrAdmin && (
+      {isManagerOrAdmin && activeTab === 'list' && (
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Plus className="w-4 h-4" />
-            <span className="font-medium">Cadastrar gasto do meu setor</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span className="font-medium">Cadastrar gasto do meu setor</span>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setCreateOpen(prev => !prev)}>
+              {createOpen ? (
+                <span className="flex items-center"><ChevronUp className="w-4 h-4 mr-1" /> Esconder</span>
+              ) : (
+                <span className="flex items-center"><ChevronDown className="w-4 h-4 mr-1" /> Mostrar</span>
+              )}
+            </Button>
           </div>
+          {createOpen && (
           <form className="grid grid-cols-1 md:grid-cols-6 gap-3" onSubmit={handleCreate}>
             <div className="md:col-span-2">
               <Label htmlFor="title">Título</Label>
@@ -240,23 +305,15 @@ export default function ExpensesPage() {
               <Button type="submit" disabled={creating} style={{ backgroundColor: '#1b263b' }}>{creating ? 'Salvando...' : 'Salvar gasto'}</Button>
             </div>
           </form>
+          )}
         </Card>
       )}
 
+      {activeTab === 'list' && (
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-medium">Gastos</span>
-          <div className="flex items-center gap-3">
-            {canViewAll && (
-              <div className="rounded-xl border px-4 py-2 bg-white/70 text-sm">
-                <span className="text-slate-600 mr-2">Gasto total:</span>
-                <span className="font-semibold">
-                  {expenses.reduce((acc, e) => acc + (e.amount || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-            )}
-            <Button variant="secondary"><Download className="w-4 h-4 mr-2" />Exportar CSV</Button>
-          </div>
+
         </div>
 
         {loading ? (
@@ -270,6 +327,7 @@ export default function ExpensesPage() {
                   <th className="p-2">Título</th>
                   <th className="p-2">Categoria</th>
                   <th className="p-2">Setor</th>
+                  <th className="p-2">Status</th>
                   <th className="p-2 text-right">Valor</th>
                 </tr>
               </thead>
@@ -280,12 +338,17 @@ export default function ExpensesPage() {
                     <td className="p-2">{e.title}</td>
                     <td className="p-2">{e.category || '-'}</td>
                     <td className="p-2">{e.department?.name || '-'}</td>
+                    <td className="p-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                      </span>
+                    </td>
                     <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   </tr>
                 ))}
                 {expenses.length === 0 && (
                   <tr>
-                    <td className="p-4 text-center text-gray-500" colSpan={5}>Nenhum gasto encontrado</td>
+                    <td className="p-4 text-center text-gray-500" colSpan={6}>Nenhum gasto encontrado</td>
                   </tr>
                 )}
               </tbody>
@@ -293,21 +356,164 @@ export default function ExpensesPage() {
           </div>
         )}
       </Card>
+      )}
 
+      {canViewAll && activeTab === 'approve' && (
       <Card className="p-4">
-        <div className="font-medium mb-2">Totais por setor</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {totalByDepartment.map((d) => (
-            <div key={d.id} className="rounded-md border p-3 bg-white/50">
-              <div className="text-sm text-gray-600">{d.name}</div>
-              <div className="text-lg font-semibold">{d.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-medium">Aprovação de Gastos</span>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="status">Status</Label>
+            <select
+              id="status"
+              className="h-10 rounded-xl border px-3 appearance-none bg-white"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: 'right 0.5rem center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '1.25em 1.25em',
+                paddingRight: '2rem'
+              }}
+            >
+              <option value="">Todos</option>
+              <option value="pending">Pendentes</option>
+              <option value="approved">Aprovados</option>
+              <option value="rejected">Rejeitados</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="rounded-xl border p-4 bg-white/80">
+            <div className="text-sm text-slate-600">Gasto total no período</div>
+            <div className="text-2xl font-semibold">
+              {expenses.filter(e => (e as any).status === 'approved').reduce((acc, e) => acc + (e.amount || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-          ))}
-          {totalByDepartment.length === 0 && (
-            <div className="text-sm text-gray-500">Sem valores no período/critério.</div>
-          )}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left border-b">
+                <th className="p-2">Data</th>
+                <th className="p-2">Título</th>
+                <th className="p-2">Categoria</th>
+                <th className="p-2">Setor</th>
+                <th className="p-2">Status</th>
+                <th className="p-2 text-right">Valor</th>
+                <th className="p-2 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expenses.map((e) => (
+                <tr key={e.id} className="border-b hover:bg-gray-50/30">
+                  <td className="p-2">{new Date(e.date).toLocaleDateString('pt-BR')}</td>
+                  <td className="p-2">{e.title}</td>
+                  <td className="p-2">{e.category || '-'}</td>
+                  <td className="p-2">{e.department?.name || '-'}</td>
+                  <td className="p-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                    </span>
+                  </td>
+                  <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td className="p-2 text-right">
+                    <div className="inline-flex gap-2">
+                      {(e.status === 'pending' || e.status === 'rejected') && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={updatingId === e.id}
+                          onClick={async () => {
+                            setUpdatingId(e.id)
+                            try {
+                              await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
+                              await loadExpenses()
+                            } finally { setUpdatingId(null) }
+                          }}
+                        >
+                          <Check className="w-4 h-4 mr-1" /> Aprovar
+                        </Button>
+                      )}
+                      {(e.status === 'pending' || e.status === 'approved') && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={updatingId === e.id}
+                          onClick={async () => {
+                            setUpdatingId(e.id)
+                            try {
+                              await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) })
+                              await loadExpenses()
+                            } finally { setUpdatingId(null) }
+                          }}
+                        >
+                          <X className="w-4 h-4 mr-1" /> Rejeitar
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {expenses.length === 0 && (
+                <tr>
+                  <td className="p-4 text-center text-gray-500" colSpan={6}>Nenhum gasto encontrado</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </Card>
+      )}
+
+      {canViewAll && activeTab === 'approve' && (
+        <Card className="p-4">
+          <div className="font-medium mb-2">Totais por setor</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {departments.map((d) => {
+                const total = expenses
+                  .filter((e) => e.department_id === d.id && (e as any).status === 'approved')
+                .reduce((sum, e) => sum + (e.amount || 0), 0)
+              return (
+                <div key={d.id} className="rounded-md border p-3 bg-white/50">
+                  <div className="text-sm text-gray-600">{d.name}</div>
+                  <div className="text-lg font-semibold">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                </div>
+              )
+            })}
+            {departments.length === 0 && (
+              <div className="text-sm text-gray-500">Nenhum setor cadastrado.</div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'list' && (
+        <Card className="p-4">
+          <div className="font-medium mb-2">Total do meu setor</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {userDepartmentId ? (
+              (() => {
+                const dept = departments.find(d => d.id === userDepartmentId)
+                const total = expenses
+                  .filter(e => e.department_id === userDepartmentId && (e as any).status === 'approved')
+                  .reduce((sum, e) => sum + (e.amount || 0), 0)
+                return (
+                  <div key={userDepartmentId} className="rounded-md border p-3 bg-white/50">
+                    <div className="text-sm text-gray-600">{dept?.name || 'Meu setor'}</div>
+                    <div className="text-lg font-semibold">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                  </div>
+                )
+              })()
+            ) : (
+              <div className="text-sm text-gray-500">Sem setor associado ao usuário.</div>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

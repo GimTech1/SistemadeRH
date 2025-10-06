@@ -119,6 +119,7 @@ export default function DashboardLayout({
       '/reports': 'Relatórios',
       '/requests': 'Solicitações',
       '/invoices': 'Notas Fiscais',
+      '/expenses': 'Controle de Gastos',
       '/users': 'Usuários',
       '/organograma': 'Organograma',
     }
