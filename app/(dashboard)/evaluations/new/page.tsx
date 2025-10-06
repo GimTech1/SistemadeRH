@@ -419,42 +419,7 @@ export default function NewEvaluationPage() {
         </div>
       </div>
 
-      {/* Campos adicionais: Forças, Melhorias, Metas */}
-      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
-        <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6">Análises e Metas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Forças</label>
-            <textarea
-              value={strengths}
-              onChange={(e) => setStrengths(e.target.value)}
-              rows={5}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
-              placeholder="Pontos fortes identificados..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Melhorias</label>
-            <textarea
-              value={improvements}
-              onChange={(e) => setImprovements(e.target.value)}
-              rows={5}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
-              placeholder="Pontos de melhoria..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Metas</label>
-            <textarea
-              value={goalsText}
-              onChange={(e) => setGoalsText(e.target.value)}
-              rows={5}
-              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
-              placeholder="Metas sugeridas..."
-            />
-          </div>
-        </div>
-      </div>
+      
 
       {/* Avaliação CHA */}
       {['conhecimento', 'habilidade', 'atitude'].map((category) => {
@@ -555,6 +520,43 @@ export default function NewEvaluationPage() {
           </div>
         )
       })}
+      
+      {/* Campos adicionais: Forças, Melhorias, Metas (movido para o final) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+        <h2 className="text-lg font-roboto font-medium text-rich-black-900 mb-6">Análises e Metas</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Forças</label>
+            <textarea
+              value={strengths}
+              onChange={(e) => setStrengths(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Pontos fortes identificados..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Melhorias</label>
+            <textarea
+              value={improvements}
+              onChange={(e) => setImprovements(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Pontos de melhoria..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Metas</label>
+            <textarea
+              value={goalsText}
+              onChange={(e) => setGoalsText(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-sm font-roboto font-light text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent resize-none"
+              placeholder="Metas sugeridas..."
+            />
+          </div>
+        </div>
+      </div>
       
       {/* Ações - Botões no final da página */}
       <div className="flex items-center justify-end gap-3 pt-4">
