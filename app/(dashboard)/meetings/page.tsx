@@ -110,9 +110,14 @@ export default function MeetingsPage() {
         .warn{background:#fef9c3; color:#854d0e}
         .no{background:#fee2e2; color:#991b1b}
         @media print { .no-print{display:none} }
+        .btn{padding:8px 12px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer; margin-right:8px}
+        .btn-primary{background:#1e3a8a; color:#fff; border-color:#1e3a8a}
       </style></head><body>
       ${htmlBody}
-      <div class="no-print" style="margin-top:16px"><button onclick="window.print()">Imprimir / Salvar PDF</button></div>
+      <div class="no-print" style="margin-top:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="window.print()">Salvar</button>
+        <span class="muted">Caso queira salvar como PDF, no diálogo de impressão, escolha a impressora "Salvar como PDF".</span>
+      </div>
     </body></html>`)
     w.document.close()
     w.focus()
