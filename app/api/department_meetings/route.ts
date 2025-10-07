@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     const { data: rows, error } = await sb
       .from('department_meetings')
-      .select('id, department_id, date, scheduled_time, done, done_at, no_meeting')
+      .select('id, department_id, date, scheduled_time, done, done_at, no_meeting, notes, quality, metrics')
       .eq('date', date)
 
     if (error) {
@@ -77,6 +77,21 @@ export async function POST(request: Request) {
     const no_meeting = Boolean(body.no_meeting)
     const scheduled_time = typeof body.scheduled_time === 'string' ? body.scheduled_time : null
 
+    // Se vierem métricas, calcular qualidade automaticamente (média 1–5, arredondada)
+    const incomingMetrics = (body as any).metrics as Record<string, unknown> | null | undefined
+    let computedQuality: number | null = null
+    let metricsToSave: Record<string, number> | null = null
+    if (incomingMetrics && typeof incomingMetrics === 'object') {
+      const entries = Object.entries(incomingMetrics)
+        .filter(([, v]) => typeof v === 'number') as Array<[string, number]>
+      if (entries.length > 0) {
+        const sum = entries.reduce((acc, [, v]) => acc + v, 0)
+        const avg = sum / entries.length
+        computedQuality = Math.round(avg)
+        metricsToSave = Object.fromEntries(entries)
+      }
+    }
+
     // Capturar usuário autenticado para auditoria
     const { data: authUser } = await supabase.auth.getUser()
     const created_by = authUser?.user?.id ?? null
@@ -91,6 +106,11 @@ export async function POST(request: Request) {
         done,
         done_at: done ? new Date().toISOString() : null,
         no_meeting,
+        notes: typeof (body as any).notes === 'string' ? (body as any).notes : null,
+        quality: computedQuality !== null
+          ? computedQuality
+          : (typeof (body as any).quality === 'number' ? (body as any).quality : null),
+        metrics: metricsToSave,
         created_by,
       }, { onConflict: 'department_id,date' })
       .select('*')

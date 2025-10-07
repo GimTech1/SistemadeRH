@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, Clock, CalendarDays, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Clock, CalendarDays, RefreshCw, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import * as Dialog from '@radix-ui/react-dialog'
 
 type Department = {
   id: string
@@ -21,6 +22,9 @@ type MeetingRow = {
   done: boolean
   done_at: string | null
   no_meeting?: boolean
+  notes?: string | null
+  quality?: number | null
+  metrics?: Record<string, number> | null
 }
 
 export default function MeetingsPage() {
@@ -39,6 +43,18 @@ export default function MeetingsPage() {
   const [date, setDate] = useState<string>(() => getLocalISODate())
   const [meetingsByDept, setMeetingsByDept] = useState<Record<string, MeetingRow | undefined>>({})
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [auditOpenFor, setAuditOpenFor] = useState<string | null>(null)
+  const [auditNotes, setAuditNotes] = useState<string>('')
+  const [auditQuality, setAuditQuality] = useState<number>(3)
+  const [auditMetrics, setAuditMetrics] = useState<Record<string, number>>({
+    pontualidade: 3,
+    duracao: 3,
+    participacao: 3,
+    objetivos: 3,
+    decisoes: 3,
+    followups: 3,
+    satisfacao: 3,
+  })
   const allowedUserIds = useMemo(() => [
     'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
     'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
@@ -104,6 +120,11 @@ export default function MeetingsPage() {
       setSavingId(departmentId)
       const current = meetingsByDept[departmentId]
       const nextDone = !current?.done
+      const hasTime = Boolean(current?.scheduled_time && String(current?.scheduled_time).trim())
+      if (!hasTime && nextDone) {
+        toast.error('Defina um horário antes de confirmar a reunião')
+        return
+      }
       const res = await fetch('/api/department_meetings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,7 +148,7 @@ export default function MeetingsPage() {
       const res = await fetch('/api/department_meetings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ department_id: departmentId, date, done: current?.done ?? false, no_meeting: current?.no_meeting ?? false, scheduled_time: time || null })
+        body: JSON.stringify({ department_id: departmentId, date, done: current?.done ?? false, no_meeting: current?.no_meeting ?? false, scheduled_time: time || null, notes: current?.notes ?? null, quality: current?.quality ?? null, metrics: current?.metrics ?? null })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Erro ao salvar horário')
@@ -148,7 +169,7 @@ export default function MeetingsPage() {
       const res = await fetch('/api/department_meetings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ department_id: departmentId, date, done: false, no_meeting: nextNoMeeting, scheduled_time: current?.scheduled_time ?? null })
+        body: JSON.stringify({ department_id: departmentId, date, done: false, no_meeting: nextNoMeeting, scheduled_time: current?.scheduled_time ?? null, notes: current?.notes ?? null, quality: current?.quality ?? null, metrics: current?.metrics ?? null })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Erro ao salvar')
@@ -156,6 +177,53 @@ export default function MeetingsPage() {
       toast.success(nextNoMeeting ? 'Marcado como sem reunião no dia' : 'Marca de sem reunião removida')
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao salvar')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  const openAudit = (departmentId: string) => {
+    const current = meetingsByDept[departmentId]
+    setAuditOpenFor(departmentId)
+    setAuditNotes(current?.notes || '')
+    setAuditQuality(current?.quality ?? 3)
+    setAuditMetrics({
+      pontualidade: current?.metrics?.pontualidade ?? 3,
+      duracao: current?.metrics?.duracao ?? 3,
+      participacao: current?.metrics?.participacao ?? 3,
+      objetivos: current?.metrics?.objetivos ?? 3,
+      decisoes: current?.metrics?.decisoes ?? 3,
+      followups: current?.metrics?.followups ?? 3,
+      satisfacao: current?.metrics?.satisfacao ?? 3,
+    })
+  }
+
+  const saveAudit = async () => {
+    if (!auditOpenFor) return
+    try {
+      setSavingId(auditOpenFor)
+      const current = meetingsByDept[auditOpenFor]
+      const res = await fetch('/api/department_meetings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          department_id: auditOpenFor,
+          date,
+          done: current?.done ?? false,
+          no_meeting: current?.no_meeting ?? false,
+          scheduled_time: current?.scheduled_time ?? null,
+          notes: auditNotes || null,
+          quality: auditQuality ?? null,
+          metrics: auditMetrics,
+        })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro ao salvar auditoria')
+      setMeetingsByDept(prev => ({ ...prev, [auditOpenFor]: json.meeting as MeetingRow }))
+      toast.success('Auditoria salva')
+      setAuditOpenFor(null)
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao salvar auditoria')
     } finally {
       setSavingId(null)
     }
@@ -222,9 +290,10 @@ export default function MeetingsPage() {
                   />
                 </div>
                 <button
-                  disabled={isSaving || isNoMeeting}
+                  disabled={isSaving || isNoMeeting || !timeValue}
                   onClick={() => toggleDone(dept.id)}
-                  className={`px-4 py-2 rounded-xl text-sm transition-all ${isDone ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-yinmn-blue-600 text-white hover:bg-yinmn-blue-700'}`}
+                  title={!timeValue ? 'Defina um horário para habilitar' : undefined}
+                  className={`px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDone ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-yinmn-blue-600 text-white hover:bg-yinmn-blue-700'}`}
                 >
                   {isDone ? 'Reunião confirmada' : 'Confirmar reunião'}
                 </button>
@@ -235,6 +304,15 @@ export default function MeetingsPage() {
                 >
                   {isNoMeeting ? 'Sem reunião (ativado)' : 'Não houve reunião'}
                 </button>
+                {isDone && !isNoMeeting && (
+                  <button
+                    disabled={isSaving}
+                    onClick={() => openAudit(dept.id)}
+                    className="px-4 py-2 rounded-xl text-sm transition-all bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200"
+                  >
+                    Avaliar reunião
+                  </button>
+                )}
               </div>
 
               {isDone && (
@@ -253,6 +331,60 @@ export default function MeetingsPage() {
           )
         })}
       </div>
+
+      <Dialog.Root open={!!auditOpenFor} onOpenChange={(o) => !o && setAuditOpenFor(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Dialog.Content
+            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none"
+          >
+            <div className="w-[min(100vw-2rem,36rem)] bg-white rounded-2xl shadow-2xl border border-platinum-200 overflow-hidden">
+              <div className="p-6 border-b border-platinum-200 bg-white">
+                <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">Avaliação da Reunião</Dialog.Title>
+                <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
+                  Atribua notas de 1 a 5 para cada métrica e adicione observações
+                </Dialog.Description>
+              </div>
+              <div className="p-6 space-y-4">
+                {Object.entries(auditMetrics).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between gap-4">
+                    <label className="text-sm font-roboto font-medium text-rich-black-900 capitalize">{key}</label>
+                    <div className="relative">
+                      <select
+                        value={value}
+                        onChange={(e) => setAuditMetrics(prev => ({ ...prev, [key]: Number(e.target.value) }))}
+                        className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                        style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                      >
+                        <option value={1}>1</option>
+                        <option value={2}>2</option>
+                        <option value={3}>3</option>
+                        <option value={4}>4</option>
+                        <option value={5}>5</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                    </div>
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Observações</label>
+                  <textarea
+                    rows={4}
+                    value={auditNotes}
+                    onChange={(e) => setAuditNotes(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-xl text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto resize-none"
+                    placeholder="Pontualidade, duração, participação, objetivos, decisões, follow-ups, satisfação..."
+                  />
+                </div>
+              </div>
+              <div className="p-6 border-t border-platinum-200 bg-platinum-50 flex items-center justify-end gap-3">
+                <button onClick={() => setAuditOpenFor(null)} className="px-6 py-3 text-oxford-blue-600 hover:text-oxford-blue-700 font-roboto font-medium transition-all duration-200">Cancelar</button>
+                <button onClick={saveAudit} className="px-6 py-3 bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white rounded-xl font-roboto font-medium transition-all duration-200">Salvar Avaliação</button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
         <div className="flex items-center justify-between">
