@@ -82,16 +82,17 @@ export async function POST(request: Request) {
     // Se vierem métricas, calcular qualidade automaticamente (média 1–5, arredondada)
     const incomingMetrics = (body as any).metrics as Record<string, unknown> | null | undefined
     let computedQuality: number | null = null
-    let metricsToSave: Record<string, number> | null = null
+    let metricsToSave: Record<string, any> | null = null
     if (incomingMetrics && typeof incomingMetrics === 'object') {
-      const entries = Object.entries(incomingMetrics)
-        .filter(([, v]) => typeof v === 'number') as Array<[string, number]>
-      if (entries.length > 0) {
-        const sum = entries.reduce((acc, [, v]) => acc + v, 0)
-        const avg = sum / entries.length
+      const numericEntries = Object.entries(incomingMetrics)
+        .filter(([k, v]) => typeof v === 'number' && (k === 'objetivos' || k === 'decisoes' || k === 'followups' || k === 'satisfacao')) as Array<[string, number]>
+      if (numericEntries.length > 0) {
+        const sum = numericEntries.reduce((acc, [, v]) => acc + v, 0)
+        const avg = sum / numericEntries.length
         computedQuality = Math.round(avg)
-        metricsToSave = Object.fromEntries(entries)
       }
+      // salvar tudo (booleanos e numéricos)
+      metricsToSave = incomingMetrics as any
     }
 
     // Capturar usuário autenticado para auditoria

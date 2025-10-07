@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, Clock, CalendarDays, RefreshCw, ChevronDown } from 'lucide-react'
+import { CheckCircle2, Clock, CalendarDays, RefreshCw, ChevronDown, XCircle, ClipboardList } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -24,7 +24,7 @@ type MeetingRow = {
   no_meeting?: boolean
   notes?: string | null
   quality?: number | null
-  metrics?: Record<string, number> | null
+  metrics?: Record<string, any> | null
 }
 
 export default function MeetingsPage() {
@@ -46,15 +46,33 @@ export default function MeetingsPage() {
   const [auditOpenFor, setAuditOpenFor] = useState<string | null>(null)
   const [auditNotes, setAuditNotes] = useState<string>('')
   const [auditQuality, setAuditQuality] = useState<number>(3)
-  const [auditMetrics, setAuditMetrics] = useState<Record<string, number>>({
-    pontualidade: 3,
-    duracao: 3,
-    participacao: 3,
+  const [auditMetrics, setAuditMetrics] = useState<Record<string, any>>({
+    // PPP
+    pontualidade: true,
+    participacao: true,
+    presenca: true,
+    // PAUTA
+    pauta_indicadores: false,
+    pauta_trello_planner: false,
+    pauta_aberto_discussao: false,
+    // RESTANTE (notas 1-5)
     objetivos: 3,
     decisoes: 3,
     followups: 3,
     satisfacao: 3,
   })
+
+  const liveAvgQuality = useMemo(() => {
+    const values = [
+      auditMetrics.objetivos,
+      auditMetrics.decisoes,
+      auditMetrics.followups,
+      auditMetrics.satisfacao,
+    ].filter((v) => typeof v === 'number') as number[]
+    if (!values.length) return null
+    const avg = values.reduce((a, b) => a + b, 0) / values.length
+    return Math.round(avg * 10) / 10
+  }, [auditMetrics])
   const allowedUserIds = useMemo(() => [
     'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
     'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
@@ -189,13 +207,16 @@ export default function MeetingsPage() {
     setAuditNotes(current?.notes || '')
     setAuditQuality(current?.quality ?? 3)
     setAuditMetrics({
-      pontualidade: current?.metrics?.pontualidade ?? 3,
-      duracao: current?.metrics?.duracao ?? 3,
-      participacao: current?.metrics?.participacao ?? 3,
-      objetivos: current?.metrics?.objetivos ?? 3,
-      decisoes: current?.metrics?.decisoes ?? 3,
-      followups: current?.metrics?.followups ?? 3,
-      satisfacao: current?.metrics?.satisfacao ?? 3,
+      pontualidade: typeof current?.metrics?.pontualidade === 'boolean' ? current?.metrics?.pontualidade : true,
+      participacao: typeof current?.metrics?.participacao === 'boolean' ? current?.metrics?.participacao : true,
+      presenca: typeof current?.metrics?.presenca === 'boolean' ? current?.metrics?.presenca : true,
+      pauta_indicadores: typeof current?.metrics?.pauta_indicadores === 'boolean' ? current?.metrics?.pauta_indicadores : false,
+      pauta_trello_planner: typeof current?.metrics?.pauta_trello_planner === 'boolean' ? current?.metrics?.pauta_trello_planner : false,
+      pauta_aberto_discussao: typeof current?.metrics?.pauta_aberto_discussao === 'boolean' ? current?.metrics?.pauta_aberto_discussao : false,
+      objetivos: typeof current?.metrics?.objetivos === 'number' ? current?.metrics?.objetivos : 3,
+      decisoes: typeof current?.metrics?.decisoes === 'number' ? current?.metrics?.decisoes : 3,
+      followups: typeof current?.metrics?.followups === 'number' ? current?.metrics?.followups : 3,
+      satisfacao: typeof current?.metrics?.satisfacao === 'number' ? current?.metrics?.satisfacao : 3,
     })
   }
 
@@ -301,16 +322,18 @@ export default function MeetingsPage() {
                 <button
                   disabled={isSaving}
                   onClick={() => toggleNoMeeting(dept.id)}
-                  className={`px-4 py-2 rounded-xl text-sm transition-all ${isNoMeeting ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200'}`}
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-roboto transition-all border shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200 ${isNoMeeting ? 'bg-amber-600 text-white hover:bg-amber-700 border-amber-600' : 'bg-white text-amber-700 hover:bg-amber-50 border-amber-300'}`}
                 >
+                  <XCircle className="w-4 h-4" />
                   {isNoMeeting ? 'Sem reunião (ativado)' : 'Não houve reunião'}
                 </button>
                 {isDone && !isNoMeeting && (
                   <button
                     disabled={isSaving}
                     onClick={() => openAudit(dept.id)}
-                    className="px-4 py-2 rounded-xl text-sm transition-all bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-roboto transition-all bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-200"
                   >
+                    <ClipboardList className="w-4 h-4" />
                     Avaliar reunião
                   </button>
                 )}
@@ -339,34 +362,149 @@ export default function MeetingsPage() {
           <Dialog.Content
             className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none"
           >
-            <div className="w-[min(100vw-2rem,36rem)] bg-white rounded-2xl shadow-2xl border border-platinum-200 overflow-hidden">
-              <div className="p-6 border-b border-platinum-200 bg-white">
-                <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">Avaliação da Reunião</Dialog.Title>
-                <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
-                  Atribua notas de 1 a 5 para cada métrica e adicione observações
-                </Dialog.Description>
+            <div className="w-[min(100vw-2rem,40rem)] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-platinum-200">
+              <div className="p-6 border-b border-platinum-200 bg-white flex items-center justify-between gap-4">
+                <div>
+                  <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">Avaliação da Reunião</Dialog.Title>
+                  <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
+                    Atribua notas de 1 a 5 para cada métrica e adicione observações
+                  </Dialog.Description>
+                </div>
+                {liveAvgQuality !== null && (
+                  <div className="px-3 py-1 rounded-lg bg-yinmn-blue-50 text-yinmn-blue-700 text-sm font-roboto font-medium whitespace-nowrap">
+                    Média: {liveAvgQuality}
+                  </div>
+                )}
               </div>
-              <div className="p-6 space-y-4">
-                {Object.entries(auditMetrics).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between gap-4">
-                    <label className="text-sm font-roboto font-medium text-rich-black-900 capitalize">{key}</label>
-                    <div className="relative">
-                      <select
-                        value={value}
-                        onChange={(e) => setAuditMetrics(prev => ({ ...prev, [key]: Number(e.target.value) }))}
-                        className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
-                        style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
-                      >
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                        <option value={3}>3</option>
-                        <option value={4}>4</option>
-                        <option value={5}>5</option>
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+              <div className="p-6 space-y-6">
+                <div>
+                  <p className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider mb-3">PPP</p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Pontualidade</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.pontualidade ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, pontualidade: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Participação</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.participacao ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, participacao: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Presença</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.presenca ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, presenca: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <p className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider mb-3">PAUTA</p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Indicadores</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.pauta_indicadores ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, pauta_indicadores: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Trello/Planner</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.pauta_trello_planner ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, pauta_trello_planner: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Aberto à discussão</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.pauta_aberto_discussao ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, pauta_aberto_discussao: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider mb-3">Restante</p>
+                  <div className="space-y-4">
+                    {[{k:'objetivos',label:'Objetivos'},{k:'decisoes',label:'Decisões'},{k:'followups',label:'Follow-ups'},{k:'satisfacao',label:'Satisfação'}].map((item) => (
+                      <div key={item.k} className="flex items-center justify-between gap-4">
+                        <label className="text-sm font-roboto font-medium text-rich-black-900">{item.label}</label>
+                        <div className="relative">
+                          <select
+                            value={auditMetrics[item.k]}
+                            onChange={(e) => setAuditMetrics(prev => ({ ...prev, [item.k]: Number(e.target.value) }))}
+                            className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                            style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                          >
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                            <option value={4}>4</option>
+                            <option value={5}>5</option>
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">Observações</label>
                   <textarea
