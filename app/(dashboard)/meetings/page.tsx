@@ -91,6 +91,71 @@ export default function MeetingsPage() {
     return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`
   }
 
+  const boolLabel = (v: any) => (v ? 'Sim' : 'Não')
+
+  const openPrintWindow = (title: string, htmlBody: string) => {
+    const w = window.open('', '_blank')
+    if (!w) return
+    w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${title}</title>
+      <style>
+        body{font-family: Arial, Helvetica, sans-serif; color:#0f172a; padding:24px}
+        h1{font-size:20px; margin:0 0 8px}
+        h2{font-size:16px; margin:16px 0 8px}
+        .muted{color:#64748b; font-size:12px}
+        table{width:100%; border-collapse:collapse; margin-top:8px}
+        th,td{border:1px solid #e2e8f0; padding:8px; font-size:12px; text-align:left}
+        th{background:#f8fafc}
+        .badge{display:inline-block; padding:2px 6px; border-radius:6px; font-size:11px}
+        .ok{background:#dcfce7; color:#166534}
+        .warn{background:#fef9c3; color:#854d0e}
+        .no{background:#fee2e2; color:#991b1b}
+        @media print { .no-print{display:none} }
+      </style></head><body>
+      ${htmlBody}
+      <div class="no-print" style="margin-top:16px"><button onclick="window.print()">Imprimir / Salvar PDF</button></div>
+    </body></html>`)
+    w.document.close()
+    w.focus()
+  }
+
+  const buildDeptSection = (dept: Department, row?: MeetingRow) => {
+    const m = row?.metrics || {}
+    const horario = row?.scheduled_time ? ` às ${row?.scheduled_time}` : ''
+    return `
+      <h2>${dept.name}</h2>
+      <div class="muted">${dept.description || ''}</div>
+      <table>
+        <tbody>
+          <tr><th>Data</th><td>${formatDate(date)}${horario}</td><th>Status</th><td>${row?.done ? '<span class="badge ok">Realizada</span>' : row?.no_meeting ? '<span class=\"badge warn\">Sem reunião</span>' : '<span class=\"badge no\">Não confirmada</span>'}</td></tr>
+          <tr><th colspan="4">PPP</th></tr>
+          <tr><td>Pontualidade</td><td>${boolLabel(m.pontualidade)}</td><td>Participação</td><td>${boolLabel(m.participacao)}</td></tr>
+          <tr><td>Presença</td><td>${boolLabel(m.presenca)}</td><td></td><td></td></tr>
+          <tr><th colspan="4">PAUTA</th></tr>
+          <tr><td>Indicadores</td><td>${boolLabel(m.pauta_indicadores)}</td><td>Trello/Planner</td><td>${boolLabel(m.pauta_trello_planner)}</td></tr>
+          <tr><td>Aberto à discussão</td><td>${boolLabel(m.pauta_aberto_discussao)}</td><td>Gestor presente</td><td>${boolLabel(m.pauta_gestor_presente)}</td></tr>
+          <tr><th colspan="4">Restante (1–5)</th></tr>
+          <tr><td>Objetivos</td><td>${m.objetivos ?? '-'}</td><td>Decisões</td><td>${m.decisoes ?? '-'}</td></tr>
+          <tr><td>Follow-ups</td><td>${m.followups ?? '-'}</td><td>Satisfação</td><td>${m.satisfacao ?? '-'}</td></tr>
+          <tr><th>Qualidade (média)</th><td>${row?.quality ?? '-'}</td><th>Observações</th><td>${row?.notes ? String(row?.notes) : '-'}</td></tr>
+        </tbody>
+      </table>
+    `
+  }
+
+  const handlePrintGeneral = () => {
+    const title = `Relatório de Reuniões - ${formatDate(date)}`
+    const sections = departments.map((d) => buildDeptSection(d, meetingsByDept[d.id])).join('<hr style="margin:16px 0;border:0;border-top:1px solid #e2e8f0"/>')
+    const header = `<h1>${title}</h1><div class="muted">Gerado em ${new Date().toLocaleString('pt-BR')}</div>`
+    openPrintWindow(title, header + sections)
+  }
+
+  const handlePrintByDept = (dept: Department) => {
+    const title = `Relatório de Reunião - ${dept.name} - ${formatDate(date)}`
+    const header = `<h1>${dept.name}</h1><div class="muted">${formatDate(date)}</div>`
+    const section = buildDeptSection(dept, meetingsByDept[dept.id])
+    openPrintWindow(title, header + section)
+  }
+
   useEffect(() => {
     const checkAccess = async () => {
       try {
@@ -283,6 +348,12 @@ export default function MeetingsPage() {
           >
             Hoje
           </button>
+        <button
+          onClick={handlePrintGeneral}
+          className="px-4 py-2 rounded-xl bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 text-sm shadow-sm"
+        >
+          Relatório geral
+        </button>
         </div>
       </div>
 
@@ -339,6 +410,12 @@ export default function MeetingsPage() {
                     Avaliar reunião
                   </button>
                 )}
+                <button
+                  onClick={() => handlePrintByDept(dept)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-roboto transition-all bg-white text-oxford-blue-700 hover:bg-platinum-100 border border-platinum-300 shadow-sm"
+                >
+                  Relatório do setor
+                </button>
               </div>
 
               {isDone && (
