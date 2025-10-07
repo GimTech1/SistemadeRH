@@ -379,48 +379,59 @@ export default function MeetingsPage() {
                 <Link href={`/departments/${dept.id}`} className="text-oxford-blue-500 text-sm hover:underline">Detalhes</Link>
               </div>
 
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-oxford-blue-500" />
-                  <input
-                    type="time"
-                    value={timeValue}
-                    onChange={(e) => setTime(dept.id, e.target.value)}
-                    className="border border-platinum-300 rounded-lg px-3 py-2 text-sm"
-                  />
+              <div className="mb-4">
+                <div className="flex items-stretch">
+                  {/* Esquerda: somente horário */}
+                  <div className="w-1/2 pr-3 border-r border-platinum-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Clock className="w-4 h-4 text-oxford-blue-500" />
+                      <input
+                        type="time"
+                        value={timeValue}
+                        onChange={(e) => setTime(dept.id, e.target.value)}
+                        className="border border-platinum-300 rounded-lg px-3 py-2 text-sm w-full max-w-[160px]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Direita: confirmar, não houve, avaliar, PDF */}
+                  <div className="w-1/2 pl-3">
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      <button
+                        disabled={isSaving || isNoMeeting || !timeValue}
+                        onClick={() => toggleDone(dept.id)}
+                        title={!timeValue ? 'Defina um horário para habilitar' : undefined}
+                        className={`inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDone ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-yinmn-blue-600 text-white hover:bg-yinmn-blue-700'}`}
+                      >
+                        {isDone ? 'Reunião confirmada' : 'Confirmar reunião'}
+                      </button>
+                      <button
+                        disabled={isSaving}
+                        onClick={() => toggleNoMeeting(dept.id)}
+                        className={`inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all border shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200 ${isNoMeeting ? 'bg-amber-600 text-white hover:bg-amber-700 border-amber-600' : 'bg-white text-amber-700 hover:bg-amber-50 border-amber-300'}`}
+                      >
+                        <XCircle className="w-4 h-4" />
+                        {isNoMeeting ? 'Sem reunião' : 'Não houve'}
+                      </button>
+                      {isDone && !isNoMeeting && (
+                        <button
+                          disabled={isSaving}
+                          onClick={() => openAudit(dept.id)}
+                          className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-200"
+                        >
+                          <ClipboardList className="w-4 h-4" />
+                          Avaliar reunião
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handlePrintByDept(dept)}
+                        className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-oxford-blue-700 hover:bg-platinum-100 border border-platinum-300 shadow-sm"
+                      >
+                        PDF do setor
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  disabled={isSaving || isNoMeeting || !timeValue}
-                  onClick={() => toggleDone(dept.id)}
-                  title={!timeValue ? 'Defina um horário para habilitar' : undefined}
-                  className={`px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDone ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-yinmn-blue-600 text-white hover:bg-yinmn-blue-700'}`}
-                >
-                  {isDone ? 'Reunião confirmada' : 'Confirmar reunião'}
-                </button>
-                <button
-                  disabled={isSaving}
-                  onClick={() => toggleNoMeeting(dept.id)}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-roboto transition-all border shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200 ${isNoMeeting ? 'bg-amber-600 text-white hover:bg-amber-700 border-amber-600' : 'bg-white text-amber-700 hover:bg-amber-50 border-amber-300'}`}
-                >
-                  <XCircle className="w-4 h-4" />
-                  {isNoMeeting ? 'Sem reunião (ativado)' : 'Não houve reunião'}
-                </button>
-                {isDone && !isNoMeeting && (
-                  <button
-                    disabled={isSaving}
-                    onClick={() => openAudit(dept.id)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-roboto transition-all bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-200"
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    Avaliar reunião
-                  </button>
-                )}
-                <button
-                  onClick={() => handlePrintByDept(dept)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-roboto transition-all bg-white text-oxford-blue-700 hover:bg-platinum-100 border border-platinum-300 shadow-sm"
-                >
-                  Relatório do setor
-                </button>
               </div>
 
               {isDone && (
