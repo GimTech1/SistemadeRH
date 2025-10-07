@@ -55,6 +55,7 @@ export default function MeetingsPage() {
     pauta_indicadores: false,
     pauta_trello_planner: false,
     pauta_aberto_discussao: false,
+    pauta_gestor_presente: false,
     // RESTANTE (notas 1-5)
     objetivos: 3,
     decisoes: 3,
@@ -213,6 +214,7 @@ export default function MeetingsPage() {
       pauta_indicadores: typeof current?.metrics?.pauta_indicadores === 'boolean' ? current?.metrics?.pauta_indicadores : false,
       pauta_trello_planner: typeof current?.metrics?.pauta_trello_planner === 'boolean' ? current?.metrics?.pauta_trello_planner : false,
       pauta_aberto_discussao: typeof current?.metrics?.pauta_aberto_discussao === 'boolean' ? current?.metrics?.pauta_aberto_discussao : false,
+      pauta_gestor_presente: typeof current?.metrics?.pauta_gestor_presente === 'boolean' ? current?.metrics?.pauta_gestor_presente : false,
       objetivos: typeof current?.metrics?.objetivos === 'number' ? current?.metrics?.objetivos : 3,
       decisoes: typeof current?.metrics?.decisoes === 'number' ? current?.metrics?.decisoes : 3,
       followups: typeof current?.metrics?.followups === 'number' ? current?.metrics?.followups : 3,
@@ -467,6 +469,21 @@ export default function MeetingsPage() {
                         <select
                           value={auditMetrics.pauta_aberto_discussao ? 'sim' : 'nao'}
                           onChange={(e) => setAuditMetrics(prev => ({ ...prev, pauta_aberto_discussao: e.target.value === 'sim' }))}
+                          className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
+                          style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
+                        >
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-oxford-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-roboto font-medium text-rich-black-900">Gestor presente</label>
+                      <div className="relative">
+                        <select
+                          value={auditMetrics.pauta_gestor_presente ? 'sim' : 'nao'}
+                          onChange={(e) => setAuditMetrics(prev => ({ ...prev, pauta_gestor_presente: e.target.value === 'sim' }))}
                           className="px-3 py-2 pr-8 bg-white border border-platinum-300 rounded-xl text-rich-black-900 text-sm appearance-none"
                           style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: 'none' }}
                         >
