@@ -138,7 +138,7 @@ export default function MeetingsPage() {
           <tr><th colspan="4">PAUTA</th></tr>
           <tr><td>Indicadores</td><td>${boolLabel(m.pauta_indicadores)}</td><td>Trello/Planner</td><td>${boolLabel(m.pauta_trello_planner)}</td></tr>
           <tr><td>Aberto à discussão</td><td>${boolLabel(m.pauta_aberto_discussao)}</td><td>Gestor presente</td><td>${boolLabel(m.pauta_gestor_presente)}</td></tr>
-          <tr><th colspan="4">Restante (1–5)</th></tr>
+          <tr><th colspan="4">Restante (Notas de 1–5)</th></tr>
           <tr><td>Objetivos</td><td>${m.objetivos ?? '-'}</td><td>Decisões</td><td>${m.decisoes ?? '-'}</td></tr>
           <tr><td>Follow-ups</td><td>${m.followups ?? '-'}</td><td>Satisfação</td><td>${m.satisfacao ?? '-'}</td></tr>
           <tr><th>Qualidade (média)</th><td>${row?.quality ?? '-'}</td><th>Observações</th><td>${row?.notes ? String(row?.notes) : '-'}</td></tr>
