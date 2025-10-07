@@ -141,7 +141,7 @@ export default function MeetingsPage() {
           <!-- <tr><th colspan="4">Restante (Notas de 1–5)</th></tr>
           <tr><td>Objetivos</td><td>${m.objetivos ?? '-'}</td><td>Decisões</td><td>${m.decisoes ?? '-'}</td></tr>
           <tr><td>Follow-ups</td><td>${m.followups ?? '-'}</td><td>Satisfação</td><td>${m.satisfacao ?? '-'}</td></tr> -->
-          <tr><th>Qualidade (média)</th><td>${row?.quality ?? '-'}</td><th>Observações</th><td>${row?.notes ? String(row?.notes) : '-'}</td></tr>
+          <tr><th>Observações</th><td colspan="3">${row?.notes ? String(row?.notes) : '-'}</td></tr>
         </tbody>
       </table>
     `
