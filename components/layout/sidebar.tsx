@@ -51,6 +51,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
+  const [userId, setUserId] = useState<string | null>(null)
+  const allowedMeetingUserIds = [
+    'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
+    'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
+    '02088194-3439-411d-bdfb-05a255d8be24',
+  ]
 
   const isOpen = mobileOpen ?? internalOpen
   const setIsOpen = onMobileOpenChange ?? setInternalOpen
@@ -130,6 +136,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: [''],
     },
     {
+      title: 'Reuniões',
+      icon: Calendar,
+      href: '/meetings',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
       title: 'Organograma',
       icon: GitBranch,
       href: '/organograma',
@@ -149,9 +161,14 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     },
   ]
 
-  const filteredMenuItems = menuItems.filter(item => 
-    item.roles.includes(userRole)
-  )
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roles.includes(userRole)) return false
+    if (item.href === '/meetings') {
+      if (!userId) return false
+      return allowedMeetingUserIds.includes(userId)
+    }
+    return true
+  })
 
   const handleLogout = async () => {
     try {
@@ -186,6 +203,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+        setUserId(user.id)
         const metaName = (user.user_metadata as any)?.full_name as string | undefined
         const metaPosition = (user.user_metadata as any)?.position as string | undefined
         if (metaName) setUserName(metaName)
