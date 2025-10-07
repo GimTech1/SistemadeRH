@@ -68,25 +68,25 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Dashboard',
       icon: LayoutDashboard,
       href: '/dashboard',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Colaboradores',
       icon: Users,
       href: '/employees',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Departamentos',
       icon: Building,
       href: '/departments',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Metas',
       icon: Target,
       href: '/goals',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Solicitações',
@@ -98,7 +98,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Avaliações',
       icon: ClipboardCheck,
       href: '/evaluations',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Ciclos de Avaliação',
@@ -116,7 +116,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Gastos',
       icon: Wallet,
       href: '/expenses',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Habilidades CHA',
@@ -140,13 +140,13 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Reuniões',
       icon: Calendar,
       href: '/meetings',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Organograma',
       icon: GitBranch,
       href: '/organograma',
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
     },
     {
       title: 'Relatórios',
