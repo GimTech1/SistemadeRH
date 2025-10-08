@@ -99,13 +99,13 @@ export default function MeetingsPage() {
     if (!w) return
     w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${title}</title>
       <style>
-        body{font-family: Arial, Helvetica, sans-serif; color:#0f172a; padding:24px}
-        h1{font-size:20px; margin:0 0 8px}
-        h2{font-size:16px; margin:16px 0 8px}
-        .muted{color:#64748b; font-size:12px}
+         body{font-family: Arial, Helvetica, sans-serif; color:#0f172a; padding:24px; text-align:center}
+         h1{font-size:20px; margin:0 0 8px; text-align:center}
+         h2{font-size:16px; margin:16px 0 8px; text-align:center}
+         .muted{color:#64748b; font-size:12px; text-align:center}
         table{width:100%; border-collapse:collapse; margin-top:8px}
         th,td{border:1px solid #e2e8f0; padding:8px; font-size:12px; text-align:left}
-        th{background:#f8fafc}
+        th{background:#f8fafc; font-size:14px; font-weight:bold}
         .badge{display:inline-block; padding:2px 6px; border-radius:6px; font-size:11px}
         .ok{background:#dcfce7; color:#166534}
         .warn{background:#fef9c3; color:#854d0e}
@@ -115,10 +115,10 @@ export default function MeetingsPage() {
         .btn-primary{background:#1e3a8a; color:#fff; border-color:#1e3a8a}
       </style></head><body>
       ${htmlBody}
-      <div class="no-print" style="margin-top:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="window.print()">Salvar</button>
-        <span class="muted">Caso queira salvar como PDF, no diálogo de impressão, escolha a impressora "Salvar como PDF".</span>
-      </div>
+       <div class="no-print" style="margin-top:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center">
+         <button class="btn btn-primary" onclick="window.print()">Salvar</button>
+         <span class="muted">Caso queira salvar como PDF, no diálogo de impressão, escolha a impressora "Salvar como PDF".</span>
+       </div>
     </body></html>`)
     w.document.close()
     w.focus()
@@ -130,7 +130,8 @@ export default function MeetingsPage() {
     return `
       <h2>${dept.name}</h2>
       <div class="muted">${dept.description || ''}</div>
-      <table style="margin: 0 auto;">
+       <div style="margin-top: 24px;"></div>
+       <table style="margin: 0 auto; width: 60%; max-width: 500px;">
         <tbody>
           <tr><th>Data</th><td>${formatDate(date)}${horario}</td></tr>
           <tr><th>Status</th><td>${row?.done ? '<span class="badge ok">Realizada</span>' : row?.no_meeting ? '<span class=\"badge warn\">Sem reunião</span>' : '<span class=\"badge no\">Não confirmada</span>'}</td></tr>
