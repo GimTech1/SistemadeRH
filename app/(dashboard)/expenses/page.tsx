@@ -46,6 +46,7 @@ export default function ExpensesPage() {
 
   const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [canViewAll, setCanViewAll] = useState(false)
+  const [canApprove, setCanApprove] = useState(false)
   const [activeTab, setActiveTab] = useState<'list' | 'approve'>('list')
   const [statusFilter, setStatusFilter] = useState('')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
@@ -73,7 +74,9 @@ export default function ExpensesPage() {
         setUserRole(profile.role)
         setUserDepartmentId(profile.department_id)
         const SUPER_IDS = ['b8f68ba9-891c-4ca1-b765-43fee671928f', '02088194-3439-411d-bdfb-05a255d8be24']
+        const APPROVERS = ['b8f68ba9-891c-4ca1-b765-43fee671928f', '02088194-3439-411d-bdfb-05a255d8be24']
         setCanViewAll(profile.role === 'admin' || SUPER_IDS.includes(user.id))
+        setCanApprove(APPROVERS.includes(user.id))
       }
 
       const { data: deps } = await supabase
@@ -185,17 +188,19 @@ export default function ExpensesPage() {
               <Send className="w-4 h-4 inline mr-2" />
               Listagem
             </button>
-            <button
-              onClick={() => setActiveTab('approve')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'approve'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <User className="w-4 h-4 inline mr-2" />
-              Aprovação
-            </button>
+            {canApprove && (
+              <button
+                onClick={() => setActiveTab('approve')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'approve'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <User className="w-4 h-4 inline mr-2" />
+                Aprovação
+              </button>
+            )}
           </nav>
         </div>
       )}
@@ -379,7 +384,7 @@ export default function ExpensesPage() {
       </Card>
       )}
 
-      {canViewAll && activeTab === 'approve' && (
+      {canApprove && activeTab === 'approve' && (
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-medium">Aprovação de Gastos</span>
@@ -490,7 +495,7 @@ export default function ExpensesPage() {
       </Card>
       )}
 
-      {canViewAll && activeTab === 'approve' && (
+      {canApprove && activeTab === 'approve' && (
         <Card className="p-4">
           <div className="font-medium mb-2">Totais por setor</div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
