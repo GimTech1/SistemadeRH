@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/button'
 
 type OrgNode = {
   id: string
@@ -601,9 +602,9 @@ export default function OrganogramaPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Visão hierárquica da estrutura organizacional</h1>
           <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={loadOrganograma} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100">Carregar</button>
-            <button onClick={resetOrganograma} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100">Resetar</button>
-            <button onClick={saveOrganograma} className="rounded-md bg-yinmn-blue-600 text-white px-3 py-2 text-sm hover:bg-yinmn-blue-700">Salvar</button>
+            <Button onClick={loadOrganograma} variant="outline" size="sm">Carregar</Button>
+            <Button onClick={resetOrganograma} variant="outline" size="sm">Resetar</Button>
+            <Button onClick={saveOrganograma} variant="primary" size="sm">Salvar</Button>
           </div>
         </div>
       </div>

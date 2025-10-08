@@ -40,6 +40,7 @@ import {
   AreaChart,
 } from 'recharts'
 import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/button'
 
 export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
@@ -116,28 +117,29 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-black-50">Relatórios e Análises - PAGINA EM DESENVOLVIMENTO DESCONSIDERAR</h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Visualize métricas e gere relatórios detalhados
-          </p>
+          <h1 className="text-2xl font-semibold text-rich-black-900">Visualize métricas e gere relatórios detalhados</h1>
         </div>
         <div className="flex gap-2">
-          <button 
+          <Button 
             onClick={() => handleExport('pdf')}
-            className="btn-secondary"
+            variant="secondary"
+            size="sm"
             disabled={loading}
+            className="flex items-center gap-2"
           >
-            <FileText className="h-4 w-4 mr-2" />
+            <FileText className="h-4 w-4" />
             Exportar PDF
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={() => handleExport('excel')}
-            className="btn-primary"
+            variant="primary"
+            size="sm"
             disabled={loading}
+            className="flex items-center gap-2"
           >
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <FileSpreadsheet className="h-4 w-4" />
             Exportar Excel
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -145,39 +147,45 @@ export default function ReportsPage() {
         {reportTypes.map((type) => {
           const Icon = type.icon
           return (
-            <button
+            <Button
               key={type.id}
               onClick={() => setSelectedReport(type.id)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-                selectedReport === type.id
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
-              }`}
+              variant={selectedReport === type.id ? 'primary' : 'outline'}
+              size="sm"
+              className="flex items-center gap-2"
             >
               <Icon className="h-4 w-4" />
               {type.name}
-            </button>
+            </Button>
           )
         })}
       </div>
 
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200"
-          >
+          <style jsx>{`
+            .custom-select {
+              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+              background-position: right 0.5rem center;
+              background-repeat: no-repeat;
+              background-size: 1.5em 1.5em;
+            }
+          `}</style>
+           <select
+             value={selectedPeriod}
+             onChange={(e) => setSelectedPeriod(e.target.value)}
+             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8"
+           >
             <option value="week">Última Semana</option>
             <option value="month">Último Mês</option>
             <option value="quarter">Último Trimestre</option>
             <option value="year">Último Ano</option>
           </select>
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200"
-          >
+           <select
+             value={selectedDepartment}
+             onChange={(e) => setSelectedDepartment(e.target.value)}
+             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8"
+           >
             <option value="all">Todos os Departamentos</option>
             <option value="vendas">Vendas</option>
             <option value="marketing">Marketing</option>
@@ -191,8 +199,8 @@ export default function ReportsPage() {
       {selectedReport === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Tendência de Performance</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Tendência de Performance</h3>
+             <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={performanceData}>
                 <defs>
                   <linearGradient id="colorVendas" x1="0" y1="0" x2="0" y2="1">
@@ -204,8 +212,8 @@ export default function ReportsPage() {
                 <XAxis dataKey="month" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
                 <Area type="monotone" dataKey="vendas" stroke="#3b82f6" fillOpacity={1} fill="url(#colorVendas)" />
               </AreaChart>
@@ -213,8 +221,8 @@ export default function ReportsPage() {
           </div>
 
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Distribuição por Departamento</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Distribuição por Departamento</h3>
+             <ResponsiveContainer width="100%" height={350}>
               <RePieChart>
                 <Pie
                   data={departmentDistribution}
@@ -231,18 +239,18 @@ export default function ReportsPage() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
               </RePieChart>
             </ResponsiveContainer>
           </div>
 
           <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Top Performers</h3>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Top Performers</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                <thead className="text-left text-xs font-medium text-oxford-blue-600 uppercase tracking-wider">
                   <tr className="border-b border-neutral-800">
                     <th className="pb-3">Posição</th>
                     <th className="pb-3">Nome</th>
@@ -254,16 +262,16 @@ export default function ReportsPage() {
                 <tbody className="divide-y divide-neutral-800">
                   {topPerformers.map((performer, index) => (
                     <tr key={index} className="text-sm">
-                      <td className="py-3 text-neutral-400">#{index + 1}</td>
-                      <td className="py-3 text-neutral-200 font-medium">{performer.name}</td>
-                      <td className="py-3 text-neutral-400">{performer.department}</td>
+                      <td className="py-3 text-oxford-blue-600">#{index + 1}</td>
+                      <td className="py-3 text-rich-black-900 font-medium">{performer.name}</td>
+                      <td className="py-3 text-oxford-blue-600">{performer.department}</td>
                       <td className="py-3">
                         <span className="text-yellow-500 font-semibold">{performer.score}</span>
                       </td>
                       <td className="py-3">
                         {performer.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
                         {performer.trend === 'down' && <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />}
-                        {performer.trend === 'stable' && <Activity className="h-4 w-4 text-neutral-500" />}
+                        {performer.trend === 'stable' && <Activity className="h-4 w-4 text-oxford-blue-600" />}
                       </td>
                     </tr>
                   ))}
@@ -277,15 +285,15 @@ export default function ReportsPage() {
       {selectedReport === 'performance' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Performance por Departamento</h3>
-            <ResponsiveContainer width="100%" height={400}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Performance por Departamento</h3>
+             <ResponsiveContainer width="100%" height={450}>
               <LineChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="month" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="vendas" stroke="#3b82f6" strokeWidth={2} />
@@ -302,15 +310,15 @@ export default function ReportsPage() {
       {selectedReport === 'cha' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Análise CHA</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Análise CHA</h3>
+             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={chaData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="skill" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
                 <Legend />
                 <Bar dataKey="anterior" fill="#6b7280" />
@@ -321,8 +329,8 @@ export default function ReportsPage() {
           </div>
 
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Competências</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Competências</h3>
+             <ResponsiveContainer width="100%" height={350}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="#374151" />
                 <PolarAngleAxis dataKey="subject" stroke="#9ca3af" />
@@ -339,15 +347,15 @@ export default function ReportsPage() {
       {selectedReport === 'goals' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Progresso de Metas</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Progresso de Metas</h3>
+             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={goalsProgress}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="category" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
                 <Legend />
                 <Bar dataKey="completed" stackId="a" fill="#10b981" />
@@ -361,15 +369,15 @@ export default function ReportsPage() {
       {selectedReport === 'departments' && (
         <div className="grid grid-cols-1 gap-6">
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-neutral-200 mb-4">Análise Comparativa</h3>
-            <ResponsiveContainer width="100%" height={400}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Análise Comparativa</h3>
+             <ResponsiveContainer width="100%" height={450}>
               <BarChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="month" stroke="#9ca3af" />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  itemStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#1f2937' }}
                 />
                 <Legend />
                 <Bar dataKey="vendas" fill="#3b82f6" />

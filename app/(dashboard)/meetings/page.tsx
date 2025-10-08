@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
+import { Button } from '@/components/ui/button'
 
 type Department = {
   id: string
@@ -353,18 +354,20 @@ export default function MeetingsPage() {
               className="bg-transparent outline-none text-rich-black-900 text-sm"
             />
           </div>
-          <button
+          <Button
             onClick={() => setDate(getLocalISODate())}
-            className="px-4 py-2 rounded-xl bg-yinmn-blue-600 text-white text-sm hover:bg-yinmn-blue-700 transition-all"
+            variant="primary"
+            size="sm"
           >
             Hoje
-          </button>
-        <button
+          </Button>
+        <Button
           onClick={handlePrintGeneral}
-          className="px-4 py-2 rounded-xl bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 text-sm shadow-sm"
+          variant="outline"
+          size="sm"
         >
           Relatório geral
-        </button>
+        </Button>
         </div>
       </div>
 
