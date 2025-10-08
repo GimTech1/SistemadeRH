@@ -57,6 +57,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
     '02088194-3439-411d-bdfb-05a255d8be24',
     '8370f649-8379-4f7b-b618-63bf4511b901',
+    '5e6734c0-491a-4355-87cb-cce6f36c0350',
   ]
 
   const isOpen = mobileOpen ?? internalOpen
