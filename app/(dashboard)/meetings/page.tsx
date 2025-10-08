@@ -130,34 +130,38 @@ export default function MeetingsPage() {
     return `
       <h2>${dept.name}</h2>
       <div class="muted">${dept.description || ''}</div>
-      <table>
+      <table style="margin: 0 auto;">
         <tbody>
-          <tr><th>Data</th><td>${formatDate(date)}${horario}</td><th>Status</th><td>${row?.done ? '<span class="badge ok">Realizada</span>' : row?.no_meeting ? '<span class=\"badge warn\">Sem reunião</span>' : '<span class=\"badge no\">Não confirmada</span>'}</td></tr>
-          <tr><th colspan="4">PPP</th></tr>
-          <tr><td>Pontualidade</td><td>${boolLabel(m.pontualidade)}</td><td>Participação</td><td>${boolLabel(m.participacao)}</td></tr>
-          <tr><td>Presença</td><td>${boolLabel(m.presenca)}</td><td></td><td></td></tr>
-          <tr><th colspan="4">PAUTA</th></tr>
-          <tr><td>Indicadores</td><td>${boolLabel(m.pauta_indicadores)}</td><td>Trello/Planner</td><td>${boolLabel(m.pauta_trello_planner)}</td></tr>
-          <tr><td>Aberto à discussão</td><td>${boolLabel(m.pauta_aberto_discussao)}</td><td>Gestor presente</td><td>${boolLabel(m.pauta_gestor_presente)}</td></tr>
+          <tr><th>Data</th><td>${formatDate(date)}${horario}</td></tr>
+          <tr><th>Status</th><td>${row?.done ? '<span class="badge ok">Realizada</span>' : row?.no_meeting ? '<span class=\"badge warn\">Sem reunião</span>' : '<span class=\"badge no\">Não confirmada</span>'}</td></tr>
+          <tr><th colspan="2">PPP</th></tr>
+          <tr><td>Pontualidade</td><td>${boolLabel(m.pontualidade)}</td></tr>
+          <tr><td>Participação</td><td>${boolLabel(m.participacao)}</td></tr>
+          <tr><td>Presença</td><td>${boolLabel(m.presenca)}</td></tr>
+          <tr><th colspan="2">PAUTA</th></tr>
+          <tr><td>Indicadores</td><td>${boolLabel(m.pauta_indicadores)}</td></tr>
+          <tr><td>Trello/Planner</td><td>${boolLabel(m.pauta_trello_planner)}</td></tr>
+          <tr><td>Aberto à discussão</td><td>${boolLabel(m.pauta_aberto_discussao)}</td></tr>
+          <tr><td>Gestor presente</td><td>${boolLabel(m.pauta_gestor_presente)}</td></tr>
           <!-- <tr><th colspan="4">Restante (Notas de 1–5)</th></tr>
           <tr><td>Objetivos</td><td>${m.objetivos ?? '-'}</td><td>Decisões</td><td>${m.decisoes ?? '-'}</td></tr>
           <tr><td>Follow-ups</td><td>${m.followups ?? '-'}</td><td>Satisfação</td><td>${m.satisfacao ?? '-'}</td></tr> -->
-          <tr><th>Observações</th><td colspan="3">${row?.notes ? String(row?.notes) : '-'}</td></tr>
+          <tr><th>Observações</th><td>${row?.notes ? String(row?.notes) : '-'}</td></tr>
         </tbody>
       </table>
     `
   }
 
   const handlePrintGeneral = () => {
-    const title = `Relatório de Reuniões - ${formatDate(date)}`
+    const title = `Resultado da Reunião de Alinhamento - ${formatDate(date)}`
     const sections = departments.map((d) => buildDeptSection(d, meetingsByDept[d.id])).join('<hr style="margin:16px 0;border:0;border-top:1px solid #e2e8f0"/>')
     const header = `<h1>${title}</h1><div class="muted">Gerado em ${new Date().toLocaleString('pt-BR')}</div>`
     openPrintWindow(title, header + sections)
   }
 
   const handlePrintByDept = (dept: Department) => {
-    const title = `Relatório de Reunião - ${dept.name} - ${formatDate(date)}`
-    const header = `<h1>${dept.name}</h1><div class="muted">${formatDate(date)}</div>`
+    const title = `Resultado da Reunião de Alinhamento - ${dept.name} - ${formatDate(date)}`
+    const header = `<h1>Resultado da Reunião de Alinhamento</h1><div class="muted">${formatDate(date)}</div>`
     const section = buildDeptSection(dept, meetingsByDept[dept.id])
     openPrintWindow(title, header + section)
   }
@@ -414,22 +418,24 @@ export default function MeetingsPage() {
                         <XCircle className="w-4 h-4" />
                         {isNoMeeting ? 'Sem reunião' : 'Não houve'}
                       </button>
-                      {isDone && !isNoMeeting && (
-                        <button
-                          disabled={isSaving}
-                          onClick={() => openAudit(dept.id)}
-                          className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-200"
-                        >
-                          <ClipboardList className="w-4 h-4" />
-                          Avaliar reunião
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handlePrintByDept(dept)}
-                        className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-oxford-blue-700 hover:bg-platinum-100 border border-platinum-300 shadow-sm"
-                      >
-                        PDF do setor
-                      </button>
+                       {isDone && !isNoMeeting && (
+                         <button
+                           disabled={isSaving}
+                           onClick={() => openAudit(dept.id)}
+                           className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-yinmn-blue-700 hover:bg-yinmn-blue-50 border border-yinmn-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-200"
+                         >
+                           <ClipboardList className="w-4 h-4" />
+                           Avaliar reunião
+                         </button>
+                       )}
+                       {isDone && (
+                         <button
+                           onClick={() => handlePrintByDept(dept)}
+                           className="inline-flex items-center justify-center gap-2 h-10 px-4 min-w-[160px] rounded-xl text-sm font-roboto transition-all bg-white text-oxford-blue-700 hover:bg-platinum-100 border border-platinum-300 shadow-sm"
+                         >
+                           PDF do setor
+                         </button>
+                       )}
                     </div>
                   </div>
                 </div>
