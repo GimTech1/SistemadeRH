@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         message,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
+      } as any)
       .select()
       .single()
 
