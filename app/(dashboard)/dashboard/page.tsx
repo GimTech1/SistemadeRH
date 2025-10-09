@@ -54,6 +54,7 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all')
   
 
   function exportDeadlinesAsCSV() {
@@ -151,8 +152,9 @@ export default function DashboardPage() {
 
       const now = new Date()
       const end = now
-      const bucketStart = new Date(now.getFullYear(), 0, 1) // Jan do ano atual
-      const monthsToShow = now.getMonth() + 1 // até o mês corrente (1..12)
+      // Ano corrente: de Jan até o mês atual
+      const bucketStart = new Date(now.getFullYear(), 0, 1)
+      const monthsToShow = now.getMonth() + 1
 
       // Buscar metas do ano corrente e calcular percentual concluído por mês
       const { data: goalsForMonths } = await supabase
@@ -170,7 +172,7 @@ export default function DashboardPage() {
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
         totalsByMonth[key] = 0
         completedByMonth[key] = 0
-        iterMonths.push({ key, label: monthNames[d.getMonth()] })
+        iterMonths.push({ key, label: `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` })
       }
 
       ;(goalsForMonths as Array<{ target_date: string; is_completed: boolean | null }> | null || []).forEach(row => {
@@ -186,7 +188,7 @@ export default function DashboardPage() {
         const total = totalsByMonth[m.key] || 0
         const completed = completedByMonth[m.key] || 0
         const pct = total > 0 ? Math.round((completed / total) * 100) : 0
-        return { month: m.label, value: pct, target: 100, total, completed }
+        return { month: m.label, value: pct, target: 100, total, completed, key: m.key }
       })
 
       const palette = [
@@ -465,6 +467,19 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="p-6 min-h-[520px] flex-1">
+            <div className="mb-4 flex items-center gap-2">
+              <label className="text-sm font-roboto font-medium text-rich-black-900">Mês:</label>
+              <select
+                value={selectedMonthKey}
+                onChange={(e) => setSelectedMonthKey(e.target.value)}
+                className="appearance-none bg-white border border-platinum-300 rounded-lg px-3 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos</option>
+                {data.monthlyData.map((m: any) => (
+                  <option key={m.key} value={m.key}>{m.month}</option>
+                ))}
+              </select>
+            </div>
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas</span>
@@ -502,7 +517,7 @@ export default function DashboardPage() {
                 <span>100</span>
               </div>
               <div className="space-y-4">
-                {data.monthlyData.map((item, index) => (
+                {(selectedMonthKey === 'all' ? data.monthlyData : data.monthlyData.filter((d: any) => d.key === selectedMonthKey)).map((item: any, index: number) => (
                   <div key={index} className="flex items-center gap-4">
                     <span className="w-8 text-xs font-roboto font-medium text-oxford-blue-600">{item.month}</span>
                     <div className="flex-1 flex items-center gap-2">
