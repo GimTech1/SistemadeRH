@@ -48,6 +48,11 @@ export default function FeedbackPage() {
   const [sortBy, setSortBy] = useState('date')
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
+  const [userStars, setUserStars] = useState({
+    available: 3,
+    used: 0,
+    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+  })
   const supabase = createClient()
 
   useEffect(() => {
@@ -236,6 +241,59 @@ export default function FeedbackPage() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Veja os feedbacks recebidos e enviados</h1>
+        </div>
+      </div>
+
+      {/* Sistema de Estrelas */}
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl shadow-sm border border-yellow-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 rounded-xl bg-yellow-100 text-yellow-600">
+              <Star className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-roboto font-medium text-rich-black-900">Sistema de Agradecimentos</h2>
+              <p className="text-sm font-roboto font-light text-oxford-blue-600">Você tem 3 estrelas por mês para agradecer colegas</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-roboto font-semibold text-rich-black-900">
+              {userStars.available - userStars.used}/{userStars.available}
+            </div>
+            <div className="text-sm font-roboto font-light text-oxford-blue-600">estrelas disponíveis</div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-2">
+            {[...Array(userStars.available)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-8 w-8 ${
+                  i < (userStars.available - userStars.used)
+                    ? 'text-yellow-500 fill-yellow-500'
+                    : 'text-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+          <Link href="/feedback/internal">
+            <button 
+              disabled={userStars.available - userStars.used === 0}
+              className={`px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
+                userStars.available - userStars.used > 0
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-sm hover:shadow-md'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <Star className="h-4 w-4" />
+              Dar Estrela
+            </button>
+          </Link>
+        </div>
+        
+        <div className="mt-4 text-xs font-roboto font-light text-oxford-blue-500">
+          Próximo reset: {userStars.resetDate.toLocaleDateString('pt-BR')}
         </div>
       </div>
 

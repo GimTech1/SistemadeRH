@@ -30,6 +30,7 @@ import {
   GitBranch,
   Receipt,
   Wallet,
+  Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -126,16 +127,16 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: [''],
     },
     {
-      title: 'Feedbacks',
-      icon: MessageSquare,
+      title: 'Avaliar Colegas',
+      icon: Star,
       href: '/feedback',
       roles: [''],
     },
     {
       title: 'Avaliar Colegas',
-      icon: Users,
+      icon: Star,
       href: '/feedback/internal',
-      roles: [''],
+      roles: ['admin', 'manager', 'employee'],
     },
     {
       title: 'Reuniões',

@@ -27,6 +27,12 @@ import {
   Grid3X3,
   List,
   Download,
+  X,
+  Gift,
+  Sparkles,
+  ThumbsUp,
+  Target,
+  Smile,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -37,10 +43,14 @@ interface Colleague {
   position: string
   department: string
   avatar: string
-  lastEvaluation: string
-  canEvaluate: boolean
-  averageScore?: number
-  totalEvaluations?: number
+  starsReceived: number
+  recentStars: Array<{
+    id: string
+    reason: string
+    message: string
+    from: string
+    date: string
+  }>
 }
 
 export default function InternalFeedbackPage() {
@@ -48,173 +58,218 @@ export default function InternalFeedbackPage() {
   const [selectedColleague, setSelectedColleague] = useState<Colleague | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
-  const [sortBy, setSortBy] = useState('name')
+  const [sortBy, setSortBy] = useState('stars')
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
-  const [feedbackForm, setFeedbackForm] = useState({
-    conhecimento: 0,
-    habilidade: 0,
-    atitude: 0,
-    comment: '',
+  const [userStars, setUserStars] = useState({
+    available: 3,
+    used: 0,
+    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
   })
+  const [starForm, setStarForm] = useState({
+    reason: '',
+    message: ''
+  })
+  const [showStarModal, setShowStarModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'give' | 'received'>('give')
+  const [receivedStars, setReceivedStars] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     loadColleagues()
+    loadUserStars()
+    loadReceivedStars()
   }, [])
+
+  const loadUserStars = async () => {
+    try {
+      const response = await fetch('/api/stars')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUserStars({
+          available: data.available,
+          used: data.used,
+          resetDate: new Date(data.resetDate)
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estrelas do usuário:', error)
+    }
+  }
+
+  const loadReceivedStars = async () => {
+    try {
+      const response = await fetch('/api/stars/received')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setReceivedStars(data.stars || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estrelas recebidas:', error)
+    }
+  }
 
   const loadColleagues = async () => {
     try {
-      // Simular dados de colegas
-      setColleagues([
-        {
-          id: '1',
-          name: 'Maria Santos',
-          position: 'Gerente de Marketing',
-          department: 'Marketing',
-          avatar: 'MS',
-          lastEvaluation: 'Há 2 meses',
-          canEvaluate: true,
-          averageScore: 8.7,
-          totalEvaluations: 12,
-        },
-        {
-          id: '2',
-          name: 'Pedro Costa',
-          position: 'Desenvolvedor Senior',
-          department: 'TI',
-          avatar: 'PC',
-          lastEvaluation: 'Há 1 mês',
-          canEvaluate: true,
-          averageScore: 9.1,
-          totalEvaluations: 8,
-        },
-        {
-          id: '3',
-          name: 'Ana Oliveira',
-          position: 'Analista de RH',
-          department: 'RH',
-          avatar: 'AO',
-          lastEvaluation: 'Há 3 semanas',
-          canEvaluate: false,
-          averageScore: 8.9,
-          totalEvaluations: 15,
-        },
-        {
-          id: '4',
-          name: 'Carlos Mendes',
-          position: 'Vendedor',
-          department: 'Vendas',
-          avatar: 'CM',
-          lastEvaluation: 'Nunca avaliado',
-          canEvaluate: true,
-          averageScore: 0,
-          totalEvaluations: 0,
-        },
-        {
-          id: '5',
-          name: 'Juliana Lima',
-          position: 'Designer',
-          department: 'Marketing',
-          avatar: 'JL',
-          lastEvaluation: 'Há 1 semana',
-          canEvaluate: false,
-          averageScore: 8.5,
-          totalEvaluations: 6,
-        },
-        {
-          id: '6',
-          name: 'Roberto Silva',
-          position: 'Analista Financeiro',
-          department: 'Financeiro',
-          avatar: 'RS',
-          lastEvaluation: 'Há 2 semanas',
-          canEvaluate: true,
-          averageScore: 8.3,
-          totalEvaluations: 9,
-        },
-        {
-          id: '7',
-          name: 'Fernanda Costa',
-          position: 'Coordenadora de RH',
-          department: 'RH',
-          avatar: 'FC',
-          lastEvaluation: 'Há 1 mês',
-          canEvaluate: true,
-          averageScore: 9.0,
-          totalEvaluations: 11,
-        },
-        {
-          id: '8',
-          name: 'Lucas Oliveira',
-          position: 'Desenvolvedor Junior',
-          department: 'TI',
-          avatar: 'LO',
-          lastEvaluation: 'Nunca avaliado',
-          canEvaluate: true,
-          averageScore: 0,
-          totalEvaluations: 0,
-        },
-      ])
+      setLoading(true)
+      
+      // Buscar colegas do banco de dados
+      const { data: colleaguesData, error: colleaguesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          position,
+          department,
+          stars_received:user_stars(count),
+          recent_stars:user_stars(
+            id,
+            reason,
+            message,
+            sender:profiles!user_stars_user_id_fkey(full_name),
+            created_at
+          )
+        `)
+        .neq('id', (await supabase.auth.getUser()).data.user?.id) // Excluir o próprio usuário
+        .order('stars_received', { ascending: false })
+
+      if (colleaguesError) {
+        console.error('Erro ao carregar colegas:', colleaguesError)
+        return
+      }
+
+      // Transformar dados para o formato esperado
+      const formattedColleagues = colleaguesData?.map(colleague => ({
+        id: colleague.id,
+        name: colleague.full_name,
+        position: colleague.position || 'Sem cargo',
+        department: colleague.department || 'Sem departamento',
+        avatar: colleague.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U',
+        starsReceived: colleague.stars_received?.[0]?.count || 0,
+        recentStars: colleague.recent_stars?.slice(0, 3).map(star => ({
+          id: star.id,
+          reason: star.reason,
+          message: star.message,
+          from: star.sender?.full_name || 'Usuário',
+          date: star.created_at
+        })) || []
+      })) || []
+
+      setColleagues(formattedColleagues)
     } catch (error) {
+      console.error('Erro ao carregar colegas:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSubmitFeedback = async () => {
+
+  const handleGiveStar = (colleague: Colleague) => {
+    if (userStars.available - userStars.used <= 0) {
+      toast.error('Você não tem estrelas disponíveis este mês')
+      return
+    }
+    setSelectedColleague(colleague)
+    setShowStarModal(true)
+  }
+
+  const handleSubmitStar = async () => {
     if (!selectedColleague) return
 
-    const averageScore = (feedbackForm.conhecimento + feedbackForm.habilidade + feedbackForm.atitude) / 3
-    
-    if (averageScore === 0) {
-      toast.error('Por favor, avalie pelo menos uma competência')
+    if (!starForm.reason.trim()) {
+      toast.error('Por favor, selecione um motivo')
       return
     }
 
-    if (!feedbackForm.comment.trim()) {
-      toast.error('Por favor, adicione um comentário')
+    if (!starForm.message.trim()) {
+      toast.error('Por favor, escreva uma mensagem de agradecimento')
       return
     }
 
     setLoading(true)
     try {
-      // Aqui você salvaria no banco
-      toast.success(`Feedback enviado para ${selectedColleague.name}!`)
+      const response = await fetch('/api/stars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientId: selectedColleague.id,
+          reason: starForm.reason,
+          message: starForm.message
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao enviar estrela')
+      }
+
+      toast.success(`Estrela enviada para ${selectedColleague.name}!`)
+      
+      // Atualizar contador de estrelas
+      setUserStars(prev => ({
+        ...prev,
+        used: prev.used + 1
+      }))
       
       // Reset form
       setSelectedColleague(null)
-      setFeedbackForm({
-        conhecimento: 0,
-        habilidade: 0,
-        atitude: 0,
-        comment: '',
+      setShowStarModal(false)
+      setStarForm({
+        reason: '',
+        message: ''
       })
       
       // Atualizar lista
       loadColleagues()
     } catch (error) {
-      toast.error('Erro ao enviar feedback')
+      console.error('Erro ao enviar estrela:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar estrela')
     } finally {
       setLoading(false)
     }
   }
 
-  const getCHAIcon = (skill: string) => {
-    switch (skill) {
-      case 'conhecimento': return Brain
-      case 'habilidade': return Zap
-      case 'atitude': return Heart
+  const getReasonIcon = (reason: string) => {
+    switch (reason) {
+      case 'ajuda': return Heart
+      case 'colaboracao': return Users
+      case 'mentoria': return Brain
+      case 'proatividade': return Zap
+      case 'lideranca': return Award
+      case 'inovacao': return Sparkles
+      case 'apoio': return ThumbsUp
       default: return Star
     }
   }
 
-  const getCHAColor = (skill: string) => {
-    switch (skill) {
-      case 'conhecimento': return 'text-purple-500'
-      case 'habilidade': return 'text-blue-500'
-      case 'atitude': return 'text-pink-500'
-      default: return 'text-oxford-blue-500'
+  const getReasonText = (reason: string) => {
+    switch (reason) {
+      case 'ajuda': return 'Ajudou com um problema'
+      case 'colaboracao': return 'Excelente colaboração'
+      case 'mentoria': return 'Fez mentoria/ensino'
+      case 'proatividade': return 'Demonstrou proatividade'
+      case 'lideranca': return 'Liderança exemplar'
+      case 'inovacao': return 'Trouxe inovação'
+      case 'apoio': return 'Apoio em momento difícil'
+      default: return reason
+    }
+  }
+
+  const getReasonColor = (reason: string) => {
+    switch (reason) {
+      case 'ajuda': return 'text-red-500 bg-red-50'
+      case 'colaboracao': return 'text-blue-500 bg-blue-50'
+      case 'mentoria': return 'text-purple-500 bg-purple-50'
+      case 'proatividade': return 'text-green-500 bg-green-50'
+      case 'lideranca': return 'text-yellow-500 bg-yellow-50'
+      case 'inovacao': return 'text-pink-500 bg-pink-50'
+      case 'apoio': return 'text-orange-500 bg-orange-50'
+      default: return 'text-gray-500 bg-gray-50'
     }
   }
 
@@ -228,7 +283,7 @@ export default function InternalFeedbackPage() {
     })
     .sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name)
-      if (sortBy === 'score') return (b.averageScore || 0) - (a.averageScore || 0)
+      if (sortBy === 'stars') return b.starsReceived - a.starsReceived
       if (sortBy === 'department') return a.department.localeCompare(b.department)
       return 0
     })
@@ -237,9 +292,9 @@ export default function InternalFeedbackPage() {
 
   const stats = {
     totalColleagues: colleagues.length,
-    canEvaluate: colleagues.filter(c => c.canEvaluate).length,
-    alreadyEvaluated: colleagues.filter(c => !c.canEvaluate).length,
-    averageScore: colleagues.filter(c => c.averageScore && c.averageScore > 0).reduce((acc, c) => acc + (c.averageScore || 0), 0) / colleagues.filter(c => c.averageScore && c.averageScore > 0).length || 0,
+    totalStars: colleagues.reduce((acc, c) => acc + c.starsReceived, 0),
+    averageStars: colleagues.reduce((acc, c) => acc + c.starsReceived, 0) / colleagues.length || 0,
+    topPerformer: colleagues.sort((a, b) => b.starsReceived - a.starsReceived)[0],
   }
 
   if (loading) {
@@ -254,15 +309,49 @@ export default function InternalFeedbackPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-roboto font-bold text-rich-black-900 tracking-wide">Sistema de Agradecimentos</h1>
+          <p className="text-lg font-roboto font-light text-oxford-blue-600 mt-2">Reconheça e agradeça seus colegas com estrelas</p>
+        </div>
+      </div>
+
+      {/* Sistema de Estrelas Principal */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+        <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-xl bg-[#E0E1DD]">
+              <Star className="h-6 w-6 text-[#778DA9]" />
+            </div>
           <div>
-            <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Avalie seus colegas de trabalho e ajude no desenvolvimento da equipe</h1>
+              <h2 className="text-xl font-roboto font-medium text-rich-black-900">Suas Estrelas do Mês</h2>
+              <p className="text-sm font-roboto font-light text-oxford-blue-600">Use suas 3 estrelas para agradecer colegas</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-roboto font-semibold text-rich-black-900">
+              {userStars.available - userStars.used}/{userStars.available}
+            </div>
+            <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
           </div>
         </div>
-        <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
-          <Plus className="h-4 w-4" />
-          Nova Avaliação
-        </button>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-2">
+            {[...Array(userStars.available)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-8 w-8 ${
+                  i < (userStars.available - userStars.used)
+                    ? 'text-yellow-500 fill-yellow-500'
+                    : 'text-platinum-300'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="text-xs font-roboto font-light text-oxford-blue-500">
+            Reset em {userStars.resetDate.toLocaleDateString('pt-BR')}
+          </div>
+        </div>
       </div>
 
       {/* Cards de métricas */}
@@ -270,12 +359,12 @@ export default function InternalFeedbackPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Total de Colegas</p>
-              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.totalColleagues}</p>
-              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">colaboradores disponíveis</p>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Total de Estrelas</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.totalStars}</p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">estrelas dadas</p>
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-[#778DA9]" />
+              <Star className="w-6 h-6 text-[#778DA9]" />
             </div>
           </div>
         </div>
@@ -283,12 +372,12 @@ export default function InternalFeedbackPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Disponíveis</p>
-              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.canEvaluate}</p>
-              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">para avaliação</p>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Média por Pessoa</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.averageStars.toFixed(1)}</p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">estrelas por colega</p>
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-[#778DA9]" />
+              <TrendingUp className="w-6 h-6 text-[#778DA9]" />
             </div>
           </div>
         </div>
@@ -296,9 +385,9 @@ export default function InternalFeedbackPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Já Avaliados</p>
-              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.alreadyEvaluated}</p>
-              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">avaliações concluídas</p>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Top Performer</p>
+              <p className="text-2xl font-roboto font-semibold text-rich-black-900">{stats.topPerformer?.name || 'N/A'}</p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">{stats.topPerformer?.starsReceived || 0} estrelas</p>
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
               <Award className="w-6 h-6 text-[#778DA9]" />
@@ -309,128 +398,50 @@ export default function InternalFeedbackPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Média Geral</p>
-              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.averageScore.toFixed(1)}</p>
-              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">pontuação média</p>
+              <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Colaboradores</p>
+              <p className="text-3xl font-roboto font-semibold text-rich-black-900">{stats.totalColleagues}</p>
+              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">na equipe</p>
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-[#778DA9]" />
+              <Users className="w-6 h-6 text-[#778DA9]" />
             </div>
           </div>
         </div>
       </div>
 
-      {selectedColleague ? (
-        /* Feedback Form */
-        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
-          <div className="p-6 border-b border-platinum-200 bg-gradient-to-r from-platinum-50 to-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center font-roboto font-semibold text-white text-lg">
-                  {selectedColleague.avatar}
-                </div>
-                <div>
-                  <h2 className="text-xl font-roboto font-medium text-rich-black-900">Avaliando: {selectedColleague.name}</h2>
-                  <p className="text-sm font-roboto font-light text-oxford-blue-600">{selectedColleague.position} • {selectedColleague.department}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedColleague(null)}
-                className="text-oxford-blue-600 hover:text-yinmn-blue-600 font-roboto font-medium transition-colors"
-              >
-                Cancelar
-              </button>
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-2">
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveTab('give')}
+            className={`flex-1 py-3 px-4 rounded-xl font-roboto font-medium transition-all duration-200 ${
+              activeTab === 'give'
+                ? 'bg-[#1B263B] text-white shadow-sm'
+                : 'text-oxford-blue-600 hover:bg-platinum-100'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Star className="h-4 w-4" />
+              Dar Estrelas
             </div>
-          </div>
-          
-          <div className="p-6 space-y-8">
-            {/* CHA Evaluation */}
-            {['conhecimento', 'habilidade', 'atitude'].map((skill) => {
-              const Icon = getCHAIcon(skill)
-              const color = getCHAColor(skill)
-              const skillValue = feedbackForm[skill as keyof typeof feedbackForm] as number
-              
-              return (
-                <div key={skill} className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${color} bg-opacity-10`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <label className="text-lg font-roboto font-medium text-rich-black-900 capitalize">
-                          {skill}
-                        </label>
-                        <p className="text-sm font-roboto font-light text-oxford-blue-600">
-                          {skill === 'conhecimento' && 'Domínio técnico e conhecimento do trabalho'}
-                          {skill === 'habilidade' && 'Capacidade de execução e resolução de problemas'}
-                          {skill === 'atitude' && 'Proatividade, colaboração e comprometimento'}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-lg font-roboto font-semibold text-rich-black-900">
-                      {skillValue}/10
-                    </span>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    {[...Array(10)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setFeedbackForm(prev => ({
-                          ...prev,
-                          [skill]: i + 1
-                        }))}
-                        className="p-2 transition-all duration-200 hover:scale-110"
-                      >
-                        <Star
-                          className={`h-6 w-6 ${
-                            i < skillValue
-                              ? 'text-yellow-500 fill-yellow-500'
-                              : 'text-platinum-300 hover:text-yellow-400'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-
-            {/* Comment */}
-            <div className="space-y-3">
-              <label className="block text-lg font-roboto font-medium text-rich-black-900">
-                Comentário
-              </label>
-              <textarea
-                value={feedbackForm.comment}
-                onChange={(e) => setFeedbackForm(prev => ({ ...prev, comment: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light"
-                rows={4}
-                placeholder="Compartilhe sua experiência trabalhando com este colega..."
-              />
+          </button>
+          <button
+            onClick={() => setActiveTab('received')}
+            className={`flex-1 py-3 px-4 rounded-xl font-roboto font-medium transition-all duration-200 ${
+              activeTab === 'received'
+                ? 'bg-[#1B263B] text-white shadow-sm'
+                : 'text-oxford-blue-600 hover:bg-platinum-100'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Gift className="h-4 w-4" />
+              Estrelas Recebidas
             </div>
-
-            {/* Submit */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-platinum-200">
-              <button
-                onClick={() => setSelectedColleague(null)}
-                className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSubmitFeedback}
-                disabled={loading}
-                className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="h-4 w-4" />
-                Enviar Avaliação
-              </button>
-            </div>
-          </div>
+          </button>
         </div>
-      ) : (
+      </div>
+
+      {activeTab === 'give' ? (
         <>
           {/* Filtros e busca */}
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
@@ -443,7 +454,7 @@ export default function InternalFeedbackPage() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                     placeholder="Buscar colaborador por nome, cargo ou departamento..."
                   />
                 </div>
@@ -456,7 +467,7 @@ export default function InternalFeedbackPage() {
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                    className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   >
                     {departments.map(dept => (
                       <option key={dept} value={dept}>
@@ -471,10 +482,10 @@ export default function InternalFeedbackPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                    className="appearance-none bg-white border border-platinum-300 rounded-lg px-4 py-2 pr-8 text-sm font-roboto font-medium text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   >
                     <option value="name">Nome</option>
-                    <option value="score">Pontuação</option>
+                    <option value="stars">Estrelas</option>
                     <option value="department">Departamento</option>
                   </select>
                 </div>
@@ -486,8 +497,8 @@ export default function InternalFeedbackPage() {
                       onClick={() => setViewMode('table')}
                       className={`p-2 rounded-md transition-all duration-200 ${
                         viewMode === 'table' 
-                          ? 'bg-white text-yinmn-blue-600 shadow-sm' 
-                          : 'text-oxford-blue-600 hover:text-yinmn-blue-600'
+                          ? 'bg-white text-yellow-600 shadow-sm' 
+                          : 'text-oxford-blue-600 hover:text-yellow-600'
                       }`}
                       title="Visualização em tabela"
                     >
@@ -497,21 +508,14 @@ export default function InternalFeedbackPage() {
                       onClick={() => setViewMode('cards')}
                       className={`p-2 rounded-md transition-all duration-200 ${
                         viewMode === 'cards' 
-                          ? 'bg-white text-yinmn-blue-600 shadow-sm' 
-                          : 'text-oxford-blue-600 hover:text-yinmn-blue-600'
+                          ? 'bg-white text-yellow-600 shadow-sm' 
+                          : 'text-oxford-blue-600 hover:text-yellow-600'
                       }`}
                       title="Visualização em cards"
                     >
                       <Grid3X3 className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Exportar
-                  </button>
                 </div>
               </div>
             </div>
@@ -527,9 +531,8 @@ export default function InternalFeedbackPage() {
                       <th className="px-6 py-4">Colaborador</th>
                       <th className="px-6 py-4">Cargo</th>
                       <th className="px-6 py-4">Departamento</th>
-                      <th className="px-6 py-4 text-center">Pontuação</th>
-                      <th className="px-6 py-4 text-center">Avaliações</th>
-                      <th className="px-6 py-4 text-center">Última Avaliação</th>
+                      <th className="px-6 py-4 text-center">Estrelas</th>
+                      <th className="px-6 py-4 text-center">Última Estrela</th>
                       <th className="px-6 py-4 text-center">Ações</th>
                     </tr>
                   </thead>
@@ -556,42 +559,33 @@ export default function InternalFeedbackPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          {colleague.averageScore && colleague.averageScore > 0 ? (
                             <div className="flex items-center justify-center space-x-1">
                               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span className="font-roboto font-semibold text-rich-black-900">{colleague.averageScore.toFixed(1)}</span>
+                            <span className="font-roboto font-semibold text-rich-black-900">{colleague.starsReceived}</span>
                             </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          {colleague.recentStars.length > 0 ? (
+                            <span className="text-sm font-roboto font-medium text-rich-black-900">
+                              {new Date(colleague.recentStars[0].date).toLocaleDateString('pt-BR')}
+                            </span>
                           ) : (
                             <span className="text-oxford-blue-400">—</span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-sm font-roboto font-medium text-rich-black-900">{colleague.totalEvaluations || 0}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm font-roboto font-medium text-rich-black-900">{colleague.lastEvaluation}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => setSelectedColleague(colleague)}
-                              disabled={!colleague.canEvaluate}
-                              className={`px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
-                                colleague.canEvaluate
-                                  ? 'bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white'
-                                  : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
-                              }`}
-                            >
-                              {colleague.canEvaluate ? (
-                                <>
-                                  Avaliar
-                                  <ChevronRight className="h-4 w-4" />
-                                </>
-                              ) : (
-                                'Já avaliado'
-                              )}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleGiveStar(colleague)}
+                            disabled={userStars.available - userStars.used <= 0}
+                            className={`px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
+                              userStars.available - userStars.used > 0
+                                ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                                : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                            }`}
+                          >
+                            <Star className="h-4 w-4" />
+                            Dar Estrela
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -619,52 +613,65 @@ export default function InternalFeedbackPage() {
                       <span className="text-sm font-roboto font-light text-oxford-blue-600">{colleague.department}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-oxford-blue-400" />
-                      <span className="text-sm font-roboto font-light text-oxford-blue-600">{colleague.lastEvaluation}</span>
-                    </div>
-
-                    {/* Pontuação */}
-                    {colleague.averageScore && colleague.averageScore > 0 && (
-                      <div className="bg-platinum-50 rounded-xl p-4">
+                    {/* Estrelas recebidas */}
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-roboto font-medium text-oxford-blue-500">Pontuação Média</span>
+                        <span className="text-sm font-roboto font-medium text-oxford-blue-500">Estrelas Recebidas</span>
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            <span className="font-roboto font-semibold text-rich-black-900">{colleague.averageScore.toFixed(1)}</span>
-                          </div>
+                          <span className="font-roboto font-semibold text-rich-black-900">{colleague.starsReceived}</span>
                         </div>
-                        <div className="w-full bg-platinum-200 rounded-full h-2">
+                      </div>
+                      <div className="w-full bg-yellow-200 rounded-full h-2">
                           <div
-                            className="bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${(colleague.averageScore / 10) * 100}%` }}
+                          className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((colleague.starsReceived / 20) * 100, 100)}%` }}
                           />
                         </div>
-                        <p className="text-xs font-roboto font-light text-oxford-blue-500 mt-2">
-                          {colleague.totalEvaluations} avaliações
-                        </p>
+                    </div>
+
+                    {/* Estrelas recentes */}
+                    {colleague.recentStars.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-roboto font-medium text-oxford-blue-500">Últimas estrelas:</p>
+                        {colleague.recentStars.slice(0, 2).map((star) => {
+                          const Icon = getReasonIcon(star.reason)
+                          const color = getReasonColor(star.reason)
+                          return (
+                            <div key={star.id} className="bg-platinum-50 rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className={`p-1 rounded ${color}`}>
+                                  <Icon className="h-3 w-3" />
+                                </div>
+                                <span className="text-xs font-roboto font-medium text-rich-black-900">
+                                  {getReasonText(star.reason)}
+                                </span>
+                              </div>
+                              <p className="text-xs font-roboto font-light text-oxford-blue-600 line-clamp-2">
+                                {star.message}
+                              </p>
+                              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">
+                                Por {star.from}
+                              </p>
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
 
                   {/* Botão de ação */}
                   <button
-                    onClick={() => setSelectedColleague(colleague)}
-                    disabled={!colleague.canEvaluate}
+                    onClick={() => handleGiveStar(colleague)}
+                    disabled={userStars.available - userStars.used <= 0}
                     className={`w-full py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
-                      colleague.canEvaluate
-                        ? 'bg-yinmn-blue-600 hover:bg-yinmn-blue-700 text-white shadow-sm hover:shadow-md'
+                      userStars.available - userStars.used > 0
+                        ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
                         : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                     }`}
                   >
-                    {colleague.canEvaluate ? (
-                      <>
-                        Avaliar
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                      </>
-                    ) : (
-                      'Já avaliado'
-                    )}
+                    <Star className="h-4 w-4 mr-2" />
+                    Dar Estrela
                   </button>
                 </div>
               ))}
@@ -674,16 +681,154 @@ export default function InternalFeedbackPage() {
           {/* Empty State */}
           {filteredColleagues.length === 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-16 text-center">
-              <div className="h-20 w-20 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-                <Users className="h-10 w-10 text-oxford-blue-400" />
+              <div className="h-20 w-20 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+                <Star className="h-10 w-10 text-yellow-500" />
               </div>
               <h3 className="text-xl font-roboto font-light text-rich-black-900 mb-4 tracking-wide">Nenhum colega encontrado</h3>
               <p className="text-sm text-oxford-blue-600 font-roboto font-light tracking-wide leading-relaxed max-w-md mx-auto">
-                Tente ajustar sua busca ou verifique se há colegas disponíveis para avaliação
+                Tente ajustar sua busca para encontrar colegas para agradecer
               </p>
             </div>
           )}
         </>
+      ) : (
+        /* Aba de Estrelas Recebidas */
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+            <h2 className="text-xl font-roboto font-medium text-rich-black-900 mb-4">Suas Estrelas Recebidas</h2>
+            <div className="space-y-4">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="text-oxford-blue-600 font-roboto font-light">Carregando estrelas recebidas...</div>
+                </div>
+              ) : receivedStars.length > 0 ? (
+                receivedStars.map((star) => {
+                  const Icon = getReasonIcon(star.reason)
+                  const color = getReasonColor(star.reason)
+                  return (
+                    <div key={star.id} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-roboto font-medium text-rich-black-900">
+                              {getReasonText(star.reason)}
+                            </h3>
+                            <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
+                              {star.message}
+                            </p>
+                            <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-2">
+                              De {star.sender?.full_name || 'Usuário'} • {new Date(star.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                        <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <div className="h-16 w-16 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <Star className="h-8 w-8 text-oxford-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-roboto font-light text-rich-black-900 mb-2">Nenhuma estrela recebida ainda</h3>
+                  <p className="text-sm text-oxford-blue-600 font-roboto font-light">
+                    Continue fazendo um bom trabalho e seus colegas reconhecerão!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para dar estrela */}
+      {showStarModal && selectedColleague && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-yellow-100 text-yellow-600">
+                  <Star className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-roboto font-medium text-rich-black-900">Dar Estrela</h3>
+                  <p className="text-sm font-roboto font-light text-oxford-blue-600">Para {selectedColleague.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowStarModal(false)
+                  setSelectedColleague(null)
+                  setStarForm({ reason: '', message: '' })
+                }}
+                className="text-oxford-blue-400 hover:text-oxford-blue-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Motivo do agradecimento
+                </label>
+                <select
+                  value={starForm.reason}
+                  onChange={(e) => setStarForm(prev => ({ ...prev, reason: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                >
+                  <option value="">Selecione um motivo</option>
+                  <option value="ajuda">Ajudou com um problema</option>
+                  <option value="colaboracao">Excelente colaboração</option>
+                  <option value="mentoria">Fez mentoria/ensino</option>
+                  <option value="proatividade">Demonstrou proatividade</option>
+                  <option value="lideranca">Liderança exemplar</option>
+                  <option value="inovacao">Trouxe inovação</option>
+                  <option value="apoio">Apoio em momento difícil</option>
+                  <option value="outro">Outro motivo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Mensagem de agradecimento
+                </label>
+                <textarea
+                  value={starForm.message}
+                  onChange={(e) => setStarForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Escreva uma mensagem de agradecimento..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowStarModal(false)
+                    setSelectedColleague(null)
+                    setStarForm({ reason: '', message: '' })
+                  }}
+                  className="px-4 py-2 text-oxford-blue-600 hover:text-oxford-blue-800 font-roboto font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmitStar}
+                  disabled={loading}
+                  className="bg-[#1B263B] hover:bg-[#0D1B2A] text-white px-6 py-2 rounded-xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Star className="h-4 w-4" />
+                  Enviar Estrela
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
