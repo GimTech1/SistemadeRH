@@ -716,25 +716,27 @@ export default function GoalsPage() {
                   return
                 }
                 try {
-                  const { error } = await (supabase as any)
+                  const { data: updated, error } = await (supabase as any)
                     .from('goals')
                     .update({
                       title: editForm.title,
                       description: editForm.description,
                       target_date: editForm.deadline,
-                      progress: editForm.progress,
+                      progress: Number(editForm.progress),
                       is_completed: editForm.isCompleted,
                     } as any)
                     .eq('id', (editGoal as any).id)
+                    .select('id, title, description, target_date, progress, is_completed')
+                    .maybeSingle()
                   if (error) throw error
 
                   setGoals(prev => prev.map(g => g.id === (editGoal as any).id ? {
                     ...g,
-                    title: editForm.title,
-                    description: editForm.description,
-                    deadline: new Date(editForm.deadline + 'T00:00:00').toLocaleDateString('pt-BR'),
-                    progress: editForm.progress,
-                    status: editForm.isCompleted ? 'hit' : (editForm.progress >= 100 ? 'hit' : 'in_progress'),
+                    title: updated?.title ?? editForm.title,
+                    description: updated?.description ?? editForm.description,
+                    deadline: (updated?.target_date ? new Date(updated.target_date + 'T00:00:00') : new Date(editForm.deadline + 'T00:00:00')).toLocaleDateString('pt-BR'),
+                    progress: Number((updated?.progress ?? editForm.progress) || 0),
+                    status: (updated?.is_completed ?? editForm.isCompleted) ? 'hit' : (Number((updated?.progress ?? editForm.progress) || 0) >= 100 ? 'hit' : 'in_progress'),
                   } : g))
                   toast.success('Meta atualizada')
                   setEditGoal(null)
