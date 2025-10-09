@@ -206,7 +206,7 @@ export default function InternalFeedbackPage() {
 
 
   const handleGiveStar = (colleague: Colleague) => {
-    if (userStars.available - userStars.used <= 0) {
+    if (userStars.available <= 0) {
       toast.error('Você não tem estrelas disponíveis este mês')
       return
     }
@@ -249,12 +249,6 @@ export default function InternalFeedbackPage() {
 
       toast.success(`Estrela enviada para ${selectedColleague.name}!`)
       
-      // Atualizar contador de estrelas
-      setUserStars(prev => ({
-        ...prev,
-        used: prev.used + 1
-      }))
-      
       // Reset form
       setSelectedColleague(null)
       setShowStarModal(false)
@@ -263,7 +257,8 @@ export default function InternalFeedbackPage() {
         message: ''
       })
       
-      // Atualizar lista
+      // Recarregar dados do servidor para garantir consistência
+      loadUserStars()
       loadColleagues()
     } catch (error) {
       console.error('Erro ao enviar estrela:', error)
@@ -275,39 +270,39 @@ export default function InternalFeedbackPage() {
 
   const getReasonIcon = (reason: string) => {
     switch (reason) {
-      case 'ajuda': return Heart
-      case 'colaboracao': return Users
-      case 'mentoria': return Brain
-      case 'proatividade': return Zap
-      case 'lideranca': return Award
-      case 'inovacao': return Sparkles
-      case 'apoio': return ThumbsUp
+      case '1': return Heart
+      case '2': return Users
+      case '3': return Brain
+      case '4': return Zap
+      case '5': return Award
+      case '6': return Sparkles
+      case '7': return ThumbsUp
       default: return Star
     }
   }
 
   const getReasonText = (reason: string) => {
     switch (reason) {
-      case 'ajuda': return 'Ajudou com um problema'
-      case 'colaboracao': return 'Excelente colaboração'
-      case 'mentoria': return 'Fez mentoria/ensino'
-      case 'proatividade': return 'Demonstrou proatividade'
-      case 'lideranca': return 'Liderança exemplar'
-      case 'inovacao': return 'Trouxe inovação'
-      case 'apoio': return 'Apoio em momento difícil'
+      case '1': return 'Ajudou com um problema'
+      case '2': return 'Excelente colaboração'
+      case '3': return 'Fez mentoria/ensino'
+      case '4': return 'Demonstrou proatividade'
+      case '5': return 'Liderança exemplar'
+      case '6': return 'Trouxe inovação'
+      case '7': return 'Apoio em momento difícil'
       default: return reason
     }
   }
 
   const getReasonColor = (reason: string) => {
     switch (reason) {
-      case 'ajuda': return 'text-red-500 bg-red-50'
-      case 'colaboracao': return 'text-blue-500 bg-blue-50'
-      case 'mentoria': return 'text-purple-500 bg-purple-50'
-      case 'proatividade': return 'text-green-500 bg-green-50'
-      case 'lideranca': return 'text-yellow-500 bg-yellow-50'
-      case 'inovacao': return 'text-pink-500 bg-pink-50'
-      case 'apoio': return 'text-orange-500 bg-orange-50'
+      case '1': return 'text-red-500 bg-red-50'
+      case '2': return 'text-blue-500 bg-blue-50'
+      case '3': return 'text-purple-500 bg-purple-50'
+      case '4': return 'text-green-500 bg-green-50'
+      case '5': return 'text-yellow-500 bg-yellow-50'
+      case '6': return 'text-pink-500 bg-pink-50'
+      case '7': return 'text-orange-500 bg-orange-50'
       default: return 'text-gray-500 bg-gray-50'
     }
   }
@@ -368,7 +363,7 @@ export default function InternalFeedbackPage() {
           </div>
           <div className="text-right">
             <div className="text-3xl font-roboto font-semibold text-rich-black-900">
-              {userStars.available - userStars.used}/{userStars.available}
+              {userStars.available}/3
             </div>
             <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
           </div>
@@ -376,11 +371,11 @@ export default function InternalFeedbackPage() {
         
         <div className="flex items-center justify-between">
           <div className="flex space-x-2">
-            {[...Array(userStars.available)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
               <Star
                 key={i}
                 className={`h-8 w-8 ${
-                  i < (userStars.available - userStars.used)
+                  i < userStars.available
                     ? 'text-yellow-500 fill-yellow-500'
                     : 'text-platinum-300'
                 }`}
@@ -615,9 +610,9 @@ export default function InternalFeedbackPage() {
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleGiveStar(colleague)}
-                            disabled={userStars.available - userStars.used <= 0}
+                            disabled={userStars.available <= 0}
                             className={`px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
-                              userStars.available - userStars.used > 0
+                              userStars.available > 0
                                 ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
                                 : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                             }`}
@@ -702,9 +697,9 @@ export default function InternalFeedbackPage() {
                   {/* Botão de ação */}
                   <button
                     onClick={() => handleGiveStar(colleague)}
-                    disabled={userStars.available - userStars.used <= 0}
+                    disabled={userStars.available <= 0}
                     className={`w-full py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
-                      userStars.available - userStars.used > 0
+                      userStars.available > 0
                         ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
                         : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                     }`}
@@ -826,14 +821,14 @@ export default function InternalFeedbackPage() {
                   }}
                 >
                   <option value="">Selecione um motivo</option>
-                  <option value="ajuda">Ajudou com um problema</option>
-                  <option value="colaboracao">Excelente colaboração</option>
-                  <option value="mentoria">Fez mentoria/ensino</option>
-                  <option value="proatividade">Demonstrou proatividade</option>
-                  <option value="lideranca">Liderança exemplar</option>
-                  <option value="inovacao">Trouxe inovação</option>
-                  <option value="apoio">Apoio em momento difícil</option>
-                  <option value="outro">Outro motivo</option>
+                  <option value="1">Ajudou com um problema</option>
+                  <option value="2">Excelente colaboração</option>
+                  <option value="3">Fez mentoria/ensino</option>
+                  <option value="4">Demonstrou proatividade</option>
+                  <option value="5">Liderança exemplar</option>
+                  <option value="6">Trouxe inovação</option>
+                  <option value="7">Apoio em momento difícil</option>
+                  <option value="8">Outro motivo</option>
                 </select>
               </div>
 

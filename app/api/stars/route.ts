@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       star,
-      remaining: 2 - (existingStars?.length || 0)
+      remaining: 3 - ((existingStars?.length || 0) + 1)
     })
   } catch (error) {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
