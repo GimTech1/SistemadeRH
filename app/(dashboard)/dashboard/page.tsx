@@ -152,7 +152,7 @@ export default function DashboardPage() {
         supabase
           .from('departments')
           .select('id, name'),
-        fetch('/api/goals/metrics').then(r => r.json()),
+        fetch('/api/goals/metrics', { cache: 'no-store' }).then(r => r.json()),
       ])
 
       const totalEmployees = employeesRes.count || 0
@@ -460,30 +460,27 @@ export default function DashboardPage() {
               </select>
             </div>
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas Totais</span>
-                {(() => {
-                  if (data.monthlyData.length === 0) return null
-                  const last = data.monthlyData[data.monthlyData.length - 1] as any
-                  const total = typeof last.total === 'number' ? last.total : undefined
-                  if (typeof total !== 'number') return null
-                  return (
-                    <span className="text-xl font-roboto font-medium text-oxford-blue-600">{total}</span>
-                  )
-                })()}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-roboto font-medium text-emerald-600">Atingimento</span>
-                {(() => {
-                  if (data.monthlyData.length === 0) return null
-                  const last = data.monthlyData[data.monthlyData.length - 1] as any
-                  if (typeof last.value !== 'number' || typeof last.target !== 'number' || last.target === 0) return null
-                  const pct = Math.round((last.value / last.target) * 100)
-                  return (
-                    <span className="text-xl font-roboto font-semibold text-emerald-600">{`${pct}%`}</span>
-                  )
-                })()}
-              </div>
+              {(() => {
+                const list = selectedMonthKey === 'all' 
+                  ? (data.monthlyData as any[])
+                  : (data.monthlyData as any[]).filter(d => d.key === selectedMonthKey)
+                if (!list || list.length === 0) return null
+                const totalSum = list.reduce((acc, it: any) => acc + (Number(it.total) || 0), 0)
+                const completedSum = list.reduce((acc, it: any) => acc + (Number(it.completed) || 0), 0)
+                const pct = totalSum > 0 ? Math.round((completedSum / totalSum) * 100) : 0
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas Totais</span>
+                      <span className="text-xl font-roboto font-medium text-oxford-blue-600">{totalSum}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-roboto font-medium text-emerald-600">Atingimento</span>
+                      <span className="text-xl font-roboto font-semibold text-emerald-600">{`${pct}%`}</span>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
             
             <div className="space-y-4">
