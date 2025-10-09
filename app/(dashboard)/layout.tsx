@@ -115,7 +115,7 @@ export default function DashboardLayout({
       '/evaluations/new': 'Nova Avaliação',
       '/goals': 'Metas',
       '/feedback': 'Feedbacks',
-      '/feedback/internal': 'Avaliar Colegas',
+      '/feedback/internal': 'Distribuir Agradecimentos',
       '/feedback/external': 'Feedback Externo',
       '/reports': 'Relatórios',
       '/requests': 'Solicitações',

@@ -344,8 +344,7 @@ export default function InternalFeedbackPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-roboto font-bold text-rich-black-900 tracking-wide">Sistema de Agradecimentos</h1>
-          <p className="text-lg font-roboto font-light text-oxford-blue-600 mt-2">Reconheça e agradeça seus colegas com estrelas</p>
+          <h1 className="text-3xl font-roboto font-bold text-rich-black-900 tracking-wide">Reconheça e agradeça seus colegas com estrelas</h1>
         </div>
       </div>
 
