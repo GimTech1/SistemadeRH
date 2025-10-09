@@ -17,6 +17,8 @@ interface ExpenseRow {
   title: string
   description: string | null
   amount: number
+  quantity: number
+  total: number
   date: string
   category: string | null
   department_id: string
@@ -52,8 +54,22 @@ export default function ExpensesPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [createOpen, setCreateOpen] = useState(true)
+  const [quantity, setQuantity] = useState(1)
+  const [amount, setAmount] = useState(0)
 
   const isManagerOrAdmin = userRole === 'gerente' || userRole === 'admin'
+  const total = quantity * amount
+
+  const calculateTotal = () => {
+    const totalInput = document.getElementById('total') as HTMLInputElement
+    if (totalInput) {
+      totalInput.value = total.toFixed(2)
+    }
+  }
+
+  useEffect(() => {
+    calculateTotal()
+  }, [quantity, amount])
 
   useEffect(() => {
     loadBootstrap()
@@ -134,10 +150,14 @@ export default function ExpensesPage() {
     if (!isManagerOrAdmin) return
     const form = e.currentTarget
     const formData = new FormData(form)
+    const quantity = Number(formData.get('quantity') || 1)
+    const amount = Number(formData.get('amount') || 0)
     const payload = {
       title: String(formData.get('title') || ''),
       description: String(formData.get('description') || ''),
-      amount: Number(formData.get('amount') || 0),
+      amount: amount,
+      quantity: quantity,
+      total: amount * quantity,
       date: String(formData.get('date') || ''),
       category: String(formData.get('category') || ''),
     }
@@ -166,7 +186,7 @@ export default function ExpensesPage() {
       const key = exp.department_id
       const name = exp.department?.name || 'Setor'
       const current = map.get(key)
-      const nextTotal = (current?.total || 0) + (exp.amount || 0)
+      const nextTotal = (current?.total || 0) + (exp.total || exp.amount || 0)
       map.set(key, { name, total: nextTotal })
     }
     return Array.from(map.entries()).map(([id, v]) => ({ id, ...v }))
@@ -316,8 +336,40 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div>
-              <Label htmlFor="amount">Valor <span className="text-red-600">*</span></Label>
-              <Input id="amount" name="amount" type="number" step="0.01" required />
+              <Label htmlFor="amount">Valor unitário <span className="text-red-600">*</span></Label>
+              <Input 
+                id="amount" 
+                name="amount" 
+                type="number" 
+                step="0.01" 
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value) || 0)}
+                required 
+              />
+            </div>
+            <div>
+              <Label htmlFor="quantity">Quantidade <span className="text-red-600">*</span></Label>
+              <Input 
+                id="quantity" 
+                name="quantity" 
+                type="number" 
+                min="1" 
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                required 
+              />
+            </div>
+            <div>
+              <Label htmlFor="total">Total</Label>
+              <Input 
+                id="total" 
+                name="total" 
+                type="number" 
+                step="0.01" 
+                value={total.toFixed(2)}
+                readOnly 
+                className="bg-gray-100" 
+              />
             </div>
             <div>
               <Label htmlFor="date">Data <span className="text-red-600">*</span></Label>
@@ -353,8 +405,10 @@ export default function ExpensesPage() {
                   <th className="p-2">Título</th>
                   <th className="p-2">Categoria</th>
                   <th className="p-2">Setor</th>
+                  <th className="p-2">Qtd</th>
+                  <th className="p-2 text-right">Valor Unit.</th>
+                  <th className="p-2 text-right">Total</th>
                   <th className="p-2">Status</th>
-                  <th className="p-2 text-right">Valor</th>
                 </tr>
               </thead>
               <tbody>
@@ -364,17 +418,19 @@ export default function ExpensesPage() {
                     <td className="p-2">{e.title}</td>
                     <td className="p-2">{e.category || '-'}</td>
                     <td className="p-2">{e.department?.name || '-'}</td>
+                    <td className="p-2">{e.quantity || 1}</td>
+                    <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                         {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
                       </span>
                     </td>
-                    <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   </tr>
                 ))}
                 {expenses.length === 0 && (
                   <tr>
-                    <td className="p-4 text-center text-gray-500" colSpan={6}>Nenhum gasto encontrado</td>
+                    <td className="p-4 text-center text-gray-500" colSpan={8}>Nenhum gasto encontrado</td>
                   </tr>
                 )}
               </tbody>
@@ -415,7 +471,7 @@ export default function ExpensesPage() {
           <div className="rounded-xl border p-4 bg-white/80">
             <div className="text-sm text-slate-600">Gasto total no período</div>
             <div className="text-2xl font-semibold">
-              {expenses.filter(e => (e as any).status === 'approved').reduce((acc, e) => acc + (e.amount || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {expenses.filter(e => (e as any).status === 'approved').reduce((acc, e) => acc + (e.total || e.amount || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
           </div>
         </div>
@@ -428,8 +484,10 @@ export default function ExpensesPage() {
                 <th className="p-2">Título</th>
                 <th className="p-2">Categoria</th>
                 <th className="p-2">Setor</th>
+                <th className="p-2">Qtd</th>
+                <th className="p-2 text-right">Valor Unit.</th>
+                <th className="p-2 text-right">Total</th>
                 <th className="p-2">Status</th>
-                <th className="p-2 text-right">Valor</th>
                 <th className="p-2 text-right">Ações</th>
               </tr>
             </thead>
@@ -440,12 +498,14 @@ export default function ExpensesPage() {
                   <td className="p-2">{e.title}</td>
                   <td className="p-2">{e.category || '-'}</td>
                   <td className="p-2">{e.department?.name || '-'}</td>
+                  <td className="p-2">{e.quantity || 1}</td>
+                  <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   <td className="p-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                       {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
                     </span>
                   </td>
-                  <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   <td className="p-2 text-right">
                     <div className="inline-flex gap-2">
                       {(e.status === 'pending' || e.status === 'rejected') && (
@@ -486,7 +546,7 @@ export default function ExpensesPage() {
               ))}
               {expenses.length === 0 && (
                 <tr>
-                  <td className="p-4 text-center text-gray-500" colSpan={6}>Nenhum gasto encontrado</td>
+                  <td className="p-4 text-center text-gray-500" colSpan={9}>Nenhum gasto encontrado</td>
                 </tr>
               )}
             </tbody>
@@ -502,7 +562,7 @@ export default function ExpensesPage() {
             {departments.map((d) => {
                 const total = expenses
                   .filter((e) => e.department_id === d.id && (e as any).status === 'approved')
-                .reduce((sum, e) => sum + (e.amount || 0), 0)
+                .reduce((sum, e) => sum + (e.total || e.amount || 0), 0)
               return (
                 <div key={d.id} className="rounded-md border p-3 bg-white/50">
                   <div className="text-sm text-gray-600">{d.name}</div>
@@ -526,7 +586,7 @@ export default function ExpensesPage() {
                 const dept = departments.find(d => d.id === userDepartmentId)
                 const total = expenses
                   .filter(e => e.department_id === userDepartmentId && (e as any).status === 'approved')
-                  .reduce((sum, e) => sum + (e.amount || 0), 0)
+                  .reduce((sum, e) => sum + (e.total || e.amount || 0), 0)
                 return (
                   <div key={userDepartmentId} className="rounded-md border p-3 bg-white/50">
                     <div className="text-sm text-gray-600">{dept?.name || 'Meu setor'}</div>

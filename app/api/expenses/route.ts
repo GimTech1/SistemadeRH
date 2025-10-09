@@ -92,10 +92,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, amount, date, category } = body as {
+    const { title, description, amount, quantity, total, date, category } = body as {
       title: string
       description?: string
       amount: number
+      quantity: number
+      total: number
       date: string
       category?: string
     }
@@ -124,6 +126,8 @@ export async function POST(request: NextRequest) {
       title,
       description: description ?? null,
       amount,
+      quantity: quantity || 1,
+      total: total || (amount * (quantity || 1)),
       date,
       category: category ?? null,
       department_id: departmentId,
