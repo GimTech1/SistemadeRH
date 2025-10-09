@@ -54,11 +54,15 @@ export default function ExpensesPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [createOpen, setCreateOpen] = useState(true)
-  const [quantity, setQuantity] = useState(1)
-  const [amount, setAmount] = useState(0)
+  const [quantity, setQuantity] = useState('')
+  const [amount, setAmount] = useState('')
 
   const isManagerOrAdmin = userRole === 'gerente' || userRole === 'admin'
-  const total = quantity * amount
+  
+  // Converter strings para números para cálculo
+  const quantityNum = parseFloat(quantity) || 0
+  const amountNum = parseFloat(amount) || 0
+  const total = quantityNum * amountNum
 
   const calculateTotal = () => {
     const totalInput = document.getElementById('total') as HTMLInputElement
@@ -148,20 +152,40 @@ export default function ExpensesPage() {
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isManagerOrAdmin) return
+    
+    // Validações
+    if (!quantity.trim()) {
+      alert('Por favor, insira a quantidade')
+      return
+    }
+    
+    if (quantityNum <= 0) {
+      alert('A quantidade deve ser maior que 0')
+      return
+    }
+    
+    if (!amount.trim()) {
+      alert('Por favor, insira o valor unitário')
+      return
+    }
+    
+    if (amountNum <= 0) {
+      alert('O valor unitário deve ser maior que 0')
+      return
+    }
+    
     const form = e.currentTarget
     const formData = new FormData(form)
-    const quantity = Number(formData.get('quantity') || 1)
-    const amount = Number(formData.get('amount') || 0)
     const payload = {
       title: String(formData.get('title') || ''),
       description: String(formData.get('description') || ''),
-      amount: amount,
-      quantity: quantity,
-      total: amount * quantity,
+      amount: amountNum,
+      quantity: quantityNum,
+      total: total,
       date: String(formData.get('date') || ''),
       category: String(formData.get('category') || ''),
     }
-    if (!payload.title || !payload.amount || !payload.date) return
+    if (!payload.title || !payload.date) return
     setCreating(true)
     try {
       const resp = await fetch('/api/expenses', {
@@ -171,6 +195,8 @@ export default function ExpensesPage() {
       })
       if (resp.ok) {
         form.reset()
+        setAmount('')
+        setQuantity('')
         await loadExpenses()
       }
     } catch (e) {
@@ -343,9 +369,14 @@ export default function ExpensesPage() {
                 type="number" 
                 step="0.01" 
                 value={amount}
-                onChange={(e) => setAmount(Number(e.target.value) || 0)}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className={amount && amountNum <= 0 ? 'border-red-500' : ''}
                 required 
               />
+              {amount && amountNum <= 0 && (
+                <p className="text-red-500 text-xs mt-1">Valor deve ser maior que 0</p>
+              )}
             </div>
             <div>
               <Label htmlFor="quantity">Quantidade <span className="text-red-600">*</span></Label>
@@ -355,9 +386,14 @@ export default function ExpensesPage() {
                 type="number" 
                 min="1" 
                 value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="1"
+                className={quantity && quantityNum <= 0 ? 'border-red-500' : ''}
                 required 
               />
+              {quantity && quantityNum <= 0 && (
+                <p className="text-red-500 text-xs mt-1">Quantidade deve ser maior que 0</p>
+              )}
             </div>
             <div>
               <Label htmlFor="total">Total</Label>
@@ -366,9 +402,10 @@ export default function ExpensesPage() {
                 name="total" 
                 type="number" 
                 step="0.01" 
-                value={total.toFixed(2)}
+                value={total > 0 ? total.toFixed(2) : ''}
                 readOnly 
                 className="bg-gray-100" 
+                placeholder="0.00"
               />
             </div>
             <div>
