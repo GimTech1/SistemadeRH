@@ -53,6 +53,21 @@ interface Colleague {
   }>
 }
 
+interface SupabaseColleague {
+  id: string
+  full_name: string | null
+  position: string | null
+  department: string | null
+  stars_received: Array<{ count: number }> | null
+  recent_stars: Array<{
+    id: string
+    reason: string
+    message: string
+    sender: { full_name: string } | null
+    created_at: string
+  }> | null
+}
+
 export default function InternalFeedbackPage() {
   const [colleagues, setColleagues] = useState<Colleague[]>([])
   const [selectedColleague, setSelectedColleague] = useState<Colleague | null>(null)
@@ -115,47 +130,71 @@ export default function InternalFeedbackPage() {
     try {
       setLoading(true)
       
-      // Buscar colegas do banco de dados
+      // Buscar colegas da tabela employees
       const { data: colleaguesData, error: colleaguesError } = await supabase
-        .from('profiles')
+        .from('employees')
         .select(`
           id,
           full_name,
           position,
-          department,
-          stars_received:user_stars(count),
-          recent_stars:user_stars(
-            id,
-            reason,
-            message,
-            sender:profiles!user_stars_user_id_fkey(full_name),
-            created_at
-          )
+          department
         `)
-        .neq('id', (await supabase.auth.getUser()).data.user?.id) // Excluir o próprio usuário
-        .order('stars_received', { ascending: false })
+        .order('full_name', { ascending: true })
 
       if (colleaguesError) {
         console.error('Erro ao carregar colegas:', colleaguesError)
         return
       }
 
-      // Transformar dados para o formato esperado
-      const formattedColleagues = colleaguesData?.map(colleague => ({
-        id: colleague.id,
-        name: colleague.full_name,
-        position: colleague.position || 'Sem cargo',
-        department: colleague.department || 'Sem departamento',
-        avatar: colleague.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U',
-        starsReceived: colleague.stars_received?.[0]?.count || 0,
-        recentStars: colleague.recent_stars?.slice(0, 3).map(star => ({
-          id: star.id,
-          reason: star.reason,
-          message: star.message,
-          from: star.sender?.full_name || 'Usuário',
-          date: star.created_at
-        })) || []
-      })) || []
+      // Buscar departamentos para mapear IDs para nomes
+      const { data: departmentsData } = await supabase
+        .from('departments')
+        .select('id, name')
+
+      const departmentsMap = new Map()
+      departmentsData?.forEach((dept: any) => {
+        departmentsMap.set(dept.id, dept.name)
+      })
+
+      // Buscar estrelas para cada colega
+      const colleaguesWithStars = await Promise.all((colleaguesData || []).map(async (colleague: any) => {
+        // Buscar estrelas recebidas por este colega
+        const { data: starsData } = await supabase
+          .from('user_stars')
+          .select('id, reason, message, created_at, user_id')
+          .eq('recipient_id', colleague.id)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        // Buscar nomes dos remetentes das estrelas
+        const starsWithSenders = await Promise.all((starsData || []).map(async (star: any) => {
+          const { data: senderData } = await supabase
+            .from('employees')
+            .select('full_name')
+            .eq('id', star.user_id)
+            .single()
+          
+          return {
+            id: star.id,
+            reason: star.reason,
+            message: star.message,
+            from: (senderData as any)?.full_name || 'Usuário',
+            date: star.created_at
+          }
+        }))
+
+        return {
+          id: colleague.id,
+          name: colleague.full_name || 'Usuário',
+          position: colleague.position || 'Sem cargo',
+          department: departmentsMap.get(colleague.department) || colleague.department || 'Sem departamento',
+          avatar: colleague.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
+          starsReceived: starsData?.length || 0,
+          recentStars: starsWithSenders
+        }
+      }))
+
+      const formattedColleagues: Colleague[] = colleaguesWithStars
 
       setColleagues(formattedColleagues)
     } catch (error) {
@@ -779,7 +818,12 @@ export default function InternalFeedbackPage() {
                 <select
                   value={starForm.reason}
                   onChange={(e) => setStarForm(prev => ({ ...prev, reason: e.target.value }))}
-                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-no-repeat bg-right pr-8"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundSize: '1.5em 1.5em'
+                  }}
                 >
                   <option value="">Selecione um motivo</option>
                   <option value="ajuda">Ajudou com um problema</option>

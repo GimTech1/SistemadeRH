@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -55,6 +55,17 @@ export async function POST(request: NextRequest) {
 
     if (!recipientId || !reason || !message) {
       return NextResponse.json({ error: 'Dados obrigatórios não fornecidos' }, { status: 400 })
+    }
+
+    // Verificar se o recipient existe
+    const { data: recipient, error: recipientError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('id', recipientId)
+      .single()
+
+    if (recipientError || !recipient) {
+      return NextResponse.json({ error: 'Destinatário não encontrado' }, { status: 400 })
     }
 
     // Verificar se o usuário ainda tem estrelas disponíveis
@@ -85,13 +96,18 @@ export async function POST(request: NextRequest) {
         recipient_id: recipientId,
         reason,
         message,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single()
 
     if (createError) {
-      return NextResponse.json({ error: 'Erro ao criar estrela' }, { status: 500 })
+      console.error('Erro ao criar estrela:', createError)
+      return NextResponse.json({ 
+        error: 'Erro ao criar estrela', 
+        details: createError.message 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ 

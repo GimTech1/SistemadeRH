@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -14,10 +14,7 @@ export async function GET(request: NextRequest) {
     // Buscar estrelas recebidas pelo usuário
     const { data: stars, error } = await supabase
       .from('user_stars')
-      .select(`
-        *,
-        sender:profiles!user_stars_user_id_fkey(full_name, position)
-      `)
+      .select('*')
       .eq('recipient_id', user.id)
       .order('created_at', { ascending: false })
 
