@@ -119,9 +119,25 @@ export default function DashboardPage() {
     loadDashboardData()
   }, [])
 
+  // Atualiza automaticamente quando a tabela public.goals mudar
+  useEffect(() => {
+    const channel = (supabase as any)
+      .channel('rt-goals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goals' }, () => {
+        // Debounce simples para evitar múltiplos reloads em lote
+        setTimeout(() => {
+          loadDashboardData()
+        }, 200)
+      })
+      .subscribe()
+    return () => {
+      try { (supabase as any).removeChannel(channel) } catch {}
+    }
+  }, [supabase])
+
   const loadDashboardData = async () => {
     try {
-      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, totalGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
+      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, totalGoalsRes, scoresRes, deptRowsRes, deptsRes, goalsMetricsRes] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
         supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
@@ -136,6 +152,7 @@ export default function DashboardPage() {
         supabase
           .from('departments')
           .select('id, name'),
+        fetch('/api/goals/metrics').then(r => r.json()),
       ])
 
       const totalEmployees = employeesRes.count || 0
@@ -150,46 +167,8 @@ export default function DashboardPage() {
         ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
         : 0
 
-      const now = new Date()
-      const end = now
-      // Ano corrente: de Jan até o mês atual
-      const bucketStart = new Date(now.getFullYear(), 0, 1)
-      const monthsToShow = now.getMonth() + 1
-
-      // Buscar metas do ano corrente e calcular percentual concluído por mês
-      const { data: goalsForMonths } = await supabase
-        .from('goals')
-        .select('id, target_date, is_completed, updated_at')
-        .gte('target_date', bucketStart.toISOString())
-        .lte('target_date', end.toISOString())
-
-      const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-      const totalsByMonth: Record<string, number> = {}
-      const completedByMonth: Record<string, number> = {}
-      const iterMonths: { key: string; label: string }[] = []
-      for (let i = 0; i < monthsToShow; i++) {
-        const d = new Date(bucketStart.getFullYear(), bucketStart.getMonth() + i, 1)
-        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-        totalsByMonth[key] = 0
-        completedByMonth[key] = 0
-        iterMonths.push({ key, label: `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` })
-      }
-
-      ;(goalsForMonths as Array<{ target_date: string; is_completed: boolean | null }> | null || []).forEach(row => {
-        const when = new Date(row.target_date)
-        const key = `${when.getFullYear()}-${String(when.getMonth()+1).padStart(2,'0')}`
-        if (totalsByMonth[key] !== undefined) {
-          totalsByMonth[key] += 1
-          if (row.is_completed === true) completedByMonth[key] += 1
-        }
-      })
-
-      const monthlyData = iterMonths.map(m => {
-        const total = totalsByMonth[m.key] || 0
-        const completed = completedByMonth[m.key] || 0
-        const pct = total > 0 ? Math.round((completed / total) * 100) : 0
-        return { month: m.label, value: pct, target: 100, total, completed, key: m.key }
-      })
+      const fromBackend = goalsMetricsRes || { monthlyData: [], totalGoals: 0 }
+      const monthlyData = (fromBackend.monthlyData || [])
 
       const palette = [
         { class: 'bg-yinmn-blue-500', hex: '#3B82F6' },
@@ -323,7 +302,7 @@ export default function DashboardPage() {
         openRequests,
         activeEvaluations,
         completedGoals,
-        totalGoals,
+        totalGoals: fromBackend.totalGoals || totalGoals,
         averageScore,
         recentEvaluations,
         upcomingDeadlines: deadlines,
@@ -482,7 +461,7 @@ export default function DashboardPage() {
             </div>
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas</span>
+                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas Totais</span>
                 {(() => {
                   if (data.monthlyData.length === 0) return null
                   const last = data.monthlyData[data.monthlyData.length - 1] as any
