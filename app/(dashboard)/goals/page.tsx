@@ -716,13 +716,14 @@ export default function GoalsPage() {
                   return
                 }
                 try {
+                  const progressToSave = editForm.isCompleted ? 100 : Number(editForm.progress)
                   const { data: updated, error } = await (supabase as any)
                     .from('goals')
                     .update({
                       title: editForm.title,
                       description: editForm.description,
                       target_date: editForm.deadline,
-                      progress: Number(editForm.progress),
+                      progress: progressToSave,
                       is_completed: editForm.isCompleted,
                     } as any)
                     .eq('id', (editGoal as any).id)
@@ -735,8 +736,8 @@ export default function GoalsPage() {
                     title: updated?.title ?? editForm.title,
                     description: updated?.description ?? editForm.description,
                     deadline: (updated?.target_date ? new Date(updated.target_date + 'T00:00:00') : new Date(editForm.deadline + 'T00:00:00')).toLocaleDateString('pt-BR'),
-                    progress: Number((updated?.progress ?? editForm.progress) || 0),
-                    status: (updated?.is_completed ?? editForm.isCompleted) ? 'hit' : (Number((updated?.progress ?? editForm.progress) || 0) >= 100 ? 'hit' : 'in_progress'),
+                    progress: Number((updated?.progress ?? progressToSave) || 0),
+                    status: (updated?.is_completed ?? editForm.isCompleted) ? 'hit' : (Number((updated?.progress ?? progressToSave) || 0) >= 100 ? 'hit' : 'in_progress'),
                   } : g))
                   toast.success('Meta atualizada')
                   setEditGoal(null)
@@ -765,7 +766,15 @@ export default function GoalsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input id="chk_done" type="checkbox" checked={editForm.isCompleted} onChange={(e) => setEditForm({ ...editForm, isCompleted: e.target.checked })} />
+                  <input
+                    id="chk_done"
+                    type="checkbox"
+                    checked={editForm.isCompleted}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setEditForm({ ...editForm, isCompleted: checked, progress: checked ? 100 : editForm.progress })
+                    }}
+                  />
                   <label htmlFor="chk_done" className="text-sm font-roboto">Marcar como batida</label>
                 </div>
               </div>
