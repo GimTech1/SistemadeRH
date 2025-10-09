@@ -838,41 +838,57 @@ export default function GoalsPage() {
                   }
                   try {
                     const { data: userData } = await supabase.auth.getUser()
-                    const insert = await (supabase as any)
-                      .from('goals')
-                      .insert({
-                        employee_id: selectedEmployeeId,
-                        title: newGoal.title,
-                        description: newGoal.description,
-                        target_date: newGoal.deadline,
-                        progress: 0,
-                        is_completed: false,
-                        created_by: userData?.user?.id || null,
-                      } as any)
-                      .select('id, created_at')
+                    const userId = userData?.user?.id || null
+                    // Verificar se o perfil do usuário existe; se não existir, evitar violar FK em goals.created_by
+                    let createdBy: string | null = null
+                    if (userId) {
+                      const { data: profile, error: profileErr } = await (supabase as any)
+                        .from('profiles')
+                        .select('id')
+                        .eq('id', userId)
+                        .maybeSingle()
+                      if (!profileErr && profile?.id) {
+                        createdBy = userId
+                      } else {
+                        createdBy = null
+                      }
+                    }
+                    // Validação extra: garantir que o employee_id existe para evitar violação de FK
+                    const { data: employeeRow, error: employeeErr } = await (supabase as any)
+                      .from('employees')
+                      .select('id, full_name')
+                      .eq('id', selectedEmployeeId)
                       .single()
-                    if (insert.error) throw insert.error
+                    if (employeeErr || !employeeRow) {
+                      toast.error('Responsável inválido: colaborador não encontrado')
+                      return
+                    }
+                    const { data: createdGoal, error } = await (supabase as any)
+                      .from('goals')
+                      .insert([
+                        {
+                          employee_id: selectedEmployeeId,
+                          title: newGoal.title,
+                          description: newGoal.description,
+                          target_date: newGoal.deadline,
+                          progress: 0,
+                          is_completed: false,
+                          created_by: createdBy,
+                        }
+                      ])
+                      .select('id')
+                      .single()
+                    if (error) throw error
+                    // Recarrega a lista a partir do banco para manter consistência
+                    await loadGoals()
                   } catch (e: any) {
-                    toast.error('Erro ao salvar meta no banco')
+                    console.error('Erro ao criar meta:', e)
+                    const code = e?.code || e?.status || 'erro'
+                    const details = e?.details || e?.hint || ''
+                    toast.error(`Erro (${code}): ${e?.message || 'Falha ao salvar meta'}${details ? ` — ${details}` : ''}`)
                     return
                   }
-
-                  const created: Goal = {
-                    id: crypto.randomUUID(),
-                    title: newGoal.title,
-                    description: newGoal.description,
-                    category: newGoal.category,
-                    status: 'in_progress',
-                    progress: 0,
-                    startDate: new Date().toLocaleDateString('pt-BR'),
-                    deadline: new Date(newGoal.deadline + 'T00:00:00').toLocaleDateString('pt-BR'),
-                    assignedTo: (employees.find(e => e.id === selectedEmployeeId)?.name || 'Responsável'),
-                    assignedBy: 'Você',
-                    priority: newGoal.priority,
-                    keyResults: [],
-                    comments: [],
-                  }
-                  setGoals((g) => [created, ...g])
+                  // Fecha modal e reseta formulário após sucesso
                   setShowNewGoalModal(false)
                   setNewGoal({ title: '', description: '', category: 'performance', priority: 'medium', deadline: '', assignedTo: '' })
                   setDepartmentId('')

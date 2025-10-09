@@ -29,6 +29,7 @@ interface DashboardData {
   openRequests: number
   activeEvaluations: number
   completedGoals: number
+  totalGoals: number
   averageScore: number
   recentEvaluations: any[]
   upcomingDeadlines: any[]
@@ -43,6 +44,7 @@ export default function DashboardPage() {
     openRequests: 0,
     activeEvaluations: 0,
     completedGoals: 0,
+    totalGoals: 0,
     averageScore: 0,
     recentEvaluations: [],
     upcomingDeadlines: [],
@@ -118,11 +120,12 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
+      const [employeesRes, requestsRes, activeEvalRes, completedGoalsRes, totalGoalsRes, scoresRes, deptRowsRes, deptsRes] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('requests').select('id', { count: 'exact', head: true }).in('status', ['requested', 'approved']),
         supabase.from('evaluations').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
         supabase.from('goals').select('id', { count: 'exact', head: true }).eq('is_completed', true),
+        supabase.from('goals').select('id', { count: 'exact', head: true }),
         supabase.from('evaluations').select('overall_score').not('overall_score', 'is', null),
         supabase
           .from('employees')
@@ -138,6 +141,7 @@ export default function DashboardPage() {
       const openRequests = requestsRes.count || 0
       const activeEvaluations = activeEvalRes.count || 0
       const completedGoals = completedGoalsRes.count || 0
+      const totalGoals = totalGoalsRes.count || 0
 
       const scores = (scoresRes.data as { overall_score: number | null }[] | null) || []
       const validScores = scores.map(s => s.overall_score).filter((n): n is number => typeof n === 'number')
@@ -150,42 +154,40 @@ export default function DashboardPage() {
       const bucketStart = new Date(now.getFullYear(), 0, 1) // Jan do ano atual
       const monthsToShow = now.getMonth() + 1 // até o mês corrente (1..12)
 
-      const { data: evalForMonths } = await supabase
-        .from('evaluations')
-        .select('overall_score, submitted_at, created_at')
-        .gte('created_at', bucketStart.toISOString())
-        .lte('created_at', end.toISOString())
-        .not('overall_score', 'is', null)
+      // Buscar metas do ano corrente e calcular percentual concluído por mês
+      const { data: goalsForMonths } = await supabase
+        .from('goals')
+        .select('id, target_date, is_completed, updated_at')
+        .gte('target_date', bucketStart.toISOString())
+        .lte('target_date', end.toISOString())
 
       const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-      const buckets: Record<string, number[]> = {}
+      const totalsByMonth: Record<string, number> = {}
+      const completedByMonth: Record<string, number> = {}
       const iterMonths: { key: string; label: string }[] = []
       for (let i = 0; i < monthsToShow; i++) {
         const d = new Date(bucketStart.getFullYear(), bucketStart.getMonth() + i, 1)
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-        buckets[key] = []
+        totalsByMonth[key] = 0
+        completedByMonth[key] = 0
         iterMonths.push({ key, label: monthNames[d.getMonth()] })
       }
 
-      ;(evalForMonths as Array<{ overall_score: number | null; submitted_at: string | null; created_at: string }> | null || []).forEach(row => {
-        const when = row.submitted_at ? new Date(row.submitted_at) : new Date(row.created_at)
+      ;(goalsForMonths as Array<{ target_date: string; is_completed: boolean | null }> | null || []).forEach(row => {
+        const when = new Date(row.target_date)
         const key = `${when.getFullYear()}-${String(when.getMonth()+1).padStart(2,'0')}`
-        if (buckets[key]) {
-          const score = typeof row.overall_score === 'number' ? row.overall_score : null
-          if (score !== null) buckets[key].push(score)
+        if (totalsByMonth[key] !== undefined) {
+          totalsByMonth[key] += 1
+          if (row.is_completed === true) completedByMonth[key] += 1
         }
       })
 
-      const monthlyData = iterMonths.map((m, idx) => {
-        const scores = buckets[m.key]
-        const avg10 = scores && scores.length ? (scores.reduce((a,b)=>a+b,0) / scores.length) : 0
-        const value = Math.round(avg10 * 10) 
-        return { month: m.label, value, target: undefined as unknown as number | undefined }
+      const monthlyData = iterMonths.map(m => {
+        const total = totalsByMonth[m.key] || 0
+        const completed = completedByMonth[m.key] || 0
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+        return { month: m.label, value: pct, target: 100, total, completed }
       })
-      for (let i = 1; i < monthlyData.length; i++) {
-        const prevVal = monthlyData[i-1].value
-        monthlyData[i].target = typeof prevVal === 'number' ? prevVal : undefined
-      }
 
       const palette = [
         { class: 'bg-yinmn-blue-500', hex: '#3B82F6' },
@@ -319,6 +321,7 @@ export default function DashboardPage() {
         openRequests,
         activeEvaluations,
         completedGoals,
+        totalGoals,
         averageScore,
         recentEvaluations,
         upcomingDeadlines: deadlines,
@@ -371,8 +374,8 @@ export default function DashboardPage() {
     },
     {
       title: 'Metas',
-      value: String(data.completedGoals),
-      subtitle: 'Metas concluídas',
+      value: String(data.totalGoals),
+      subtitle: 'Total de metas',
       change: '',
       changeText: '',
       positive: true,
@@ -464,16 +467,16 @@ export default function DashboardPage() {
           <div className="p-6 min-h-[520px] flex-1">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Performance Atual</span>
-                {data.monthlyData.length > 0 && typeof (data.monthlyData[data.monthlyData.length - 1] as any).value === 'number' && (
-                  <span className="text-2xl font-roboto font-semibold text-rich-black-900">{`${Number((data.monthlyData[data.monthlyData.length - 1] as any).value).toFixed(1)}%`}</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Meta</span>
-                {data.monthlyData.length > 0 && typeof (data.monthlyData[data.monthlyData.length - 1] as any).target === 'number' && (
-                  <span className="text-xl font-roboto font-medium text-oxford-blue-600">{`${Number((data.monthlyData[data.monthlyData.length - 1] as any).target).toFixed(1)}%`}</span>
-                )}
+                <span className="text-sm font-roboto font-medium text-oxford-blue-500">Metas</span>
+                {(() => {
+                  if (data.monthlyData.length === 0) return null
+                  const last = data.monthlyData[data.monthlyData.length - 1] as any
+                  const total = typeof last.total === 'number' ? last.total : undefined
+                  if (typeof total !== 'number') return null
+                  return (
+                    <span className="text-xl font-roboto font-medium text-oxford-blue-600">{total}</span>
+                  )
+                })()}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-roboto font-medium text-emerald-600">Atingimento</span>
@@ -513,7 +516,7 @@ export default function DashboardPage() {
                           style={{ left: `${item.target}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm font-roboto font-medium text-rich-black-900 w-8">{item.value}</span>
+                      <span className="text-sm font-roboto font-medium text-rich-black-900 w-8">{item.total}</span>
                     </div>
                   </div>
                 ))}
