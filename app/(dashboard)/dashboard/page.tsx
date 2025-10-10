@@ -190,18 +190,21 @@ export default function DashboardPage() {
         ((deptsRes.data as Array<{ id: string; name: string }> | null) || []).map(d => [d.id, d.name])
       )
 
-      const departmentBreakdown = Array.from(deptCountsMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .flatMap(([id, count], idx) => {
-          const displayName = idToName.get(id)
-          if (!displayName) return []
-          return [{
-            name: displayName,
-            value: count,
-            color: palette[idx % palette.length].class,
-            hex: palette[idx % palette.length].hex,
-          }]
-        })
+      // Primeiro, criar um mapa com todos os departamentos (incluindo os sem funcionários)
+      const allDepartments = Array.from(idToName.entries()).map(([id, name]) => ({
+        id,
+        name,
+        count: deptCountsMap.get(id) || 0
+      }))
+
+      const departmentBreakdown = allDepartments
+        .sort((a, b) => b.count - a.count)
+        .map((dept, idx) => ({
+          name: dept.name,
+          value: dept.count,
+          color: palette[idx % palette.length].class,
+          hex: palette[idx % palette.length].hex,
+        }))
 
       const { data: recentEvalsRaw } = await supabase
         .from('evaluations')
