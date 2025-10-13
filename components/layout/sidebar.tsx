@@ -297,7 +297,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
                     href={item.href}
                     className={cn(
                       "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
-                      shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3",
+                      shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2",
                       isActive 
                         ? "bg-gray-700 text-white shadow-sm" 
                         : "text-white hover:bg-gray-700 hover:text-white"
@@ -306,60 +306,60 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
                   >
                     <Icon className={cn(
                       "flex-shrink-0",
-                      shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
+                      shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
                     )} />
-                    {shouldExpand && <span className="tracking-wide">{item.title}</span>}
+                    {shouldExpand && <span className="tracking-wide text-xs">{item.title}</span>}
                   </Link>
                 </li>
               )
             })}
           </ul>
 
-          <div className="border-t border-gray-600 pt-2 mt-2">
+          <div className="border-t border-gray-600 pt-2 mt-2 flex-shrink-0">
             <div className="mb-2 space-y-1">
               <Link
                 href="/profile"
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
-                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
+                  shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2"
                 )}
                 title={!shouldExpand ? "Meu Perfil" : undefined}
               >
                 <UserCircle className={cn(
                   "flex-shrink-0",
-                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
+                  shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
                 )} />
-                {shouldExpand && <span className="tracking-wide">Meu Perfil</span>}
+                {shouldExpand && <span className="tracking-wide text-xs">Meu Perfil</span>}
               </Link>
 
               <Link
                 href="/"
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-gray-700 hover:text-white transition-all duration-300",
-                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
+                  shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2"
                 )}
                 title={!shouldExpand ? "Início" : undefined}
               >
                 <Home className={cn(
                   "flex-shrink-0",
-                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
+                  shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
                 )} />
-                {shouldExpand && <span className="tracking-wide">Início</span>}
+                {shouldExpand && <span className="tracking-wide text-xs">Início</span>}
               </Link>
 
               <button
                 onClick={handleLogout}
                 className={cn(
                   "w-full flex items-center rounded-xl text-sm font-roboto font-medium text-white hover:bg-red-600 hover:text-white transition-all duration-300",
-                  shouldExpand ? "px-4 py-3" : "justify-center px-2 py-3"
+                  shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2"
                 )}
                 title={!shouldExpand ? "Sair" : undefined}
               >
                 <LogOut className={cn(
                   "flex-shrink-0",
-                  shouldExpand ? "w-5 h-5 mr-3" : "w-5 h-5"
+                  shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
                 )} />
-                {shouldExpand && <span className="tracking-wide">Sair</span>}
+                {shouldExpand && <span className="tracking-wide text-xs">Sair</span>}
               </button>
             </div>
           </div>
