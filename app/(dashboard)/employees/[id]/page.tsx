@@ -1628,20 +1628,20 @@ export default function EmployeeProfilePage() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" onClick={() => setIsEditOpen(false)} />
           <Dialog.Content
-            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none"
+            className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none max-h-[95vh] w-[min(100vw-1rem,80rem)]"
             onPointerDownOutside={() => setIsEditOpen(false)}
             onInteractOutside={() => setIsEditOpen(false)}
             onEscapeKeyDown={() => setIsEditOpen(false)}
           >
-            <div className="w-[min(100vw-2rem,80rem)] max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-200 bg-white">
+            <div className="w-full h-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[95vh]">
+              <div className="p-6 border-b border-slate-200 bg-white flex-shrink-0">
                 <Dialog.Title className="text-lg font-semibold text-slate-900">Editar colaborador</Dialog.Title>
                 <Dialog.Description className="text-sm text-slate-600 mt-1">
                   Edite as informações do colaborador.
                 </Dialog.Description>
               </div>
               
-              <div className="border-b border-slate-200 bg-white">
+              <div className="border-b border-slate-200 bg-white flex-shrink-0">
                 <div className="lg:hidden px-4 py-2 bg-slate-50 border-b border-slate-200">
                   <div className="flex items-center justify-center text-xs font-medium text-slate-500">
                     <span className="flex items-center gap-1">
@@ -1675,7 +1675,8 @@ export default function EmployeeProfilePage() {
                 </nav>
               </div>
               
-              <div className="p-6 max-h-[60vh] overflow-y-auto bg-white">
+              <div className="flex-1 overflow-y-auto bg-white" style={{ maxHeight: 'calc(95vh - 250px)', WebkitOverflowScrolling: 'touch' }}>
+                <div className="p-6">
                 {editTab === 'pessoal' && (
                   <div className="space-y-6">
                     
@@ -2474,13 +2475,14 @@ export default function EmployeeProfilePage() {
                     </div>
                   </div>
                 )}
+                </div>
               </div>
               
-              <div className="p-6 border-t border-slate-200 bg-white flex items-center justify-end gap-2">
+              <div className="p-4 sm:p-6 border-t border-slate-200 bg-white flex items-center justify-end gap-2 flex-shrink-0 sticky bottom-0 z-10 shadow-lg backdrop-blur-sm">
                 <Dialog.Close asChild>
-                  <Button variant="ghost">Cancelar</Button>
+                  <Button variant="ghost" className="min-h-[44px] px-4">Cancelar</Button>
                 </Dialog.Close>
-                <Button variant="primary" className="!bg-[#1B263B]" disabled={saving} onClick={handleSaveEdit} type="button">
+                <Button variant="primary" className="!bg-[#1B263B] min-h-[44px] px-4" disabled={saving} onClick={handleSaveEdit} type="button">
                   {saving ? 'Salvando...' : 'Salvar'}
                 </Button>
               </div>
