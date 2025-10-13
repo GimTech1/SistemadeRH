@@ -434,44 +434,98 @@ export default function ExpensesPage() {
         {loading ? (
           <div className="py-8 text-sm text-gray-500">Carregando...</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="p-2">Data</th>
-                  <th className="p-2">Título</th>
-                  <th className="p-2">Categoria</th>
-                  <th className="p-2">Setor</th>
-                  <th className="p-2">Qtd</th>
-                  <th className="p-2 text-right">Valor Unit.</th>
-                  <th className="p-2 text-right">Total</th>
-                  <th className="p-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((e) => (
-                  <tr key={e.id} className="border-b hover:bg-gray-50/30">
-                    <td className="p-2">{new Date(e.date).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-2">{e.title}</td>
-                    <td className="p-2">{e.category || '-'}</td>
-                    <td className="p-2">{e.department?.name || '-'}</td>
-                    <td className="p-2">{e.quantity || 1}</td>
-                    <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                    <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                    <td className="p-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
-                      </span>
-                    </td>
+          <div>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b">
+                    <th className="p-2">Data</th>
+                    <th className="p-2">Título</th>
+                    <th className="p-2">Categoria</th>
+                    <th className="p-2">Setor</th>
+                    <th className="p-2">Qtd</th>
+                    <th className="p-2 text-right">Valor Unit.</th>
+                    <th className="p-2 text-right">Total</th>
+                    <th className="p-2">Status</th>
                   </tr>
-                ))}
-                {expenses.length === 0 && (
-                  <tr>
-                    <td className="p-4 text-center text-gray-500" colSpan={8}>Nenhum gasto encontrado</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {expenses.map((e) => (
+                    <tr key={e.id} className="border-b hover:bg-gray-50/30">
+                      <td className="p-2">{new Date(e.date).toLocaleDateString('pt-BR')}</td>
+                      <td className="p-2">{e.title}</td>
+                      <td className="p-2">{e.category || '-'}</td>
+                      <td className="p-2">{e.department?.name || '-'}</td>
+                      <td className="p-2">{e.quantity || 1}</td>
+                      <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                      <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {expenses.length === 0 && (
+                    <tr>
+                      <td className="p-4 text-center text-gray-500" colSpan={8}>Nenhum gasto encontrado</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {expenses.map((e) => (
+                <div key={e.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 text-sm leading-tight mb-1">{e.title}</h3>
+                      <p className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                      e.status === 'approved' 
+                        ? 'text-green-700 bg-green-50/80 border border-green-200/50' 
+                        : e.status === 'rejected'
+                        ? 'text-red-700 bg-red-50/80 border border-red-200/50'
+                        : 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
+                    }`}>
+                      {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Categoria:</span>
+                      <span className="font-medium text-gray-900">{e.category || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Setor:</span>
+                      <span className="font-medium text-gray-900">{e.department?.name || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Quantidade:</span>
+                      <span className="font-medium text-gray-900">{e.quantity || 1}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Valor Unit.:</span>
+                      <span className="font-medium text-gray-900">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm font-semibold border-t border-gray-200 pt-2">
+                      <span className="text-gray-900">Total:</span>
+                      <span className="text-blue-600">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {expenses.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Nenhum gasto encontrado</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Card>
@@ -513,81 +567,173 @@ export default function ExpensesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="p-2">Data</th>
-                <th className="p-2">Título</th>
-                <th className="p-2">Categoria</th>
-                <th className="p-2">Setor</th>
-                <th className="p-2">Qtd</th>
-                <th className="p-2 text-right">Valor Unit.</th>
-                <th className="p-2 text-right">Total</th>
-                <th className="p-2">Status</th>
-                <th className="p-2 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((e) => (
-                <tr key={e.id} className="border-b hover:bg-gray-50/30">
-                  <td className="p-2">{new Date(e.date).toLocaleDateString('pt-BR')}</td>
-                  <td className="p-2">{e.title}</td>
-                  <td className="p-2">{e.category || '-'}</td>
-                  <td className="p-2">{e.department?.name || '-'}</td>
-                  <td className="p-2">{e.quantity || 1}</td>
-                  <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                  <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                  <td className="p-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
-                    </span>
-                  </td>
-                  <td className="p-2 text-right">
-                    <div className="inline-flex gap-2">
-                      {(e.status === 'pending' || e.status === 'rejected') && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          disabled={updatingId === e.id}
-                          onClick={async () => {
-                            setUpdatingId(e.id)
-                            try {
-                              await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
-                              await loadExpenses()
-                            } finally { setUpdatingId(null) }
-                          }}
-                        >
-                          <Check className="w-4 h-4 mr-1" /> Aprovar
-                        </Button>
-                      )}
-                      {(e.status === 'pending' || e.status === 'approved') && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={updatingId === e.id}
-                          onClick={async () => {
-                            setUpdatingId(e.id)
-                            try {
-                              await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) })
-                              await loadExpenses()
-                            } finally { setUpdatingId(null) }
-                          }}
-                        >
-                          <X className="w-4 h-4 mr-1" /> Rejeitar
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+        <div>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left border-b">
+                  <th className="p-2">Data</th>
+                  <th className="p-2">Título</th>
+                  <th className="p-2">Categoria</th>
+                  <th className="p-2">Setor</th>
+                  <th className="p-2">Qtd</th>
+                  <th className="p-2 text-right">Valor Unit.</th>
+                  <th className="p-2 text-right">Total</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2 text-right">Ações</th>
                 </tr>
-              ))}
-              {expenses.length === 0 && (
-                <tr>
-                  <td className="p-4 text-center text-gray-500" colSpan={9}>Nenhum gasto encontrado</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {expenses.map((e) => (
+                  <tr key={e.id} className="border-b hover:bg-gray-50/30">
+                    <td className="p-2">{new Date(e.date).toLocaleDateString('pt-BR')}</td>
+                    <td className="p-2">{e.title}</td>
+                    <td className="p-2">{e.category || '-'}</td>
+                    <td className="p-2">{e.department?.name || '-'}</td>
+                    <td className="p-2">{e.quantity || 1}</td>
+                    <td className="p-2 text-right">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td className="p-2 text-right">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td className="p-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${e.status === 'approved' ? 'bg-green-100 text-green-700' : e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                      </span>
+                    </td>
+                    <td className="p-2 text-right">
+                      <div className="inline-flex gap-2">
+                        {(e.status === 'pending' || e.status === 'rejected') && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={updatingId === e.id}
+                            onClick={async () => {
+                              setUpdatingId(e.id)
+                              try {
+                                await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
+                                await loadExpenses()
+                              } finally { setUpdatingId(null) }
+                            }}
+                          >
+                            <Check className="w-4 h-4 mr-1" /> Aprovar
+                          </Button>
+                        )}
+                        {(e.status === 'pending' || e.status === 'approved') && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={updatingId === e.id}
+                            onClick={async () => {
+                              setUpdatingId(e.id)
+                              try {
+                                await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) })
+                                await loadExpenses()
+                              } finally { setUpdatingId(null) }
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-1" /> Rejeitar
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {expenses.length === 0 && (
+                  <tr>
+                    <td className="p-4 text-center text-gray-500" colSpan={9}>Nenhum gasto encontrado</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {expenses.map((e) => (
+              <div key={e.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-sm leading-tight mb-1">{e.title}</h3>
+                    <p className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                    e.status === 'approved' 
+                      ? 'text-green-700 bg-green-50/80 border border-green-200/50' 
+                      : e.status === 'rejected'
+                      ? 'text-red-700 bg-red-50/80 border border-red-200/50'
+                      : 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
+                  }`}>
+                    {e.status === 'approved' ? 'Aprovado' : e.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Categoria:</span>
+                    <span className="font-medium text-gray-900">{e.category || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Setor:</span>
+                    <span className="font-medium text-gray-900">{e.department?.name || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Quantidade:</span>
+                    <span className="font-medium text-gray-900">{e.quantity || 1}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Valor Unit.:</span>
+                    <span className="font-medium text-gray-900">{e.amount?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-semibold border-t border-gray-200 pt-2">
+                    <span className="text-gray-900">Total:</span>
+                    <span className="text-blue-600">{e.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </div>
+                </div>
+
+                {/* Ações Mobile */}
+                <div className="flex gap-2 pt-3 border-t border-gray-200">
+                  {(e.status === 'pending' || e.status === 'rejected') && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={updatingId === e.id}
+                      onClick={async () => {
+                        setUpdatingId(e.id)
+                        try {
+                          await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
+                          await loadExpenses()
+                        } finally { setUpdatingId(null) }
+                      }}
+                      className="flex-1"
+                    >
+                      <Check className="w-4 h-4 mr-1" /> Aprovar
+                    </Button>
+                  )}
+                  {(e.status === 'pending' || e.status === 'approved') && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={updatingId === e.id}
+                      onClick={async () => {
+                        setUpdatingId(e.id)
+                        try {
+                          await fetch(`/api/expenses/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) })
+                          await loadExpenses()
+                        } finally { setUpdatingId(null) }
+                      }}
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-1" /> Rejeitar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {expenses.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum gasto encontrado</p>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
       )}
