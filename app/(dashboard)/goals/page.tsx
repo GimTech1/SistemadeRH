@@ -826,8 +826,8 @@ export default function GoalsPage() {
 
       {showNewGoalModal && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowNewGoalModal(false)}>
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-platinum-200" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-4 border-b border-platinum-200">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-platinum-200 max-h-[75vh] sm:max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-3 border-b border-platinum-200 flex-shrink-0">
                 <h3 className="text-lg font-roboto font-medium text-rich-black-900">Nova Meta</h3>
                 <button className="p-2 rounded-lg hover:bg-platinum-100" onClick={() => setShowNewGoalModal(false)}>
                   <X className="w-4 h-4 text-oxford-blue-600" />
@@ -907,7 +907,7 @@ export default function GoalsPage() {
                   toast.success('Meta criada')
                 }}
               >
-                <div className="p-4 space-y-3">
+                <div className="p-3 space-y-3 flex-1 overflow-y-auto mobile-scroll-fix" style={{ maxHeight: 'calc(75vh - 100px)' }}>
                   <div>
                     <label className="text-sm font-roboto font-medium text-rich-black-900">Título</label>
                     <input value={newGoal.title} onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })} className="mt-1 w-full bg-white border border-platinum-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500" />
@@ -973,9 +973,9 @@ export default function GoalsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="p-4 border-t border-platinum-200 flex items-center justify-end gap-2">
-                  <button type="button" onClick={() => setShowNewGoalModal(false)} className="px-4 py-2 rounded-xl bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200 text-sm">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 rounded-xl text-white text-sm" style={{ backgroundColor: '#1B263B' }}>Criar Meta</button>
+                <div className="p-3 border-t border-platinum-200 flex items-center justify-end gap-2 flex-shrink-0 sticky bottom-0 bg-white shadow-lg">
+                  <button type="button" onClick={() => setShowNewGoalModal(false)} className="px-4 py-2 rounded-xl bg-platinum-100 text-oxford-blue-700 hover:bg-platinum-200 text-sm min-h-[44px]">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 rounded-xl text-white text-sm min-h-[44px]" style={{ backgroundColor: '#1B263B' }}>Criar Meta</button>
                 </div>
               </form>
             </div>
