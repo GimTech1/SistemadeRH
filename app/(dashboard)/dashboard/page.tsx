@@ -674,7 +674,8 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="p-6">
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-xs font-roboto font-light text-oxford-blue-500 uppercase tracking-wider">
@@ -692,9 +693,9 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center">
                             <Clock className="w-5 h-5 text-amber-600" />
-                    </div>
+                          </div>
                           <span className="font-roboto font-medium text-rich-black-900">{deadline.title}</span>
-                  </div>
+                        </div>
                       </td>
                       <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.date}</td>
                       <td className="py-4">
@@ -702,8 +703,8 @@ export default function DashboardPage() {
                           deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
                           deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
                           'bg-purple-50 text-purple-700 border border-purple-200/50'
-                  }`}>
-                    {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
+                        }`}>
+                          {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
                         </span>
                       </td>
                       <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.daysLeft} dias</td>
@@ -716,12 +717,56 @@ export default function DashboardPage() {
                             : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
                         }`}>
                           {deadline.status}
-                  </span>
+                        </span>
                       </td>
                     </tr>
-              ))}
+                  ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {data.upcomingDeadlines.map((deadline: any, index: number) => (
+                <div key={index} className="bg-platinum-50/30 rounded-lg p-4 border border-platinum-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-roboto font-medium text-rich-black-900 text-sm leading-tight">{deadline.title}</h4>
+                        <p className="text-xs font-roboto font-light text-oxford-blue-500 mt-1">{deadline.date}</p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center text-xs font-roboto font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                      deadline.status === 'Urgente' 
+                        ? 'text-red-700 bg-red-50/80 border border-red-200/50' 
+                        : deadline.status === 'Em andamento'
+                        ? 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
+                        : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
+                    }`}>
+                      {deadline.status}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-roboto font-medium ${
+                        deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
+                        deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
+                        'bg-purple-50 text-purple-700 border border-purple-200/50'
+                      }`}>
+                        {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-roboto font-medium text-oxford-blue-600">{deadline.daysLeft} dias</span>
+                      <p className="text-xs font-roboto font-light text-oxford-blue-500">restantes</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
