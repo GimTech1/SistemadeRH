@@ -557,7 +557,8 @@ export default function InternalFeedbackPage() {
           {/* Visualização de colegas */}
           {viewMode === 'table' ? (
             <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 overflow-hidden">
-              <div className="overflow-x-auto">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-platinum-50 border-b border-platinum-200">
                     <tr className="text-left text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">
@@ -624,6 +625,64 @@ export default function InternalFeedbackPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4 p-4">
+                {filteredColleagues.map((colleague) => (
+                  <div key={colleague.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yinmn-blue-500 to-yinmn-blue-600 flex items-center justify-center text-sm font-roboto font-semibold text-white">
+                          {colleague.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-roboto font-medium text-rich-black-900 text-sm leading-tight mb-1">{colleague.name}</h3>
+                          <p className="text-xs text-gray-500">{colleague.position}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span className="font-roboto font-semibold text-rich-black-900 text-sm">{colleague.starsReceived}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Departamento:</span>
+                        <span className="font-medium text-gray-900">{colleague.department}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Última estrela:</span>
+                        <span className="font-medium text-gray-900">
+                          {colleague.recentStars.length > 0 
+                            ? new Date(colleague.recentStars[0].date).toLocaleDateString('pt-BR')
+                            : 'Nenhuma'
+                          }
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Botão de ação */}
+                    <button
+                      onClick={() => handleGiveStar(colleague)}
+                      disabled={userStars.available <= 0}
+                      className={`w-full py-2 px-4 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                        userStars.available > 0
+                          ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                          : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Star className="h-4 w-4" />
+                      Dar Estrela
+                    </button>
+                  </div>
+                ))}
+                {filteredColleagues.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Nenhum colega encontrado</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
