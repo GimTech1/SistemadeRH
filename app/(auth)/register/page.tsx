@@ -150,7 +150,7 @@ export default function RegisterPage() {
                 </div>
               </div>
               
-              <div>
+              {/* <div>
                 <label htmlFor="position" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Cargo
                 </label>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
                     disabled={loading}
                   />
                 </div>
-              </div>
+              </div> */}
               
               <div>
                 <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
