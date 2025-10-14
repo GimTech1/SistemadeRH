@@ -197,13 +197,31 @@ export default function DashboardPage() {
       const monthlyData = (fromBackend.monthlyData || [])
 
       const palette = [
-        { class: 'bg-yinmn-blue-500', hex: '#3B82F6' },
-        { class: 'bg-silver-lake-blue-500', hex: '#06B6D4' },
+        { class: 'bg-blue-500', hex: '#3B82F6' },
         { class: 'bg-emerald-500', hex: '#10B981' },
         { class: 'bg-amber-500', hex: '#F59E0B' },
         { class: 'bg-purple-500', hex: '#8B5CF6' },
         { class: 'bg-rose-500', hex: '#F43F5E' },
         { class: 'bg-indigo-500', hex: '#6366F1' },
+        { class: 'bg-teal-500', hex: '#14B8A6' },
+        { class: 'bg-orange-500', hex: '#F97316' },
+        { class: 'bg-pink-500', hex: '#EC4899' },
+        { class: 'bg-lime-500', hex: '#84CC16' },
+        { class: 'bg-sky-500', hex: '#0EA5E9' },
+        { class: 'bg-red-500', hex: '#EF4444' },
+        { class: 'bg-green-500', hex: '#22C55E' },
+        { class: 'bg-yellow-500', hex: '#EAB308' },
+        { class: 'bg-violet-500', hex: '#8B5CF6' },
+        { class: 'bg-cyan-500', hex: '#06B6D4' },
+        { class: 'bg-gray-500', hex: '#6B7280' },
+        { class: 'bg-slate-500', hex: '#64748B' },
+        { class: 'bg-stone-500', hex: '#78716C' },
+        { class: 'bg-zinc-500', hex: '#71717A' },
+        { class: 'bg-neutral-500', hex: '#737373' },
+        { class: 'bg-fuchsia-500', hex: '#D946EF' },
+        { class: 'bg-red-600', hex: '#DC2626' },
+        { class: 'bg-blue-600', hex: '#2563EB' },
+        { class: 'bg-green-600', hex: '#16A34A' },
       ]
 
       const deptCountsMap = new Map<string, number>()
