@@ -48,6 +48,15 @@ export default function EmployeesPage() {
   const supabase = createClient()
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // ID específico que deve ter bypass para ver os botões
+  const BYPASS_USER_ID = 'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3'
+
+  // Função para verificar se o usuário pode ver os botões de ação
+  const canViewActionButtons = () => {
+    return userRole === 'admin' || userId === BYPASS_USER_ID
+  }
 
   useEffect(() => {
     loadEmployees()
@@ -55,6 +64,10 @@ export default function EmployeesPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+        
+        // Armazenar o ID do usuário para verificação de bypass
+        setUserId(user.id)
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -484,7 +497,7 @@ export default function EmployeesPage() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
-                      {userRole === 'admin' && (
+                      {canViewActionButtons() && (
                         <div className="flex items-center justify-center gap-1 sm:gap-2">
                           <Link href={`/employees/${employee.id}`}>
                             <button className="p-1.5 sm:p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
@@ -536,7 +549,7 @@ export default function EmployeesPage() {
                     <p className="text-sm font-roboto font-light text-oxford-blue-600">{employee.position}</p>
                   </div>
                 </div>
-                {userRole === 'admin' && (
+                {canViewActionButtons() && (
                   <div className="flex items-center gap-2">
                     <Link href={`/employees/${employee.id}`}>
                       <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
