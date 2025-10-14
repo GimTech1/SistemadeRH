@@ -472,15 +472,7 @@ export default function MeetingsPage() {
               <div className="p-6 border-b border-platinum-200 bg-white flex items-center justify-between gap-4">
                 <div>
                   <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">Avaliação da Reunião</Dialog.Title>
-                  <Dialog.Description className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
-                    Atribua notas de 1 a 5 para cada métrica e adicione observações
-                  </Dialog.Description>
                 </div>
-                {liveAvgQuality !== null && (
-                  <div className="px-3 py-1 rounded-lg bg-yinmn-blue-50 text-yinmn-blue-700 text-sm font-roboto font-medium whitespace-nowrap">
-                    Média: {liveAvgQuality}
-                  </div>
-                )}
               </div>
               <div className="p-6 space-y-6">
                 <div>
