@@ -32,7 +32,7 @@ interface Employee {
   score: number
   trend: 'up' | 'down' | 'stable'
   evaluations: number
-  feedbacks: number
+  stars: number
   avatar: string
   avatarUrl?: string
   isActive: boolean
@@ -81,7 +81,7 @@ export default function EmployeesPage() {
       // Pré-carregar contagens de avaliações e feedbacks para todos os colaboradores em lote
       const employeeIds = (data || []).map((e: any) => e.id)
       let evaluationsCountByEmployee: Record<string, number> = {}
-      let feedbacksCountByEmployee: Record<string, number> = {}
+      let starsCountByEmployee: Record<string, number> = {}
 
       if (employeeIds.length > 0) {
         // Contagem de avaliações por employee_id
@@ -99,17 +99,17 @@ export default function EmployeesPage() {
           }
         }
 
-        // Contagem de feedbacks externos por employee_id
-        const { data: fbRows } = await (supabase as any)
-          .from('external_feedback')
-          .select('employee_id')
-          .in('employee_id', employeeIds)
+        // Contagem de estrelas recebidas por recipient_id
+        const { data: starRows } = await (supabase as any)
+          .from('user_stars')
+          .select('recipient_id')
+          .in('recipient_id', employeeIds)
 
-        if (Array.isArray(fbRows)) {
-          for (const row of fbRows as Array<{ employee_id: string }>) {
-            const key = (row as any).employee_id
+        if (Array.isArray(starRows)) {
+          for (const row of starRows as Array<{ recipient_id: string }>) {
+            const key = (row as any).recipient_id
             if (!key) continue
-            feedbacksCountByEmployee[key] = (feedbacksCountByEmployee[key] || 0) + 1
+            starsCountByEmployee[key] = (starsCountByEmployee[key] || 0) + 1
           }
         }
       }
@@ -142,7 +142,7 @@ export default function EmployeesPage() {
           score: 0,
           trend: 'stable',
           evaluations: evaluationsCountByEmployee[e.id] || 0,
-          feedbacks: feedbacksCountByEmployee[e.id] || 0,
+          stars: starsCountByEmployee[e.id] || 0,
           avatar: (e.full_name || e.email || '?')
             .split(' ')
             .map((n: string) => n[0])
@@ -535,10 +535,10 @@ export default function EmployeesPage() {
                   </div>
                   <div className="bg-gradient-to-br from-platinum-50 to-platinum-100 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">Feedbacks</span>
-                      <Users className="h-4 w-4 text-oxford-blue-400" />
+                      <span className="text-xs font-roboto font-medium text-oxford-blue-500 uppercase tracking-wider">Estrelas</span>
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                     </div>
-                    <p className="text-2xl font-roboto font-semibold text-rich-black-900">{employee.feedbacks}</p>
+                    <p className="text-2xl font-roboto font-semibold text-rich-black-900">{employee.stars}</p>
                   </div>
                 </div>
               </div>
