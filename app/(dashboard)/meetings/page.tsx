@@ -45,6 +45,7 @@ export default function MeetingsPage() {
   const [meetingsByDept, setMeetingsByDept] = useState<Record<string, MeetingRow | undefined>>({})
   const [savingId, setSavingId] = useState<string | null>(null)
   const [auditOpenFor, setAuditOpenFor] = useState<string | null>(null)
+  const [auditDepartmentName, setAuditDepartmentName] = useState<string>('')
   const [auditNotes, setAuditNotes] = useState<string>('')
   const [auditQuality, setAuditQuality] = useState<number>(3)
   const [auditMetrics, setAuditMetrics] = useState<Record<string, any>>({
@@ -281,7 +282,9 @@ export default function MeetingsPage() {
 
   const openAudit = (departmentId: string) => {
     const current = meetingsByDept[departmentId]
+    const department = departments.find(d => d.id === departmentId)
     setAuditOpenFor(departmentId)
+    setAuditDepartmentName(department?.name || '')
     setAuditNotes(current?.notes || '')
     setAuditQuality(current?.quality ?? 3)
     setAuditMetrics({
@@ -471,7 +474,9 @@ export default function MeetingsPage() {
             <div className="w-[min(100vw-2rem,40rem)] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-platinum-200">
               <div className="p-6 border-b border-platinum-200 bg-white flex items-center justify-between gap-4">
                 <div>
-                  <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">Avaliação da Reunião</Dialog.Title>
+                  <Dialog.Title className="text-lg font-roboto font-semibold text-rich-black-900">
+                    Avaliar reunião - {auditDepartmentName}
+                  </Dialog.Title>
                 </div>
               </div>
               <div className="p-6 space-y-6">
