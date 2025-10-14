@@ -78,6 +78,42 @@ export default function EmployeesPage() {
         toast.error('Erro ao carregar funcionários: ' + error.message)
         throw error
       }
+      // Pré-carregar contagens de avaliações e feedbacks para todos os colaboradores em lote
+      const employeeIds = (data || []).map((e: any) => e.id)
+      let evaluationsCountByEmployee: Record<string, number> = {}
+      let feedbacksCountByEmployee: Record<string, number> = {}
+
+      if (employeeIds.length > 0) {
+        // Contagem de avaliações por employee_id
+        const { data: evalRows } = await (supabase as any)
+          .from('evaluations')
+          .select('employee_id', { count: 'exact', head: false })
+          .in('employee_id', employeeIds)
+
+        // Supabase não retorna count por grupo diretamente; agregamos manualmente
+        if (Array.isArray(evalRows)) {
+          for (const row of evalRows as Array<{ employee_id: string }>) {
+            const key = (row as any).employee_id
+            if (!key) continue
+            evaluationsCountByEmployee[key] = (evaluationsCountByEmployee[key] || 0) + 1
+          }
+        }
+
+        // Contagem de feedbacks externos por employee_id
+        const { data: fbRows } = await (supabase as any)
+          .from('external_feedback')
+          .select('employee_id')
+          .in('employee_id', employeeIds)
+
+        if (Array.isArray(fbRows)) {
+          for (const row of fbRows as Array<{ employee_id: string }>) {
+            const key = (row as any).employee_id
+            if (!key) continue
+            feedbacksCountByEmployee[key] = (feedbacksCountByEmployee[key] || 0) + 1
+          }
+        }
+      }
+
       const mapped: Employee[] = await Promise.all((data || []).map(async (e: any) => {
         let departmentName = '—'
         
@@ -105,8 +141,8 @@ export default function EmployeesPage() {
           department: departmentName,
           score: 0,
           trend: 'stable',
-          evaluations: 0,
-          feedbacks: 0,
+          evaluations: evaluationsCountByEmployee[e.id] || 0,
+          feedbacks: feedbacksCountByEmployee[e.id] || 0,
           avatar: (e.full_name || e.email || '?')
             .split(' ')
             .map((n: string) => n[0])
