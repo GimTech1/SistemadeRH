@@ -55,7 +55,33 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all')
+  const [hoveredSegment, setHoveredSegment] = useState<number | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [showTooltip, setShowTooltip] = useState(false)
   
+  // Funções para lidar com hover no gráfico de donut
+  const handleMouseEnter = (index: number, event: React.MouseEvent) => {
+    setHoveredSegment(index)
+    setShowTooltip(true)
+    const rect = event.currentTarget.getBoundingClientRect()
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    })
+  }
+
+  const handleMouseLeave = () => {
+    setHoveredSegment(null)
+    setShowTooltip(false)
+  }
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    })
+  }
 
   function exportDeadlinesAsCSV() {
     const headers = ['Tarefa', 'Data', 'Tipo', 'Dias Restantes', 'Status']
@@ -548,19 +574,78 @@ export default function DashboardPage() {
               {(() => {
                 const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
                 if (total === 0) return null
-                let start = 0
-                const stops: string[] = []
-                data.departmentBreakdown.forEach((d: any) => {
-                  const pct = ((d.value || 0) / total) * 100
-                  const end = start + pct
-                  const color = d.hex || '#3B82F6'
-                  stops.push(`${color} ${start.toFixed(2)}% ${end.toFixed(2)}%`)
-                  start = end
-                })
-                const bg = `conic-gradient(${stops.join(', ')})`
+                
+                let currentAngle = 0
+                const radius = 96 // 192px / 2
+                const innerRadius = 53.7 // Aumentei o raio interno para deixar o anel mais fino
+                
                 return (
-                  <div className="w-full h-full rounded-full relative overflow-hidden" style={{ background: bg }}>
-                    <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+                  <div className="relative w-full h-full">
+                    <svg width="192" height="192" className="w-full h-full">
+                      <defs>
+                        {data.departmentBreakdown.map((dept: any, index: number) => (
+                          <filter key={index} id={`glow-${index}`}>
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge> 
+                              <feMergeNode in="coloredBlur"/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
+                        ))}
+                      </defs>
+                      
+                      {data.departmentBreakdown.map((dept: any, index: number) => {
+                        const percentage = (dept.value || 0) / total
+                        const angle = percentage * 360
+                        const endAngle = currentAngle + angle
+                        
+                        const startAngleRad = (currentAngle - 90) * (Math.PI / 180)
+                        const endAngleRad = (endAngle - 90) * (Math.PI / 180)
+                        
+                        const x1 = 96 + radius * Math.cos(startAngleRad)
+                        const y1 = 96 + radius * Math.sin(startAngleRad)
+                        const x2 = 96 + radius * Math.cos(endAngleRad)
+                        const y2 = 96 + radius * Math.sin(endAngleRad)
+                        
+                        const innerX1 = 96 + innerRadius * Math.cos(startAngleRad)
+                        const innerY1 = 96 + innerRadius * Math.sin(startAngleRad)
+                        const innerX2 = 96 + innerRadius * Math.cos(endAngleRad)
+                        const innerY2 = 96 + innerRadius * Math.sin(endAngleRad)
+                        
+                        const largeArcFlag = angle > 180 ? 1 : 0
+                        
+                        const pathData = [
+                          `M ${x1} ${y1}`,
+                          `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                          `L ${innerX2} ${innerY2}`,
+                          `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerX1} ${innerY1}`,
+                          'Z'
+                        ].join(' ')
+                        
+                        currentAngle = endAngle
+                        
+                        return (
+                          <path
+                            key={index}
+                            d={pathData}
+                            fill={dept.hex || '#3B82F6'}
+                            stroke="#ffffff"
+                            strokeWidth="1"
+                            className="cursor-pointer transition-all duration-200 hover:opacity-80"
+                            style={{
+                              filter: hoveredSegment === index ? `url(#glow-${index})` : 'none',
+                              transform: hoveredSegment === index ? 'scale(1.05)' : 'scale(1)',
+                              transformOrigin: '96px 96px'
+                            }}
+                            onMouseEnter={(e) => handleMouseEnter(index, e)}
+                            onMouseLeave={handleMouseLeave}
+                            onMouseMove={handleMouseMove}
+                          />
+                        )
+                      })}
+                    </svg>
+                    
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="text-center">
                         <div className="text-2xl font-roboto font-semibold text-rich-black-900">{data.totalEmployees}</div>
                         <div className="text-xs font-roboto font-medium text-oxford-blue-500">Total</div>
@@ -570,6 +655,36 @@ export default function DashboardPage() {
                 )
               })()}
             </div>
+            
+            {/* Tooltip */}
+            {showTooltip && hoveredSegment !== null && (
+              <div 
+                className="fixed z-50 bg-rich-black-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-roboto font-medium pointer-events-none"
+                style={{
+                  left: tooltipPosition.x,
+                  top: tooltipPosition.y,
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: data.departmentBreakdown[hoveredSegment]?.hex || '#3B82F6' }}
+                  ></div>
+                  <span>{data.departmentBreakdown[hoveredSegment]?.name}</span>
+                  <span className="text-oxford-blue-300">
+                    ({data.departmentBreakdown[hoveredSegment]?.value} funcionários)
+                  </span>
+                </div>
+                <div className="text-xs text-oxford-blue-300 mt-1">
+                  {(() => {
+                    const total = data.departmentBreakdown.reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                    const pct = total > 0 ? Math.round(((data.departmentBreakdown[hoveredSegment]?.value || 0) / total) * 100) : 0
+                    return `${pct}% do total`
+                  })()}
+                </div>
+              </div>
+            )}
             
             <div className="space-y-3">
               {(() => {
