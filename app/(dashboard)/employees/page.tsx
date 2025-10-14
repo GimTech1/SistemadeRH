@@ -81,21 +81,41 @@ export default function EmployeesPage() {
       // Pré-carregar contagens de avaliações e feedbacks para todos os colaboradores em lote
       const employeeIds = (data || []).map((e: any) => e.id)
       let evaluationsCountByEmployee: Record<string, number> = {}
+      let scoreByEmployee: Record<string, number> = {}
       let starsCountByEmployee: Record<string, number> = {}
 
       if (employeeIds.length > 0) {
         // Contagem de avaliações por employee_id
         const { data: evalRows } = await (supabase as any)
           .from('evaluations')
-          .select('employee_id', { count: 'exact', head: false })
+          .select('employee_id, overall_score, status')
           .in('employee_id', employeeIds)
 
         // Supabase não retorna count por grupo diretamente; agregamos manualmente
         if (Array.isArray(evalRows)) {
-          for (const row of evalRows as Array<{ employee_id: string }>) {
+          const sumByEmployee: Record<string, number> = {}
+          const completedCountByEmployee: Record<string, number> = {}
+          for (const row of evalRows as Array<{ employee_id: string; overall_score: number | null; status: string }>) {
             const key = (row as any).employee_id
             if (!key) continue
+            // Contagem total de avaliações (qualquer status)
             evaluationsCountByEmployee[key] = (evaluationsCountByEmployee[key] || 0) + 1
+            // Média de performance apenas para avaliações concluídas/revisadas
+            const status = (row as any).status
+            const score = (row as any).overall_score
+            const isCompleted = status === 'completed' || status === 'reviewed'
+            if (isCompleted && typeof score === 'number') {
+              sumByEmployee[key] = (sumByEmployee[key] || 0) + score
+              completedCountByEmployee[key] = (completedCountByEmployee[key] || 0) + 1
+            }
+          }
+          for (const empId of Object.keys(sumByEmployee)) {
+            const count = completedCountByEmployee[empId] || 0
+            if (count > 0) {
+              const avg = sumByEmployee[empId] / count
+              // 1 casa decimal como string e volta para número
+              scoreByEmployee[empId] = parseFloat(avg.toFixed(1))
+            }
           }
         }
 
@@ -139,7 +159,7 @@ export default function EmployeesPage() {
           email: e.email || '',
           position: e.position || '',
           department: departmentName,
-          score: 0,
+          score: scoreByEmployee[e.id] || 0,
           trend: 'stable',
           evaluations: evaluationsCountByEmployee[e.id] || 0,
           stars: starsCountByEmployee[e.id] || 0,
