@@ -82,20 +82,30 @@ export default function EmployeesPage() {
       const employeeIds = (data || []).map((e: any) => e.id)
       let evaluationsCountByEmployee: Record<string, number> = {}
       let scoreByEmployee: Record<string, number> = {}
+      let trendByEmployee: Record<string, 'up' | 'down' | 'stable'> = {}
       let starsCountByEmployee: Record<string, number> = {}
 
       if (employeeIds.length > 0) {
         // Contagem de avaliações por employee_id
         const { data: evalRows } = await (supabase as any)
           .from('evaluations')
-          .select('employee_id, overall_score, status')
+          .select('employee_id, overall_score, status, created_at, submitted_at')
           .in('employee_id', employeeIds)
 
         // Supabase não retorna count por grupo diretamente; agregamos manualmente
         if (Array.isArray(evalRows)) {
           const sumByEmployee: Record<string, number> = {}
           const completedCountByEmployee: Record<string, number> = {}
-          for (const row of evalRows as Array<{ employee_id: string; overall_score: number | null; status: string }>) {
+          // Acúmulos para janelas de 90 dias (tendência)
+          const now = new Date()
+          const last90Start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+          const prev90Start = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+          const lastSumByEmployee: Record<string, number> = {}
+          const lastCountByEmployee: Record<string, number> = {}
+          const prevSumByEmployee: Record<string, number> = {}
+          const prevCountByEmployee: Record<string, number> = {}
+
+          for (const row of evalRows as Array<{ employee_id: string; overall_score: number | null; status: string; created_at?: string; submitted_at?: string }>) {
             const key = (row as any).employee_id
             if (!key) continue
             // Contagem total de avaliações (qualquer status)
@@ -107,6 +117,19 @@ export default function EmployeesPage() {
             if (isCompleted && typeof score === 'number') {
               sumByEmployee[key] = (sumByEmployee[key] || 0) + score
               completedCountByEmployee[key] = (completedCountByEmployee[key] || 0) + 1
+
+              // Separar por janelas temporais para tendência
+              const dateStr = (row as any).submitted_at || (row as any).created_at
+              const d = dateStr ? new Date(dateStr) : null
+              if (d) {
+                if (d >= last90Start && d <= now) {
+                  lastSumByEmployee[key] = (lastSumByEmployee[key] || 0) + score
+                  lastCountByEmployee[key] = (lastCountByEmployee[key] || 0) + 1
+                } else if (d >= prev90Start && d < last90Start) {
+                  prevSumByEmployee[key] = (prevSumByEmployee[key] || 0) + score
+                  prevCountByEmployee[key] = (prevCountByEmployee[key] || 0) + 1
+                }
+              }
             }
           }
           for (const empId of Object.keys(sumByEmployee)) {
@@ -115,6 +138,22 @@ export default function EmployeesPage() {
               const avg = sumByEmployee[empId] / count
               // 1 casa decimal como string e volta para número
               scoreByEmployee[empId] = parseFloat(avg.toFixed(1))
+            }
+          }
+
+          // Definir tendência com base nas janelas (limiar 0.5)
+          for (const empId of employeeIds) {
+            const lastCount = lastCountByEmployee[empId] || 0
+            const prevCount = prevCountByEmployee[empId] || 0
+            if (lastCount > 0 && prevCount > 0) {
+              const lastAvg = lastSumByEmployee[empId] / lastCount
+              const prevAvg = prevSumByEmployee[empId] / prevCount
+              const diff = lastAvg - prevAvg
+              if (diff >= 0.5) trendByEmployee[empId] = 'up'
+              else if (diff <= -0.5) trendByEmployee[empId] = 'down'
+              else trendByEmployee[empId] = 'stable'
+            } else {
+              trendByEmployee[empId] = 'stable'
             }
           }
         }
@@ -160,7 +199,7 @@ export default function EmployeesPage() {
           position: e.position || '',
           department: departmentName,
           score: scoreByEmployee[e.id] || 0,
-          trend: 'stable',
+          trend: trendByEmployee[e.id] || 'stable',
           evaluations: evaluationsCountByEmployee[e.id] || 0,
           stars: starsCountByEmployee[e.id] || 0,
           avatar: (e.full_name || e.email || '?')
