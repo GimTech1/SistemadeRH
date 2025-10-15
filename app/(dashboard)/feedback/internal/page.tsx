@@ -328,7 +328,11 @@ export default function InternalFeedbackPage() {
     totalColleagues: colleagues.length,
     totalStars: colleagues.reduce((acc, c) => acc + c.starsReceived, 0),
     averageStars: colleagues.reduce((acc, c) => acc + c.starsReceived, 0) / colleagues.length || 0,
-    topPerformer: colleagues.sort((a, b) => b.starsReceived - a.starsReceived)[0],
+    topPerformer: (() => {
+      if (colleagues.length === 0) return undefined
+      const top = [...colleagues].sort((a, b) => b.starsReceived - a.starsReceived)[0]
+      return top && top.starsReceived > 0 ? top : undefined
+    })(),
   }
 
   if (loading) {
@@ -419,8 +423,17 @@ export default function InternalFeedbackPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Top Performer</p>
-              <p className="text-2xl font-roboto font-semibold text-rich-black-900">{stats.topPerformer?.name || 'N/A'}</p>
-              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">{stats.topPerformer?.starsReceived || 0} estrelas</p>
+              {stats.topPerformer ? (
+                <>
+                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">{stats.topPerformer.name}</p>
+                  <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">{stats.topPerformer.starsReceived} estrelas</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">—</p>
+                  <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">Sem estrelas registradas</p>
+                </>
+              )}
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
               <Award className="w-6 h-6 text-[#778DA9]" />
