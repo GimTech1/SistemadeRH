@@ -1,10 +1,11 @@
+
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, User, Lock, Mail, Building, Eye, EyeOff } from 'lucide-react'
+import { Loader2, User, Lock, Mail, Building, Eye, EyeOff, ChevronDown } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import type { Database } from '@/lib/supabase/database.types'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -17,11 +18,36 @@ export default function RegisterPage() {
     confirmPassword: '',
     fullName: '',
     position: '',
+    departmentId: '',
   })
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([])
+  const [departmentsLoading, setDepartmentsLoading] = useState<boolean>(false)
+  const [departmentsError, setDepartmentsError] = useState<string>('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const supabase: SupabaseClient<Database> = createClient()
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      setDepartmentsLoading(true)
+      setDepartmentsError('')
+      try {
+        const res = await fetch('/api/departments')
+        if (!res.ok) {
+          setDepartmentsError('Não foi possível carregar os departamentos')
+          return
+        }
+        const json = await res.json()
+        setDepartments(Array.isArray(json.departments) ? json.departments : [])
+      } catch (err) {
+        setDepartmentsError('Erro ao carregar os departamentos')
+      } finally {
+        setDepartmentsLoading(false)
+      }
+    }
+    loadDepartments()
+  }, [])
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
@@ -56,10 +82,25 @@ export default function RegisterPage() {
           full_name: formData.fullName,
           position: formData.position,
           role: 'employee',
+          department_id: formData.departmentId || null,
         }
         const { error: profileError } = await (supabase.from('profiles') as any)
           .insert([newProfile])
-        if (profileError) {
+
+        // Sempre garantir persistência via endpoint server-side (mantém metadados e assegura BD)
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              email: formData.email,
+              fullName: formData.fullName,
+              position: formData.position,
+              departmentId: formData.departmentId || null,
+            })
+          })
+        } catch (e) {
         }
         toast.success('Conta criada com sucesso! Verifique seu email.')
         router.push('/login')
@@ -114,7 +155,7 @@ export default function RegisterPage() {
                 <label htmlFor="fullName" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Nome Completo
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
                   <input
                     id="fullName"
@@ -170,6 +211,32 @@ export default function RegisterPage() {
                 </div>
               </div> 
               
+              <div>
+                <label htmlFor="departmentId" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Setor/Departamento
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400" />
+                  <select
+                    id="departmentId"
+                    name="departmentId"
+                    value={formData.departmentId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                    className="no-native-select-arrow w-full pl-10 pr-10 py-3 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent font-roboto font-light text-base appearance-none"
+                    disabled={loading || departmentsLoading || !!departmentsError}
+                    required
+                  >
+                    <option value="" disabled>
+                      {departmentsLoading ? 'Carregando departamentos...' : (departmentsError ? 'Erro ao carregar departamentos' : 'Selecione um departamento')}
+                    </option>
+                    {!departmentsLoading && !departmentsError && departments.map(dep => (
+                      <option key={dep.id} value={dep.id}>{dep.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-400 transition-opacity group-hover:opacity-0 group-focus-within:opacity-0" />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="password" className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
                   Senha
