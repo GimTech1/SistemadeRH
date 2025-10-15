@@ -86,21 +86,21 @@ export default function RegisterPage() {
         }
         const { error: profileError } = await (supabase.from('profiles') as any)
           .insert([newProfile])
-        if (profileError) {
-          try {
-            await fetch('/api/users', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: authData.user.id,
-                email: formData.email,
-                fullName: formData.fullName,
-                position: formData.position,
-                departmentId: formData.departmentId || null,
-              })
+
+        // Sempre garantir persistência via endpoint server-side (mantém metadados e assegura BD)
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              email: formData.email,
+              fullName: formData.fullName,
+              position: formData.position,
+              departmentId: formData.departmentId || null,
             })
-          } catch (e) {
-          }
+          })
+        } catch (e) {
         }
         toast.success('Conta criada com sucesso! Verifique seu email.')
         router.push('/login')
