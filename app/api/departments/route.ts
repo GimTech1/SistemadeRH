@@ -3,6 +3,11 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 
+// Garantir que não haja cache em produção
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const runtime = 'nodejs'
+
 export async function GET() {
   try {
     // Priorizar o uso da credencial de serviço em produção para evitar problemas de RLS/sessão
@@ -23,7 +28,18 @@ export async function GET() {
         )
       }
 
-      return NextResponse.json({ departments: data ?? [] }, { status: 200 })
+      const count = (data ?? []).length
+      return new NextResponse(
+        JSON.stringify({ departments: data ?? [] }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, max-age=0',
+            'X-Departments-Count': String(count),
+          },
+        }
+      )
     }
 
     // Fallback para cliente com credencial anônima e cookies (dev/local)
@@ -40,7 +56,18 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ departments: data ?? [] }, { status: 200 })
+    const count = (data ?? []).length
+    return new NextResponse(
+      JSON.stringify({ departments: data ?? [] }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, max-age=0',
+          'X-Departments-Count': String(count),
+        },
+      }
+    )
   } catch (error) {
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
