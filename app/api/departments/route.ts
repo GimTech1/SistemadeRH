@@ -5,25 +5,33 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export async function GET() {
   try {
-    const supabase = await createServerClient()
-    
-    let { data: departments, error } = await supabase
-      .from('departments')
-      .select('id, name, description, manager_id, parent_department_id')
-      .order('name', { ascending: true })
-
-    if ((error || !departments || departments.length === 0) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    // Priorizar o uso da credencial de serviço em produção para evitar problemas de RLS/sessão
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const admin = createAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       ) as any
-      const res = await admin
+      const { data, error } = await admin
         .from('departments')
         .select('id, name, description, manager_id, parent_department_id')
         .order('name', { ascending: true })
-      departments = res.data as any
-      error = res.error as any
+
+      if (error) {
+        return NextResponse.json(
+          { error: 'Erro ao buscar departamentos' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({ departments: data ?? [] }, { status: 200 })
     }
+
+    // Fallback para cliente com credencial anônima e cookies (dev/local)
+    const supabase = await createServerClient()
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name, description, manager_id, parent_department_id')
+      .order('name', { ascending: true })
 
     if (error) {
       return NextResponse.json(
@@ -32,7 +40,7 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ departments }, { status: 200 })
+    return NextResponse.json({ departments: data ?? [] }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
