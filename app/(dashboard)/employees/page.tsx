@@ -49,6 +49,10 @@ export default function EmployeesPage() {
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [userId, setUserId] = useState<string | null>(null)
+  const [isInviteOpen, setIsInviteOpen] = useState(false)
+  // Mantido como referência caso volte o envio de convites por e-mail
+  // const [inviteEmail, setInviteEmail] = useState('')
+  // const [sendingInvite, setSendingInvite] = useState(false)
 
   // ID específico que deve ter bypass para ver os botões
   const BYPASS_USER_ID = 'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3'
@@ -280,12 +284,14 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">Gerencie e visualize o desempenho de todos os colaboradores</h1>
         </div>
-        <Link href="/employees/new">
-          <button className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2" style={{ backgroundColor: '#1B263B' }}>
-            <UserPlus className="h-4 w-4" />
-            Novo Colaborador
-          </button>
-        </Link>
+        <button
+          onClick={() => setIsInviteOpen(true)}
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+          style={{ backgroundColor: '#1B263B' }}
+        >
+          <UserPlus className="h-4 w-4" />
+          Novo Colaborador
+        </button>
                 </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -616,6 +622,53 @@ export default function EmployeesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {isInviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsInviteOpen(false)} />
+          <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-lg border border-platinum-200 p-6">
+            <h3 className="text-lg font-roboto font-medium text-rich-black-900 mb-2">Como adicionar um novo colaborador</h3>
+            <p className="text-sm font-roboto font-light text-oxford-blue-600 mb-4">
+              Peça para o colaborador criar a conta dele acessando o link abaixo. Após o cadastro, o perfil será criado automaticamente no sistema.
+            </p>
+            <a
+              href="https://rh.investmoneysa.com.br/register"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-white hover:opacity-90"
+              style={{ backgroundColor: '#1B263B' }}
+            >
+              Acessar página de cadastro
+            </a>
+            <p className="text-xs font-roboto font-light text-oxford-blue-600 mt-3 text-center">
+              Ou acesse: 
+              {' '}
+              <a
+                href="https://rh.investmoneysa.com.br/register"
+                target="_blank"
+                rel="noreferrer"
+                className="underline text-yinmn-blue-600 hover:text-yinmn-blue-700 break-all"
+              >
+                https://rh.investmoneysa.com.br/register
+              </a>
+            </p>
+            <div className="flex items-center justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setIsInviteOpen(false)}
+                className="px-4 py-2 rounded-lg border border-platinum-300 text-oxford-blue-700 hover:bg-platinum-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {/** Lógica anterior de envio de convite por e-mail mantida fora do JSX como referência.
+             * Estados: inviteEmail, sendingInvite
+             * Ação: POST /api/users/invite { email }
+             */}
+          </div>
         </div>
       )}
     </div>
