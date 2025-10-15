@@ -152,17 +152,67 @@ export default function DepartmentsPage() {
           } catch (error) {
           }
 
+          // Metas por departamento (contagem total e concluídas) via join employees
+          let goals = 0
+          let completedGoals = 0
+          try {
+            const totalGoalsRes = await (supabase as any)
+              .from('goals')
+              .select('id, employees!inner(department)', { count: 'exact', head: true })
+              .eq('employees.department', dept.id)
+
+            const completedGoalsRes = await (supabase as any)
+              .from('goals')
+              .select('id, employees!inner(department)', { count: 'exact', head: true })
+              .eq('employees.department', dept.id)
+              .eq('is_completed', true)
+
+            goals = Number(totalGoalsRes.count || 0)
+            completedGoals = Number(completedGoalsRes.count || 0)
+          } catch (error) {
+          }
+
+          // Define tendência com base na taxa de conclusão de metas
+          const completionRate = goals > 0 ? completedGoals / goals : 0
+          let computedTrend: 'up' | 'down' | 'stable' = 'stable'
+          if (completionRate >= 0.7 && goals >= 3) {
+            computedTrend = 'up'
+          } else if (completionRate <= 0.3 && goals >= 3) {
+            computedTrend = 'down'
+          }
+
+          // Média de avaliações por departamento
+          let averageScore = 0
+          try {
+            const { data: evalRows, error: evalError } = await (supabase as any)
+              .from('evaluations')
+              .select('overall_score, employees!inner(department)')
+              .eq('employees.department', dept.id)
+              .not('overall_score', 'is', null)
+
+            if (!evalError) {
+              const scores = ((evalRows as any[]) || [])
+                .map((r: any) => Number(r.overall_score))
+                .filter((n: number) => Number.isFinite(n))
+              if (scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+                averageScore = Number(avg.toFixed(1))
+              }
+            }
+          } catch (error) {
+          }
+
           return {
             id: dept.id,
             name: dept.name,
             manager: managerName,
             managerId: dept.manager_id || '',
             employeeCount: employeeCount,
-            averageScore: 0, 
-            trend: 'stable' as const,
+            averageScore: averageScore, 
+            trend: computedTrend,
             description: dept.description || '',
-            goals: 0, 
-            completedGoals: 0, 
+            goals: goals, 
+            completedGoals: completedGoals, 
             topPerformers: [], 
           }
         })
@@ -361,7 +411,9 @@ export default function DepartmentsPage() {
             <div>
               <p className="text-sm font-roboto font-medium text-oxford-blue-500 mb-1">Média Geral</p>
               <p className="text-3xl font-roboto font-semibold text-rich-black-900">
-                {(departments.reduce((acc, dept) => acc + dept.averageScore, 0) / departments.length).toFixed(1)}
+                {departments.length > 0
+                  ? (departments.reduce((acc, dept) => acc + (Number.isFinite(dept.averageScore) ? dept.averageScore : 0), 0) / departments.length).toFixed(1)
+                  : '0.0'}
               </p>
               <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">performance geral</p>
             </div>
@@ -508,12 +560,12 @@ export default function DepartmentsPage() {
                         <span className="text-sm font-roboto font-medium text-rich-black-900">
                           {dept.completedGoals}/{dept.goals}
                         </span>
-                        <div className="w-16 h-2 bg-platinum-200 rounded-full mt-1">
-                          <div 
-                            className="h-full bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600 rounded-full"
-                            style={{ width: `${(dept.completedGoals / dept.goals) * 100}%` }}
-                          />
-                        </div>
+                    <div className="w-16 h-2 bg-platinum-200 rounded-full mt-1">
+                      <div
+                        className={`${dept.goals === 0 ? 'bg-platinum-300' : 'bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600'} h-full rounded-full`}
+                        style={{ width: `${dept.goals > 0 ? (dept.completedGoals / dept.goals) * 100 : 0}%` }}
+                      />
+                    </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -595,13 +647,13 @@ export default function DepartmentsPage() {
                   <span className="text-rich-black-900 font-roboto font-semibold">{dept.completedGoals}/{dept.goals}</span>
                 </div>
                 <div className="w-full bg-platinum-200 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${(dept.completedGoals / dept.goals) * 100}%` }}
+                  <div
+                    className={`${dept.goals === 0 ? 'bg-platinum-300' : 'bg-gradient-to-r from-yinmn-blue-500 to-yinmn-blue-600'} h-3 rounded-full transition-all duration-500`}
+                    style={{ width: `${dept.goals > 0 ? (dept.completedGoals / dept.goals) * 100 : 0}%` }}
                   />
                 </div>
                 <p className="text-xs text-oxford-blue-500 font-roboto font-light mt-2">
-                  {Math.round((dept.completedGoals / dept.goals) * 100)}% concluído
+                  {dept.goals > 0 ? Math.round((dept.completedGoals / dept.goals) * 100) : 0}% concluído
                 </p>
               </div>
 
