@@ -30,13 +30,15 @@ export async function GET() {
 
       const count = (data ?? []).length
       return new NextResponse(
-        JSON.stringify({ departments: data ?? [] }),
+        JSON.stringify({ source: 'service', departments: data ?? [] }),
         {
           status: 200,
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-store, max-age=0',
             'X-Departments-Count': String(count),
+            'X-Supabase-Project': new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname,
+            'X-Supabase-Source': 'service',
           },
         }
       )
@@ -58,13 +60,15 @@ export async function GET() {
 
     const count = (data ?? []).length
     return new NextResponse(
-      JSON.stringify({ departments: data ?? [] }),
+      JSON.stringify({ source: 'anon', departments: data ?? [] }),
       {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, max-age=0',
           'X-Departments-Count': String(count),
+          'X-Supabase-Project': new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname,
+          'X-Supabase-Source': 'anon',
         },
       }
     )
