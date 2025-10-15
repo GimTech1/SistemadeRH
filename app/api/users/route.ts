@@ -119,4 +119,51 @@ export async function PUT(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { userId, email, fullName, position, departmentId } = body as {
+      userId?: string
+      email?: string
+      fullName?: string
+      position?: string
+      departmentId?: string
+    }
+
+    if (!userId || !email || !fullName) {
+      return NextResponse.json({ error: 'Parâmetros obrigatórios ausentes' }, { status: 400 })
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Service role não configurada' }, { status: 500 })
+    }
+
+    const admin: any = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data, error } = await admin
+      .from('profiles')
+      .upsert({
+        id: userId,
+        email,
+        full_name: fullName,
+        position: position ?? null,
+        role: 'employee',
+        department_id: departmentId ?? null,
+      }, { onConflict: 'id' } as any)
+      .select('id, department_id')
+      .maybeSingle()
+
+    if (error) {
+      return NextResponse.json({ error: `Erro ao salvar perfil: ${error.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({ profile: data }, { status: 200 })
+  } catch (error) {
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+  }
+}
+
 

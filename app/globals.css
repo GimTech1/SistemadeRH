@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Remover seta nativa do select em diferentes navegadores, incluindo Windows */
+.no-native-select-arrow::-ms-expand { display: none; }
+.no-native-select-arrow {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: none;
+}
+
+/* Edge/Chromium pode pintar um glyph adicional em hover/focus; forçar fundo liso */
+.no-native-select-arrow:focus,
+.no-native-select-arrow:hover {
+  background-image: none !important;
+}
+
 @layer base {
   * {
     @apply border-slate-200;

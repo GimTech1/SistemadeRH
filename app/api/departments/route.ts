@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 
 export async function GET() {
   try {
     const supabase = await createServerClient()
     
-    const { data: departments, error } = await supabase
+    let { data: departments, error } = await supabase
       .from('departments')
       .select('id, name, description, manager_id, parent_department_id')
       .order('name', { ascending: true })
+
+    if ((error || !departments || departments.length === 0) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const admin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      ) as any
+      const res = await admin
+        .from('departments')
+        .select('id, name, description, manager_id, parent_department_id')
+        .order('name', { ascending: true })
+      departments = res.data as any
+      error = res.error as any
+    }
 
     if (error) {
       return NextResponse.json(
