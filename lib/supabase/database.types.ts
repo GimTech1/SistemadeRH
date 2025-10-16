@@ -637,6 +637,58 @@ export type Database = {
           updated_at?: string
         }
       }
+      daily_questions: {
+        Row: {
+          id: string
+          department_id: string
+          question: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          department_id: string
+          question: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          department_id?: string
+          question?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      daily_responses: {
+        Row: {
+          id: string
+          question_id: string
+          employee_id: string
+          response: string
+          response_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          question_id: string
+          employee_id: string
+          response: string
+          response_date: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          question_id?: string
+          employee_id?: string
+          response?: string
+          response_date?: string
+          created_at?: string
+        }
+      }
     }
   }
 }

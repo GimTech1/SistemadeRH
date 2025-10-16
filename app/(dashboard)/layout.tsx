@@ -123,6 +123,7 @@ export default function DashboardLayout({
       '/expenses': 'Controle de Gastos',
       '/users': 'Usuários',
       '/organograma': 'Organograma',
+      '/pace': 'Check-in de perguntas diário',
     }
     if (map[pathname]) return map[pathname]
     const base = '/' + pathname.split('/').filter(Boolean)[0]

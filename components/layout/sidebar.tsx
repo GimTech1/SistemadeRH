@@ -31,6 +31,7 @@ import {
   Receipt,
   Wallet,
   Star,
+  BookMarked,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -131,6 +132,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       icon: Star,
       href: '/feedback',
       roles: [''],
+    },
+    {
+      title: 'PACE',
+      icon: BookMarked,
+      href: '/pace',
+      roles: ['admin', 'manager', 'employee'],
     },
     {
       title: 'Avaliar Colegas',
