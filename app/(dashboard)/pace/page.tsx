@@ -71,6 +71,7 @@ export default function PacePage() {
   const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [todayResponses, setTodayResponses] = useState<Record<string, string>>({})
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0])
   const [activeTab, setActiveTab] = useState<'responder' | 'manage'>('responder')
   const isManagerOrAdmin = userRole === 'admin' || userRole === 'manager' || userRole === 'gerente'
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null)
@@ -136,8 +137,8 @@ export default function PacePage() {
       // Carregar perguntas diárias
       await loadDailyQuestions()
       
-      // Carregar respostas do dia atual
-      await loadTodayResponses()
+      // Carregar respostas do dia selecionado
+      await loadTodayResponses(selectedDate)
 
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -159,11 +160,11 @@ export default function PacePage() {
     }
   }
 
-  const loadTodayResponses = async () => {
+  const loadTodayResponses = async (dateOverride?: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const targetDate = dateOverride || selectedDate
       
-      const response = await fetch(`/api/daily-responses?date=${today}`)
+      const response = await fetch(`/api/daily-responses?date=${targetDate}`)
       if (response.ok) {
         const data = await response.json()
         const responsesMap: Record<string, string> = {}
@@ -176,6 +177,12 @@ export default function PacePage() {
       console.error('Erro ao carregar respostas:', error)
     }
   }
+
+  useEffect(() => {
+    // Recarrega respostas quando a data muda
+    loadTodayResponses(selectedDate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate])
 
   const createDailyQuestion = async () => {
     if (!newQuestion.trim()) {
@@ -300,7 +307,7 @@ export default function PacePage() {
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const targetDate = selectedDate
       
       const responseData = await fetch('/api/daily-responses', {
         method: 'POST',
@@ -310,13 +317,13 @@ export default function PacePage() {
         body: JSON.stringify({
           question_id: questionId,
           response: response.trim(),
-          response_date: today
+          response_date: targetDate
         })
       })
 
       if (responseData.ok) {
         toast.success('Resposta salva com sucesso')
-        await loadTodayResponses()
+        await loadTodayResponses(selectedDate)
       } else {
         const error = await responseData.json()
         toast.error(error.error || 'Erro ao salvar resposta')
@@ -366,8 +373,12 @@ export default function PacePage() {
           </div>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <Calendar className="w-4 h-4" />
-          <span>{new Date().toLocaleDateString('pt-BR')}</span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="h-9 rounded-md border border-gray-300 px-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+          />
         </div>
       </div>
 
