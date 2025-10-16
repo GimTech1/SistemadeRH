@@ -72,9 +72,11 @@ export default function PacePage() {
   const [loading, setLoading] = useState(true)
   const [todayResponses, setTodayResponses] = useState<Record<string, string>>({})
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0])
-  const [activeTab, setActiveTab] = useState<'responder' | 'manage'>('responder')
+  const [activeTab, setActiveTab] = useState<'responder' | 'manage' | 'respostas'>('responder')
   const isManagerOrAdmin = userRole === 'admin' || userRole === 'manager' || userRole === 'gerente'
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null)
+  const [allResponses, setAllResponses] = useState<any[]>([])
+  const [loadingResponses, setLoadingResponses] = useState(false)
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -183,6 +185,30 @@ export default function PacePage() {
     loadTodayResponses(selectedDate)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
+
+  const loadAllResponses = async (date?: string) => {
+    if (!isManagerOrAdmin) return
+    
+    setLoadingResponses(true)
+    try {
+      const targetDate = date || selectedDate
+      const response = await fetch(`/api/daily-responses?date=${targetDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAllResponses(data)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar respostas:', error)
+    } finally {
+      setLoadingResponses(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'respostas' && isManagerOrAdmin) {
+      loadAllResponses()
+    }
+  }, [activeTab, selectedDate, isManagerOrAdmin])
 
   const createDailyQuestion = async () => {
     if (!newQuestion.trim()) {
@@ -462,6 +488,18 @@ export default function PacePage() {
               Perguntas do Setor
             </button>
           )}
+          {isManagerOrAdmin && (
+            <button
+              onClick={() => setActiveTab('respostas')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'respostas'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Respostas
+            </button>
+          )}
         </nav>
       </div>
 
@@ -717,6 +755,66 @@ export default function PacePage() {
           </div>
         )}
       </Card>
+      )}
+
+      {/* Aba de Respostas (Admin/Manager) */}
+      {isManagerOrAdmin && activeTab === 'respostas' && (
+        <Card className="p-6 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Respostas dos Colaboradores</h2>
+              <p className="text-sm text-gray-600">
+                Visualize as respostas dos colaboradores para a data selecionada
+              </p>
+            </div>
+          </div>
+
+          {loadingResponses ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : allResponses.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">
+                Nenhuma resposta encontrada para a data selecionada.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allResponses.map((response: any) => (
+                <div key={response.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="font-medium text-gray-900">
+                          {response.profiles?.full_name || 'Usuário não encontrado'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ({response.profiles?.email})
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>Pergunta:</strong> {response.daily_questions?.question}
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>Departamento:</strong> {response.daily_questions?.departments?.name}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(response.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-sm text-gray-700">
+                      <strong>Resposta:</strong> {response.response}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       )}
     </div>
   )
