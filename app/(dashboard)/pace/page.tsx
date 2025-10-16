@@ -73,6 +73,7 @@ export default function PacePage() {
   const [todayResponses, setTodayResponses] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState<'responder' | 'manage'>('responder')
   const isManagerOrAdmin = userRole === 'admin' || userRole === 'manager' || userRole === 'gerente'
+  const [editingResponseId, setEditingResponseId] = useState<string | null>(null)
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -462,18 +463,7 @@ export default function PacePage() {
               <p className="text-sm text-gray-600">
                 {userDepartmentId ? getDepartmentName(userDepartmentId) : 'Carregando departamento...'}
               </p>
-            </div>
-            <Button 
-              onClick={() => {
-                setNewQuestion('')
-                setSelectedDepartment(userDepartmentId || '')
-              }}
-              className="flex items-center space-x-2"
-              disabled={!userDepartmentId}
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nova Pergunta</span>
-            </Button>
+            </div>  
           </div>
 
           {/* Formulário de Nova Pergunta */}
@@ -494,6 +484,8 @@ export default function PacePage() {
               onClick={createDailyQuestion} 
               className="w-full md:w-auto"
               disabled={!userDepartmentId}
+              style={{ backgroundColor: '#1b263b' }}
+              size="sm"
             >
               <Save className="w-4 h-4 mr-2" />
               Criar Pergunta
@@ -613,44 +605,104 @@ export default function PacePage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {getQuestionsForUser().map(question => (
-              <div key={question.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium text-gray-900">
-                    {getDepartmentName(question.department_id)}
-                  </h3>
-                  {todayResponses[question.id] && (
-                    <span className="flex items-center text-green-600 text-sm">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Respondido
-                    </span>
+            {getQuestionsForUser().map(question => {
+              const answered = Boolean(todayResponses[question.id])
+              const isEditing = editingResponseId === question.id
+              return (
+                <div
+                  key={question.id}
+                  className={cn(
+                    "rounded-lg p-4 border",
+                    answered && !isEditing
+                      ? "border-green-200 bg-green-50"
+                      : "border-gray-200"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-900">
+                      {getDepartmentName(question.department_id)}
+                    </h3>
+                    {answered && !isEditing && (
+                      <span className="flex items-center text-green-600 text-sm">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Respondido
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 mb-3">{question.question}</p>
+
+                  {/* Estado: respondido (visualização) */}
+                  {answered && !isEditing && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="px-3 py-3 rounded-lg bg-white border border-green-200 text-gray-900">
+                          {todayResponses[question.id]}
+                        </div>
+                      </div>
+                      <div className="ml-2">
+                        <Button
+                          variant="secondary"
+                          onClick={() => setEditingResponseId(question.id)}
+                        >
+                          Editar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estado: edição da resposta */}
+                  {answered && isEditing && (
+                    <div className="flex space-x-2">
+                      <Input
+                        defaultValue={todayResponses[question.id]}
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            submitResponse(question.id, (e.target as HTMLInputElement).value)
+                            setEditingResponseId(null)
+                          }
+                        }}
+                      />
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={(e) => {
+                          const input = (e.currentTarget.previousElementSibling as HTMLInputElement)
+                          submitResponse(question.id, input.value)
+                          setEditingResponseId(null)
+                        }}
+                      >
+                        Salvar
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingResponseId(null)}>Cancelar</Button>
+                    </div>
+                  )}
+
+                  {/* Estado: não respondido */}
+                  {!answered && (
+                    <div className="flex space-x-2">
+                      <Input
+                        placeholder="Sua resposta..."
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            submitResponse(question.id, (e.target as HTMLInputElement).value)
+                          }
+                        }}
+                      />
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={(e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement
+                          submitResponse(question.id, input.value)
+                        }}
+                      >
+                        Responder
+                      </Button>
+                    </div>
                   )}
                 </div>
-                <p className="text-gray-700 mb-3">{question.question}</p>
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Sua resposta..."
-                    defaultValue={todayResponses[question.id] || ''}
-                    className="flex-1"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        submitResponse(question.id, (e.target as HTMLInputElement).value)
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement
-                      submitResponse(question.id, input.value)
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Save className="w-4 h-4 mr-1" />
-                    Salvar
-                  </Button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </Card>
