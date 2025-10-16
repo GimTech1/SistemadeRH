@@ -68,6 +68,7 @@ export default function PacePage() {
   const [editQuestionText, setEditQuestionText] = useState('')
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'gerente' | 'employee'>('employee')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [todayResponses, setTodayResponses] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState<'responder' | 'manage'>('responder')
@@ -89,12 +90,13 @@ export default function PacePage() {
         
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, department_id')
           .eq('id', user.id)
           .single()
         
         if (profile) {
           setUserRole((profile as any).role as 'admin' | 'manager' | 'gerente' | 'employee')
+          setUserDepartmentId((profile as any).department_id)
         }
       }
 
@@ -175,8 +177,13 @@ export default function PacePage() {
   }
 
   const createDailyQuestion = async () => {
-    if (!newQuestion.trim() || !selectedDepartment) {
-      toast.error('Preencha todos os campos')
+    if (!newQuestion.trim()) {
+      toast.error('Preencha a pergunta')
+      return
+    }
+
+    if (!userDepartmentId) {
+      toast.error('Departamento não identificado')
       return
     }
 
@@ -187,7 +194,7 @@ export default function PacePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          department_id: selectedDepartment,
+          department_id: userDepartmentId,
           question: newQuestion.trim(),
           is_active: true
         })
@@ -196,7 +203,6 @@ export default function PacePage() {
       if (response.ok) {
         toast.success('Pergunta criada com sucesso')
         setNewQuestion('')
-        setSelectedDepartment('')
         await loadDailyQuestions()
       } else {
         const error = await response.json()
@@ -325,17 +331,19 @@ export default function PacePage() {
     return dept?.name || 'Departamento não encontrado'
   }
 
-  const getEmployeeDepartment = () => {
-    const employee = employees.find(emp => emp.id === currentUser?.id)
-    return employee?.department
-  }
-
   const getQuestionsForUser = () => {
     if (userRole === 'admin' || userRole === 'manager' || userRole === 'gerente') {
       return dailyQuestions.filter(q => q.is_active)
     } else {
-      const userDepartment = getEmployeeDepartment()
-      return dailyQuestions.filter(q => q.is_active && q.department_id === userDepartment)
+      return dailyQuestions.filter(q => q.is_active && q.department_id === userDepartmentId)
+    }
+  }
+
+  const getQuestionsForDepartment = () => {
+    if (userRole === 'admin') {
+      return dailyQuestions.filter(q => q.is_active)
+    } else {
+      return dailyQuestions.filter(q => q.is_active && q.department_id === userDepartmentId)
     }
   }
 
@@ -449,13 +457,19 @@ export default function PacePage() {
       {isManagerOrAdmin && activeTab === 'manage' && (
         <Card className="p-6 mt-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Gerenciar Perguntas Diárias</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Perguntas do Meu Setor</h2>
+              <p className="text-sm text-gray-600">
+                {userDepartmentId ? getDepartmentName(userDepartmentId) : 'Carregando departamento...'}
+              </p>
+            </div>
             <Button 
               onClick={() => {
                 setNewQuestion('')
-                setSelectedDepartment('')
+                setSelectedDepartment(userDepartmentId || '')
               }}
               className="flex items-center space-x-2"
+              disabled={!userDepartmentId}
             >
               <Plus className="w-4 h-4" />
               <span>Nova Pergunta</span>
@@ -464,23 +478,7 @@ export default function PacePage() {
 
           {/* Formulário de Nova Pergunta */}
           <div className="space-y-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="department">Departamento</Label>
-                <select
-                  id="department"
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Selecione um departamento</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="question">Pergunta Diária</Label>
                 <Input
@@ -492,7 +490,11 @@ export default function PacePage() {
                 />
               </div>
             </div>
-            <Button onClick={createDailyQuestion} className="w-full md:w-auto">
+            <Button 
+              onClick={createDailyQuestion} 
+              className="w-full md:w-auto"
+              disabled={!userDepartmentId}
+            >
               <Save className="w-4 h-4 mr-2" />
               Criar Pergunta
             </Button>
@@ -500,7 +502,7 @@ export default function PacePage() {
 
           {/* Lista de Perguntas */}
           <div className="space-y-3">
-            {dailyQuestions.map(question => (
+            {getQuestionsForDepartment().map(question => (
               <div key={question.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
@@ -579,6 +581,17 @@ export default function PacePage() {
                 </div>
               </div>
             ))}
+            {getQuestionsForDepartment().length === 0 && (
+              <div className="text-center py-8">
+                <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  {userDepartmentId 
+                    ? 'Não há perguntas cadastradas para seu departamento.'
+                    : 'Carregando departamento...'
+                  }
+                </p>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -645,3 +658,4 @@ export default function PacePage() {
     </div>
   )
 }
+
