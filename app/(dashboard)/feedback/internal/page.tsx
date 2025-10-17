@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import {
   Users,
   Star,
@@ -131,6 +132,7 @@ export default function InternalFeedbackPage() {
       setLoading(true)
       
       // Buscar colegas da tabela employees
+      console.log('👥 Buscando colegas da tabela employees...')
       const { data: colleaguesData, error: colleaguesError } = await supabase
         .from('employees')
         .select(`
@@ -140,6 +142,13 @@ export default function InternalFeedbackPage() {
           department
         `)
         .order('full_name', { ascending: true })
+
+      if (colleaguesError) {
+        console.error('❌ Erro ao buscar colegas:', colleaguesError)
+      } else {
+        console.log(`👥 Total de colegas encontrados: ${colleaguesData?.length || 0}`)
+        console.log('👥 Dados dos colegas:', colleaguesData)
+      }
 
       if (colleaguesError) {
         console.error('Erro ao carregar colegas:', colleaguesError)
@@ -156,23 +165,57 @@ export default function InternalFeedbackPage() {
         departmentsMap.set(dept.id, dept.name)
       })
 
+      // Buscar TODAS as estrelas do sistema via API SQL direta (bypass RLS)
+      console.log('🔍 Buscando todas as estrelas do sistema via API SQL direta...')
+      const response = await fetch('/api/stars/raw-sql')
+      const { stars: allStarsData, total, error: apiError } = await response.json()
+
+      if (apiError || !response.ok) {
+        console.error('❌ Erro ao buscar todas as estrelas via API admin:', apiError)
+        console.error('📋 Detalhes do erro:', apiError)
+      } else {
+        console.log(`⭐ Total de estrelas no sistema: ${total}`)
+        console.log('📊 Dados das estrelas:', allStarsData)
+      }
+
+      // Agrupar estrelas por usuário
+      const starsByUser = new Map<string, any[]>()
+      if (allStarsData) {
+        console.log('🔄 Agrupando estrelas por usuário...')
+        for (const star of allStarsData as any[]) {
+          console.log(`⭐ Estrela: ${star.id} - De: ${star.user_id} Para: ${star.recipient_id}`)
+          if (!starsByUser.has(star.recipient_id)) {
+            starsByUser.set(star.recipient_id, [])
+          }
+          starsByUser.get(star.recipient_id)!.push(star)
+        }
+        console.log('📊 Agrupamento final:', Object.fromEntries(starsByUser))
+      }
+
       // Buscar estrelas para cada colega
       const colleaguesWithStars = await Promise.all((colleaguesData || []).map(async (colleague: any) => {
-        // Buscar estrelas recebidas por este colega
-        const { data: starsData } = await supabase
-          .from('user_stars')
-          .select('id, reason, message, created_at, user_id')
-          .eq('recipient_id', colleague.id)
-          .order('created_at', { ascending: false })
-          .limit(3)
+        console.log(`🔍 Processando: ${colleague.full_name} (ID: ${colleague.id})`)
+        
+        // Obter estrelas recebidas por este colega
+        const userStars = starsByUser.get(colleague.id) || []
+        const totalStars = userStars.length
+        
+        console.log(`⭐ Estrelas recebidas por ${colleague.full_name}: ${totalStars}`)
 
-        // Buscar nomes dos remetentes das estrelas
-        const starsWithSenders = await Promise.all((starsData || []).map(async (star: any) => {
-          const { data: senderData } = await supabase
+        // Pegar as 3 estrelas mais recentes
+        const recentStars = userStars.slice(0, 3)
+
+        // Buscar nomes dos remetentes das estrelas recentes
+        const starsWithSenders = await Promise.all(recentStars.map(async (star: any) => {
+          const { data: senderData, error: senderError } = await supabase
             .from('employees')
             .select('full_name')
             .eq('id', star.user_id)
             .single()
+          
+          if (senderError) {
+            console.error(`❌ Erro ao buscar remetente ${star.user_id}:`, senderError)
+          }
           
           return {
             id: star.id,
@@ -183,15 +226,22 @@ export default function InternalFeedbackPage() {
           }
         }))
 
-        return {
+        const result = {
           id: colleague.id,
           name: colleague.full_name || 'Usuário',
           position: colleague.position || 'Sem cargo',
           department: departmentsMap.get(colleague.department) || colleague.department || 'Sem departamento',
           avatar: colleague.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
-          starsReceived: starsData?.length || 0,
+          starsReceived: totalStars,
           recentStars: starsWithSenders
         }
+
+        console.log(`✅ Resultado final para ${colleague.full_name}:`, {
+          starsReceived: result.starsReceived,
+          recentStarsCount: result.recentStars.length
+        })
+
+        return result
       }))
 
       const formattedColleagues: Colleague[] = colleaguesWithStars
