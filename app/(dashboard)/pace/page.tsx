@@ -90,6 +90,7 @@ export default function PacePage() {
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null)
   const [allResponses, setAllResponses] = useState<any[]>([])
   const [loadingResponses, setLoadingResponses] = useState(false)
+  const [showPendingModal, setShowPendingModal] = useState(false)
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -238,6 +239,13 @@ export default function PacePage() {
       loadAllResponses()
     }
   }, [activeTab, selectedDate, isManagerOrAdmin])
+
+  // Verificar se deve mostrar modal de pendentes
+  useEffect(() => {
+    if (shouldShowPendingModal()) {
+      setShowPendingModal(true)
+    }
+  }, [allResponses, employees, userRole, userDepartmentId])
 
   const createDailyQuestion = async () => {
     if (!newQuestion.trim()) {
@@ -434,6 +442,66 @@ export default function PacePage() {
     } else {
       return dailyQuestions.filter(q => q.is_active && q.department_id === userDepartmentId)
     }
+  }
+
+  const getPendingCountForSelectedDate = () => {
+    // Primeiro verifica se há perguntas ativas para responder
+    const activeQuestions = getQuestionsForUser()
+    if (activeQuestions.length === 0) {
+      return -1 // Indica que não há perguntas para responder
+    }
+
+    // Considera todos os colaboradores se admin; caso contrário, apenas do departamento do gerente
+    const relevantEmployees = (userRole === 'admin')
+      ? employees
+      : employees.filter(emp => emp.department === userDepartmentId)
+
+    const relevantEmployeeIds = new Set(relevantEmployees.map(emp => emp.id))
+    const responderIds = new Set(
+      allResponses
+        .filter((resp: any) => relevantEmployeeIds.has(resp.employee_id))
+        .map((resp: any) => resp.employee_id)
+    )
+
+    let pending = 0
+    for (const emp of relevantEmployees) {
+      if (!responderIds.has(emp.id)) pending++
+    }
+    return pending
+  }
+
+  const getPendingEmployees = () => {
+    const activeQuestions = getQuestionsForUser()
+    if (activeQuestions.length === 0) {
+      return []
+    }
+
+    const relevantEmployees = (userRole === 'admin')
+      ? employees
+      : employees.filter(emp => emp.department === userDepartmentId)
+
+    const relevantEmployeeIds = new Set(relevantEmployees.map(emp => emp.id))
+    const responderIds = new Set(
+      allResponses
+        .filter((resp: any) => relevantEmployeeIds.has(resp.employee_id))
+        .map((resp: any) => resp.employee_id)
+    )
+
+    return relevantEmployees.filter(emp => !responderIds.has(emp.id))
+  }
+
+  const shouldShowPendingModal = () => {
+    if (!isManagerOrAdmin) return false
+    
+    const now = new Date()
+    const currentHour = now.getHours()
+    
+    // Só mostra após 10h da manhã
+    if (currentHour < 10) return false
+    
+    // Verifica se há pendentes hoje
+    const pending = getPendingCountForSelectedDate()
+    return pending > 0
   }
 
   const addNewOption = () => {
@@ -1061,6 +1129,24 @@ export default function PacePage() {
             </div>
           </div>
 
+          {/* Alerta de pendentes */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+              <div className="text-sm text-amber-800">
+                {(() => {
+                  const pending = getPendingCountForSelectedDate()
+                  if (pending === -1) {
+                    return 'Não há perguntas ativas para responder hoje.'
+                  }
+                  if (pending === 0) {
+                    return 'Todos os colaboradores responderam hoje.'
+                  }
+                  return `${pending} colaborador${pending > 1 ? 'es' : ''} ainda não respondeu.`
+                })()}
+              </div>
+            </div>
+          </div>
+
           {loadingResponses ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1119,6 +1205,70 @@ export default function PacePage() {
             </div>
           )}
         </Card>
+      )}
+
+      {/* Modal de Pendentes */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Colaboradores Pendentes
+              </h3>
+              <button
+                onClick={() => setShowPendingModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Os seguintes colaboradores ainda não responderam as perguntas diárias de hoje:
+              </p>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto mb-4">
+              {getPendingEmployees().map((employee) => (
+                <div key={employee.id} className="flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-blue-600">
+                      {employee.full_name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{employee.full_name}</p>
+                    <p className="text-xs text-gray-500">{employee.email}</p>
+                    {employee.department_name && (
+                      <p className="text-xs text-gray-400">{employee.department_name}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPendingModal(false)}
+              >
+                Fechar
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowPendingModal(false)
+                  setActiveTab('respostas')
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Ver Respostas
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
