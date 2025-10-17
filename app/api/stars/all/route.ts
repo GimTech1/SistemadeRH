@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      stars: allStars || [],
-      total: allStars?.length || 0
+      stars: (allStars as any[]) || [],
+      total: (allStars as any[])?.length || 0
     })
   } catch (error) {
     console.error('Erro na API de todas as estrelas:', error)

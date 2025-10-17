@@ -15,8 +15,6 @@ export async function GET(request: NextRequest) {
       }
     )
     
-    console.log('🔍 Buscando todas as estrelas com service role...')
-    
     // Buscar todas as estrelas sem restrições
     const { data: allStars, error } = await supabaseAdmin
       .from('user_stars')
@@ -31,16 +29,13 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('❌ Erro ao buscar estrelas com service role:', error)
+      console.error('Erro ao buscar estrelas com service role:', error)
       return NextResponse.json({ 
         error: 'Erro ao buscar estrelas',
         details: error.message,
         code: error.code
       }, { status: 500 })
     }
-
-    console.log(`✅ Encontradas ${allStars?.length || 0} estrelas com service role`)
-    console.log('📊 Dados das estrelas:', allStars)
 
     return NextResponse.json({ 
       stars: allStars || [],

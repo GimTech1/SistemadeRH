@@ -21,22 +21,12 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Erro ao buscar estrelas:', error)
-      console.error('Detalhes do erro:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      
       return NextResponse.json({ 
         error: 'Erro ao buscar estrelas',
         details: error.message,
         code: error.code
       }, { status: 500 })
     }
-
-    console.log(`✅ Encontradas ${allStars?.length || 0} estrelas`)
-    console.log('📊 Dados das estrelas:', allStars)
 
     return NextResponse.json({ 
       stars: allStars || [],
