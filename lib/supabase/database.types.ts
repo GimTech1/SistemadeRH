@@ -648,6 +648,8 @@ export type Database = {
           id: string
           department_id: string
           question: string
+          question_type: 'text' | 'multiple_choice'
+          options: Json | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -656,6 +658,8 @@ export type Database = {
           id?: string
           department_id: string
           question: string
+          question_type?: 'text' | 'multiple_choice'
+          options?: Json | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -664,6 +668,8 @@ export type Database = {
           id?: string
           department_id?: string
           question?: string
+          question_type?: 'text' | 'multiple_choice'
+          options?: Json | null
           is_active?: boolean
           created_at?: string
           updated_at?: string

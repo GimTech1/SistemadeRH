@@ -33,6 +33,8 @@ interface DailyQuestion {
   id: string
   department_id: string
   question: string
+  question_type: 'text' | 'multiple_choice'
+  options: string[] | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -64,14 +66,25 @@ export default function PacePage() {
   const [dailyResponses, setDailyResponses] = useState<DailyResponse[]>([])
   const [selectedDepartment, setSelectedDepartment] = useState<string>('')
   const [newQuestion, setNewQuestion] = useState('')
+  const [newQuestionType, setNewQuestionType] = useState<'text' | 'multiple_choice'>('text')
+  const [newQuestionOptions, setNewQuestionOptions] = useState<string[]>(['', ''])
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null)
   const [editQuestionText, setEditQuestionText] = useState('')
+  const [editQuestionType, setEditQuestionType] = useState<'text' | 'multiple_choice'>('text')
+  const [editQuestionOptions, setEditQuestionOptions] = useState<string[]>(['', ''])
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'gerente' | 'employee'>('employee')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [todayResponses, setTodayResponses] = useState<Record<string, string>>({})
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0])
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string>>({})
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
   const [activeTab, setActiveTab] = useState<'responder' | 'manage' | 'respostas'>('responder')
   const isManagerOrAdmin = userRole === 'admin' || userRole === 'manager' || userRole === 'gerente'
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null)
@@ -150,9 +163,10 @@ export default function PacePage() {
     }
   }
 
-  const loadDailyQuestions = async () => {
+  const loadDailyQuestions = async (dateOverride?: string) => {
     try {
-      const response = await fetch('/api/daily-questions')
+      const d = dateOverride || selectedDate
+      const response = await fetch(`/api/daily-questions?date=${encodeURIComponent(d)}`)
       if (response.ok) {
         const data = await response.json()
         setDailyQuestions(data)
@@ -181,10 +195,25 @@ export default function PacePage() {
   }
 
   useEffect(() => {
-    // Recarrega respostas quando a data muda
+    // Recarrega perguntas e respostas quando a data muda (somente perguntas filtradas na aba Responder)
+    if (activeTab === 'responder') {
+      loadDailyQuestions(selectedDate)
+    } else {
+      loadDailyQuestions()
+    }
     loadTodayResponses(selectedDate)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
+
+  useEffect(() => {
+    // Ao mudar de aba, garante o dataset correto de perguntas
+    if (activeTab === 'responder') {
+      loadDailyQuestions(selectedDate)
+    } else {
+      loadDailyQuestions()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   const loadAllResponses = async (date?: string) => {
     if (!isManagerOrAdmin) return
@@ -221,6 +250,15 @@ export default function PacePage() {
       return
     }
 
+    // Validação para perguntas de múltipla escolha
+    if (newQuestionType === 'multiple_choice') {
+      const validOptions = newQuestionOptions.filter(opt => opt.trim())
+      if (validOptions.length < 2) {
+        toast.error('Perguntas de múltipla escolha devem ter pelo menos 2 opções')
+        return
+      }
+    }
+
     try {
       const response = await fetch('/api/daily-questions', {
         method: 'POST',
@@ -230,6 +268,8 @@ export default function PacePage() {
         body: JSON.stringify({
           department_id: userDepartmentId,
           question: newQuestion.trim(),
+          question_type: newQuestionType,
+          options: newQuestionType === 'multiple_choice' ? newQuestionOptions.filter(opt => opt.trim()) : null,
           is_active: true
         })
       })
@@ -237,6 +277,8 @@ export default function PacePage() {
       if (response.ok) {
         toast.success('Pergunta criada com sucesso')
         setNewQuestion('')
+        setNewQuestionType('text')
+        setNewQuestionOptions(['', ''])
         await loadDailyQuestions()
       } else {
         const error = await response.json()
@@ -254,6 +296,15 @@ export default function PacePage() {
       return
     }
 
+    // Validação para perguntas de múltipla escolha
+    if (editQuestionType === 'multiple_choice') {
+      const validOptions = editQuestionOptions.filter(opt => opt.trim())
+      if (validOptions.length < 2) {
+        toast.error('Perguntas de múltipla escolha devem ter pelo menos 2 opções')
+        return
+      }
+    }
+
     try {
       const response = await fetch(`/api/daily-questions/${questionId}`, {
         method: 'PUT',
@@ -261,7 +312,9 @@ export default function PacePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: editQuestionText.trim()
+          question: editQuestionText.trim(),
+          question_type: editQuestionType,
+          options: editQuestionType === 'multiple_choice' ? editQuestionOptions.filter(opt => opt.trim()) : null
         })
       })
 
@@ -269,6 +322,8 @@ export default function PacePage() {
         toast.success('Pergunta atualizada com sucesso')
         setEditingQuestion(null)
         setEditQuestionText('')
+        setEditQuestionType('text')
+        setEditQuestionOptions(['', ''])
         await loadDailyQuestions()
       } else {
         const error = await response.json()
@@ -379,6 +434,45 @@ export default function PacePage() {
     } else {
       return dailyQuestions.filter(q => q.is_active && q.department_id === userDepartmentId)
     }
+  }
+
+  const addNewOption = () => {
+    setNewQuestionOptions([...newQuestionOptions, ''])
+  }
+
+  const removeNewOption = (index: number) => {
+    if (newQuestionOptions.length > 2) {
+      setNewQuestionOptions(newQuestionOptions.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateNewOption = (index: number, value: string) => {
+    const newOptions = [...newQuestionOptions]
+    newOptions[index] = value
+    setNewQuestionOptions(newOptions)
+  }
+
+  const addEditOption = () => {
+    setEditQuestionOptions([...editQuestionOptions, ''])
+  }
+
+  const removeEditOption = (index: number) => {
+    if (editQuestionOptions.length > 2) {
+      setEditQuestionOptions(editQuestionOptions.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateEditOption = (index: number, value: string) => {
+    const newOptions = [...editQuestionOptions]
+    newOptions[index] = value
+    setEditQuestionOptions(newOptions)
+  }
+
+  const startEditingQuestion = (question: DailyQuestion) => {
+    setEditingQuestion(question.id)
+    setEditQuestionText(question.question)
+    setEditQuestionType(question.question_type)
+    setEditQuestionOptions(question.options || ['', ''])
   }
 
   if (loading) {
@@ -528,6 +622,58 @@ export default function PacePage() {
                   className="mt-1"
                 />
               </div>
+              
+              <div>
+                <Label htmlFor="questionType">Tipo de Pergunta</Label>
+                <select
+                  id="questionType"
+                  value={newQuestionType}
+                  onChange={(e) => setNewQuestionType(e.target.value as 'text' | 'multiple_choice')}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                >
+                  <option value="text">Texto Livre</option>
+                  <option value="multiple_choice">Múltipla Escolha</option>
+                </select>
+              </div>
+
+              {newQuestionType === 'multiple_choice' && (
+                <div>
+                  <Label>Opções de Resposta</Label>
+                  <div className="mt-2 space-y-2">
+                    {newQuestionOptions.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          value={option}
+                          onChange={(e) => updateNewOption(index, e.target.value)}
+                          placeholder={`Opção ${index + 1}`}
+                          className="flex-1"
+                        />
+                        {newQuestionOptions.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeNewOption(index)}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addNewOption}
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Opção
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <Button 
               onClick={createDailyQuestion} 
@@ -560,32 +706,103 @@ export default function PacePage() {
                     </span>
                   </div>
                   {editingQuestion === question.id ? (
-                    <div className="flex items-center space-x-2">
+                    <div className="space-y-3">
                       <Input
                         value={editQuestionText}
                         onChange={(e) => setEditQuestionText(e.target.value)}
-                        className="flex-1"
+                        className="w-full"
                       />
-                      <Button 
-                        size="sm" 
-                        onClick={() => updateQuestion(question.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Save className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          setEditingQuestion(null)
-                          setEditQuestionText('')
-                        }}
-                      >
-                        Cancelar
-                      </Button>
+                      
+                      <div>
+                        <Label htmlFor={`editQuestionType-${question.id}`}>Tipo de Pergunta</Label>
+                        <select
+                          id={`editQuestionType-${question.id}`}
+                          value={editQuestionType}
+                          onChange={(e) => setEditQuestionType(e.target.value as 'text' | 'multiple_choice')}
+                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                        >
+                          <option value="text">Texto Livre</option>
+                          <option value="multiple_choice">Múltipla Escolha</option>
+                        </select>
+                      </div>
+
+                      {editQuestionType === 'multiple_choice' && (
+                        <div>
+                          <Label>Opções de Resposta</Label>
+                          <div className="mt-2 space-y-2">
+                            {editQuestionOptions.map((option, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <Input
+                                  value={option}
+                                  onChange={(e) => updateEditOption(index, e.target.value)}
+                                  placeholder={`Opção ${index + 1}`}
+                                  className="flex-1"
+                                />
+                                {editQuestionOptions.length > 2 && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => removeEditOption(index)}
+                                    className="text-red-600 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addEditOption}
+                              className="w-full"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Adicionar Opção
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => updateQuestion(question.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setEditingQuestion(null)
+                            setEditQuestionText('')
+                            setEditQuestionType('text')
+                            setEditQuestionOptions(['', ''])
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-gray-700">{question.question}</p>
+                    <div>
+                      <p className="text-gray-700">{question.question}</p>
+                      {question.question_type === 'multiple_choice' && question.options && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500 mb-1">Opções:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {question.options.map((option, index) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                {option}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
@@ -594,10 +811,7 @@ export default function PacePage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          setEditingQuestion(question.id)
-                          setEditQuestionText(question.question)
-                        }}
+                        onClick={() => startEditingQuestion(question)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -701,52 +915,130 @@ export default function PacePage() {
 
                   {/* Estado: edição da resposta */}
                   {answered && isEditing && (
-                    <div className="flex space-x-2">
-                      <Input
-                        defaultValue={todayResponses[question.id]}
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            submitResponse(question.id, (e.target as HTMLInputElement).value)
-                            setEditingResponseId(null)
-                          }
-                        }}
-                      />
-                      <Button
-                        className="bg-blue-600 hover:bg-blue-700"
-                        onClick={(e) => {
-                          const input = (e.currentTarget.previousElementSibling as HTMLInputElement)
-                          submitResponse(question.id, input.value)
-                          setEditingResponseId(null)
-                        }}
-                      >
-                        Salvar
-                      </Button>
-                      <Button variant="outline" onClick={() => setEditingResponseId(null)}>Cancelar</Button>
+                    <div className="space-y-3">
+                      {question.question_type === 'multiple_choice' && question.options ? (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-2">Escolha uma opção:</p>
+                          <div className="space-y-2">
+                            {question.options.map((option, index) => (
+                              <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`edit-question-${question.id}`}
+                                  value={option}
+                                  defaultChecked={(selectedChoices[question.id] ?? todayResponses[question.id]) === option}
+                                  className="text-blue-600 focus:ring-blue-500"
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedChoices(prev => ({ ...prev, [question.id]: option }))
+                                    }
+                                  }}
+                                />
+                                <span className="text-gray-700">{option}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Input
+                            defaultValue={todayResponses[question.id]}
+                            className="flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                submitResponse(question.id, (e.target as HTMLInputElement).value)
+                                setEditingResponseId(null)
+                              }
+                            }}
+                          />
+                          <Button
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={(e) => {
+                              const input = (e.currentTarget.previousElementSibling as HTMLInputElement)
+                              submitResponse(question.id, input.value)
+                              setEditingResponseId(null)
+                            }}
+                          >
+                            Salvar
+                          </Button>
+                        </div>
+                      )}
+                      {question.question_type === 'multiple_choice' && (
+                        <div className="flex space-x-2">
+                          <Button
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={() => {
+                              const value = selectedChoices[question.id] ?? todayResponses[question.id] ?? ''
+                              submitResponse(question.id, value)
+                              setEditingResponseId(null)
+                            }}
+                          >
+                            Salvar
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditingResponseId(null)}>Cancelar</Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* Estado: não respondido */}
                   {!answered && (
-                    <div className="flex space-x-2">
-                      <Input
-                        placeholder="Sua resposta..."
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            submitResponse(question.id, (e.target as HTMLInputElement).value)
-                          }
-                        }}
-                      />
-                      <Button
-                        className="bg-blue-600 hover:bg-blue-700"
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement
-                          submitResponse(question.id, input.value)
-                        }}
-                      >
-                        Responder
-                      </Button>
+                    <div className="space-y-3">
+                      {question.question_type === 'multiple_choice' && question.options ? (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-2">Escolha uma opção:</p>
+                          <div className="space-y-2">
+                            {question.options.map((option, index) => (
+                              <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`question-${question.id}`}
+                                  value={option}
+                                  className="text-blue-600 focus:ring-blue-500"
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedChoices(prev => ({ ...prev, [question.id]: option }))
+                                    }
+                                  }}
+                                />
+                                <span className="text-gray-700">{option}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <div className="flex space-x-2 mt-4 md:mt-6">
+                            <Button
+                              className="bg-blue-600 hover:bg-blue-700"
+                              onClick={() => {
+                                const value = selectedChoices[question.id] ?? ''
+                                submitResponse(question.id, value)
+                              }}
+                            >
+                              Responder
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Input
+                            placeholder="Sua resposta..."
+                            className="flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                submitResponse(question.id, (e.target as HTMLInputElement).value)
+                              }
+                            }}
+                          />
+                          <Button
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement
+                              submitResponse(question.id, input.value)
+                            }}
+                          >
+                            Responder
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -796,6 +1088,18 @@ export default function PacePage() {
                       </div>
                       <div className="text-sm text-gray-600 mb-2">
                         <strong>Pergunta:</strong> {response.daily_questions?.question}
+                        {response.daily_questions?.question_type === 'multiple_choice' && response.daily_questions?.options && (
+                          <div className="mt-1">
+                            <span className="text-xs text-gray-500">Opções: </span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {response.daily_questions.options.map((option: string, index: number) => (
+                                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                  {option}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="text-sm text-gray-600 mb-2">
                         <strong>Departamento:</strong> {response.daily_questions?.departments?.name}

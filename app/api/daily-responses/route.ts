@@ -37,6 +37,8 @@ export async function GET(request: Request) {
         daily_questions!inner(
           id,
           question,
+          question_type,
+          options,
           department_id,
           departments(name)
         ),
@@ -92,7 +94,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
     }
 
-    const today = response_date || new Date().toISOString().split('T')[0]
+    // Garante data no fuso local do servidor (ou data informada pelo cliente)
+    const today = response_date || (() => {
+      const d = new Date()
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    })()
 
     // Verificar se já existe resposta para hoje
     const { data: existingResponse } = await supabase
@@ -121,6 +130,8 @@ export async function POST(request: Request) {
           daily_questions!inner(
             id,
             question,
+            question_type,
+            options,
             department_id,
             departments(name)
           )
@@ -149,6 +160,8 @@ export async function POST(request: Request) {
           daily_questions!inner(
             id,
             question,
+            question_type,
+            options,
             department_id,
             departments(name)
           )

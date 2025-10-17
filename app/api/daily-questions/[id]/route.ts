@@ -31,10 +31,15 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { question, is_active } = body
+    const { question, question_type, options, is_active } = body
 
     if (!question?.trim()) {
       return NextResponse.json({ error: 'Pergunta não pode estar vazia' }, { status: 400 })
+    }
+
+    // Validação para perguntas de múltipla escolha
+    if (question_type === 'multiple_choice' && (!options || !Array.isArray(options) || options.length < 2)) {
+      return NextResponse.json({ error: 'Perguntas de múltipla escolha devem ter pelo menos 2 opções' }, { status: 400 })
     }
 
     // Atualizar pergunta
@@ -42,6 +47,8 @@ export async function PUT(
       .from('daily_questions')
       .update({
         question: question.trim(),
+        question_type: question_type || 'text',
+        options: question_type === 'multiple_choice' ? options : null,
         is_active: is_active !== undefined ? is_active : true
       })
       .eq('id', id)
@@ -49,6 +56,8 @@ export async function PUT(
         id,
         department_id,
         question,
+        question_type,
+        options,
         is_active,
         created_at,
         updated_at,
