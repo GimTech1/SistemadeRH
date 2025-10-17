@@ -26,9 +26,12 @@ export async function PATCH(
 
     const { id: invoiceId } = await params
     const body = await request.json()
-    const { status } = body
+    const { status, payment_status } = body
 
-    if (!status || !['approved', 'rejected'].includes(status)) {
+    if (
+      (status && !['approved', 'rejected'].includes(status)) ||
+      (payment_status && !['pending', 'paid'].includes(payment_status))
+    ) {
       return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
     }
 
@@ -46,10 +49,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nota fiscal não encontrada' }, { status: 404 })
     }
 
-    // Atualizar o status da nota fiscal
+    // Atualizar o status da nota fiscal e/ou pagamento
+    const updatePayload: Record<string, any> = {}
+    if (status) updatePayload.status = status
+    if (payment_status) {
+      updatePayload.payment_status = payment_status
+      updatePayload.paid_at = payment_status === 'paid' ? new Date().toISOString() : null
+    }
+
     const { data: updatedInvoice, error: updateError } = await (supabase as any)
       .from('invoice_files')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', invoiceId)
       .select(`
         *,

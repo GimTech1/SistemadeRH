@@ -27,6 +27,8 @@ interface ReceivedInvoice {
   file_url: string
   created_at: string
   status: 'pending' | 'approved' | 'rejected'
+  payment_status?: 'pending' | 'paid'
+  paid_at?: string | null
   description?: string | null
   sender?: {
     full_name: string
@@ -38,6 +40,7 @@ export default function ReceivedInvoicesPage() {
   const [invoices, setInvoices] = useState<ReceivedInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [updatingPayment, setUpdatingPayment] = useState<string | null>(null)
   const supabase: SupabaseClient<Database> = createClient()
 
   useEffect(() => {
@@ -89,6 +92,33 @@ export default function ReceivedInvoicesPage() {
       toast.error(error instanceof Error ? error.message : 'Erro ao atualizar status')
     } finally {
       setUpdating(null)
+    }
+  }
+
+  const handlePaymentUpdate = async (invoiceId: string, payment_status: 'pending' | 'paid') => {
+    setUpdatingPayment(invoiceId)
+
+    try {
+      const response = await fetch(`/api/invoices/received/${invoiceId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ payment_status }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao atualizar pagamento')
+      }
+
+      toast.success(`Pagamento marcado como ${payment_status === 'paid' ? 'pago' : 'pendente'}.`)
+      loadReceivedInvoices()
+    } catch (error) {
+      console.error('Erro ao atualizar pagamento:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar pagamento')
+    } finally {
+      setUpdatingPayment(null)
     }
   }
 
@@ -226,6 +256,11 @@ export default function ReceivedInvoicesPage() {
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
                     {getStatusText(invoice.status)}
                   </span>
+                  {invoice.status === 'approved' && (
+                    <span className="text-xs text-gray-600">
+                      • {invoice.payment_status === 'paid' ? 'Pagamento efetuado' : 'Pagamento pendente'}
+                    </span>
+                  )}
                   <Button
                     variant="secondary"
                     size="sm"
@@ -265,6 +300,29 @@ export default function ReceivedInvoicesPage() {
                         {updating === invoice.id ? 'Rejeitando...' : 'Rejeitar'}
                       </Button>
                     </>
+                  )}
+                  {invoice.status === 'approved' && (
+                    invoice.payment_status !== 'paid' ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handlePaymentUpdate(invoice.id, 'paid')}
+                        disabled={updatingPayment === invoice.id}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        {updatingPayment === invoice.id ? 'Marcando como pago...' : 'Marcar como pago'}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handlePaymentUpdate(invoice.id, 'pending')}
+                        disabled={updatingPayment === invoice.id}
+                        className="text-gray-700 hover:text-gray-800 hover:bg-gray-100"
+                      >
+                        {updatingPayment === invoice.id ? 'Atualizando...' : 'Definir como pendente'}
+                      </Button>
+                    )
                   )}
                 </div>
               </div>

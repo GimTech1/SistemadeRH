@@ -576,6 +576,8 @@ export type Database = {
           file_type: string
           description: string | null
           status: 'pending' | 'approved' | 'rejected'
+          payment_status: 'pending' | 'paid'
+          paid_at: string | null
           created_at: string
           updated_at: string
         }
@@ -590,6 +592,8 @@ export type Database = {
           file_type: string
           description?: string | null
           status?: 'pending' | 'approved' | 'rejected'
+          payment_status?: 'pending' | 'paid'
+          paid_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -604,6 +608,8 @@ export type Database = {
           file_type?: string
           description?: string | null
           status?: 'pending' | 'approved' | 'rejected'
+          payment_status?: 'pending' | 'paid'
+          paid_at?: string | null
           created_at?: string
           updated_at?: string
         }

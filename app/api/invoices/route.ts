@@ -119,7 +119,9 @@ export async function POST(request: NextRequest) {
         file_size: file.size,
         file_type: file.type,
         description: description || null,
-        status: 'pending'
+        status: 'pending',
+        payment_status: 'pending',
+        paid_at: null
       })
       .select(`
         *,

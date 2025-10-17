@@ -30,6 +30,8 @@ interface InvoiceFile {
   file_url: string
   created_at: string
   status: 'pending' | 'approved' | 'rejected'
+  payment_status?: 'pending' | 'paid'
+  paid_at?: string | null
   description?: string | null
   recipient_id?: string | null
   recipient?: {
@@ -54,6 +56,7 @@ export default function InvoicesPage() {
   const [description, setDescription] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent')
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase: SupabaseClient<Database> = createClient()
 
@@ -238,6 +241,32 @@ export default function InvoicesPage() {
     }
   }
 
+  const handlePaymentUpdate = async (fileId: string, payment_status: 'pending' | 'paid') => {
+    try {
+      setUpdatingPaymentId(fileId)
+      const response = await fetch(`/api/invoices/received/${fileId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ payment_status }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao atualizar pagamento')
+      }
+
+      toast.success(payment_status === 'paid' ? 'Pagamento marcado como efetuado.' : 'Pagamento definido como pendente.')
+      loadInvoices()
+    } catch (error) {
+      console.error('Erro ao atualizar pagamento:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar pagamento')
+    } finally {
+      setUpdatingPaymentId('')
+    }
+  }
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -410,6 +439,9 @@ export default function InvoicesPage() {
                     <p className="font-medium text-gray-900">{file.file_name}</p>
                     <p className="text-sm text-gray-500">
                       {formatFileSize(file.file_size)} • {getStatusText(file.status)}
+                      {file.status === 'approved' && (
+                        <span className="ml-1">• {file.payment_status === 'paid' ? 'Pagamento efetuado' : 'Pagamento pendente'}</span>
+                      )}
                     </p>
                     <p className="text-xs text-gray-400">
                       {activeTab === 'sent' 
@@ -449,30 +481,57 @@ export default function InvoicesPage() {
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
+                      Deletar
                     </Button>
                   ) : (
-                    file.status === 'pending' && (
-                      <>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleStatusUpdate(file.id, 'approved')}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Aprovar
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleStatusUpdate(file.id, 'rejected')}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Rejeitar
-                        </Button>
-                      </>
-                    )
+                    <>
+                      {file.status === 'pending' && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleStatusUpdate(file.id, 'approved')}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Aprovar
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleStatusUpdate(file.id, 'rejected')}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Rejeitar
+                          </Button>
+                        </>
+                      )}
+                      {file.status === 'approved' && (
+                        file.payment_status !== 'paid' ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handlePaymentUpdate(file.id, 'paid')}
+                            disabled={updatingPaymentId === file.id}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            {updatingPaymentId === file.id ? 'Marcando como pago...' : 'Marcar como pago'}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handlePaymentUpdate(file.id, 'pending')}
+                            disabled={updatingPaymentId === file.id}
+                            className="text-gray-700 hover:text-gray-800 hover:bg-gray-100"
+                          >
+                            {updatingPaymentId === file.id ? 'Atualizando...' : 'Definir como pendente'}
+                          </Button>
+                        )
+                      )}
+                    </>
                   )}
                 </div>
               </div>
