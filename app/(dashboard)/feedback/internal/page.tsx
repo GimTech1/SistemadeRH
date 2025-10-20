@@ -606,8 +606,21 @@ export default function InternalFeedbackPage() {
     averageStars: colleagues.reduce((acc, c) => acc + c.starsReceived, 0) / colleagues.length || 0,
     topPerformer: (() => {
       if (colleagues.length === 0) return undefined
-      const top = [...colleagues].sort((a, b) => b.starsReceived - a.starsReceived)[0]
-      return top && top.starsReceived > 0 ? top : undefined
+      
+      // Ordenar por estrelas recebidas (decrescente)
+      const sorted = [...colleagues].sort((a, b) => b.starsReceived - a.starsReceived)
+      const top = sorted[0]
+      
+      // Se não há estrelas, não mostrar ninguém
+      if (!top || top.starsReceived === 0) return undefined
+      
+      // Verificar se há empate com o segundo colocado
+      const second = sorted[1]
+      if (second && second.starsReceived === top.starsReceived) {
+        return undefined // Há empate, não mostrar ninguém
+      }
+      
+      return top
     })(),
   }
 
@@ -746,12 +759,12 @@ export default function InternalFeedbackPage() {
                   <p className="text-2xl font-roboto font-semibold text-rich-black-900">{stats.topPerformer.name}</p>
                   <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">{stats.topPerformer.starsReceived} estrelas</p>
                 </>
-              ) : (
-                <>
-                  <p className="text-2xl font-roboto font-semibold text-rich-black-900">—</p>
-                  <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">Sem estrelas registradas</p>
-                </>
-              )}
+                ) : (
+                  <>
+                    <p className="text-2xl font-roboto font-semibold text-rich-black-900">—</p>
+                    <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">Sem líder definido</p>
+                  </>
+                )}
             </div>
             <div className="w-12 h-12 bg-[#E0E1DD] rounded-xl flex items-center justify-center">
               <Award className="w-6 h-6 text-[#778DA9]" />
@@ -1201,6 +1214,9 @@ export default function InternalFeedbackPage() {
               </p>
             </div>
           )}
+
+          {/* Espaçamento no final da aba Dar Estrelas */}
+          <div className="h-8"></div>
         </>
       ) : (
         /* Aba de Feedback Recebido */
@@ -1304,6 +1320,9 @@ export default function InternalFeedbackPage() {
               )}
             </div>
           </div>
+
+          {/* Espaçamento no final da aba Feedback Recebido */}
+          <div className="h-8"></div>
         </div>
       )}
 
