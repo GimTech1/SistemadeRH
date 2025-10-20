@@ -219,7 +219,7 @@ export default function ExpensesPage() {
   }, [expenses])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-8">
       {canViewAll && (
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
