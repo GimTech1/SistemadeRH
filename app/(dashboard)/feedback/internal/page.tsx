@@ -175,7 +175,20 @@ export default function InternalFeedbackPage() {
       const data = await response.json()
       
       if (response.ok) {
-        setReceivedStars(data.stars || [])
+        // Enriquecer cada estrela com o nome do remetente a partir de employees
+        const enriched = await Promise.all((data.stars || []).map(async (star: any) => {
+          try {
+            const { data: senderData } = await supabase
+              .from('employees')
+              .select('full_name')
+              .eq('id', star.user_id)
+              .single()
+            return { ...star, sender: { full_name: (senderData as any)?.full_name || 'Usuário' } }
+          } catch {
+            return { ...star, sender: { full_name: 'Usuário' } }
+          }
+        }))
+        setReceivedStars(enriched)
       }
     } catch (error) {
       console.error('Erro ao carregar estrelas recebidas:', error)
@@ -188,7 +201,20 @@ export default function InternalFeedbackPage() {
       const data = await response.json()
       
       if (response.ok) {
-        setReceivedDislikes(data.dislikes || [])
+        // Enriquecer cada dislike com o nome do remetente a partir de employees
+        const enriched = await Promise.all((data.dislikes || []).map(async (dislike: any) => {
+          try {
+            const { data: senderData } = await supabase
+              .from('employees')
+              .select('full_name')
+              .eq('id', dislike.user_id)
+              .single()
+            return { ...dislike, sender: { full_name: (senderData as any)?.full_name || 'Usuário' } }
+          } catch {
+            return { ...dislike, sender: { full_name: 'Usuário' } }
+          }
+        }))
+        setReceivedDislikes(enriched)
       }
     } catch (error) {
       console.error('Erro ao carregar dislikes recebidos:', error)
