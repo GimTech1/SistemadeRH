@@ -303,6 +303,7 @@ export default function DashboardPage() {
         supabase
           .from('evaluation_cycles')
           .select('id, name, end_date, is_active')
+          .eq('is_active', true)
           .gte('end_date', today.toISOString())
           .lte('end_date', next60.toISOString())
           .order('end_date', { ascending: true }),
