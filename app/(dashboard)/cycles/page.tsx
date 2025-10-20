@@ -146,11 +146,8 @@ export default function CyclesPage() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
-            Ciclos de Avaliação
-          </h1>
-          <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
             Gerencie os ciclos de avaliação da empresa
-          </p>
+          </h1>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}

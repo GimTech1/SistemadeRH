@@ -111,6 +111,7 @@ export default function DashboardLayout({
       '/employees': 'Colaboradores',
       '/departments': 'Departamentos',
       '/meetings': 'Reuniões',
+      '/cycles': 'Ciclos de Avaliação',
       '/evaluations': 'Avaliações',
       '/evaluations/new': 'Nova Avaliação',
       '/goals': 'Metas',
