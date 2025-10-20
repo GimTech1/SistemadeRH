@@ -77,6 +77,7 @@ export default function InternalFeedbackPage() {
   const [sortBy, setSortBy] = useState('stars')
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userStars, setUserStars] = useState({
     available: 3,
     used: 0,
@@ -92,10 +93,22 @@ export default function InternalFeedbackPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    loadCurrentUser()
     loadColleagues()
     loadUserStars()
     loadReceivedStars()
   }, [])
+
+  const loadCurrentUser = async () => {
+    try {
+      const { data, error } = await supabase.auth.getUser()
+      if (!error && data?.user) {
+        setCurrentUserId(data.user.id)
+      }
+    } catch (err) {
+      console.error('Erro ao obter usuário atual:', err)
+    }
+  }
 
   const loadUserStars = async () => {
     try {
@@ -231,6 +244,10 @@ export default function InternalFeedbackPage() {
   const handleGiveStar = (colleague: Colleague) => {
     if (userStars.available <= 0) {
       toast.error('Você não tem estrelas disponíveis este mês')
+      return
+    }
+    if (currentUserId && colleague.id === currentUserId) {
+      toast.error('Você não pode dar estrela para si mesmo')
       return
     }
     setSelectedColleague(colleague)
@@ -646,9 +663,9 @@ export default function InternalFeedbackPage() {
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleGiveStar(colleague)}
-                            disabled={userStars.available <= 0}
+                            disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                             className={`px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
-                              userStars.available > 0
+                              userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
                                 ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
                                 : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                             }`}
@@ -702,9 +719,9 @@ export default function InternalFeedbackPage() {
                     {/* Botão de ação */}
                     <button
                       onClick={() => handleGiveStar(colleague)}
-                      disabled={userStars.available <= 0}
+                      disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                       className={`w-full py-2 px-4 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                        userStars.available > 0
+                        userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
                           ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
                           : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                       }`}
@@ -791,9 +808,9 @@ export default function InternalFeedbackPage() {
                   {/* Botão de ação */}
                   <button
                     onClick={() => handleGiveStar(colleague)}
-                    disabled={userStars.available <= 0}
+                    disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                     className={`w-full py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
-                      userStars.available > 0
+                      userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
                         ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
                         : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                     }`}

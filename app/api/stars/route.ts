@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados obrigatórios não fornecidos' }, { status: 400 })
     }
 
+    // Impedir que o usuário dê estrela para si mesmo
+    if (recipientId === user.id) {
+      return NextResponse.json({ error: 'Você não pode dar estrela para si mesmo' }, { status: 400 })
+    }
+
     // Verificar se o recipient existe
     const { data: recipient, error: recipientError } = await supabase
       .from('employees')
