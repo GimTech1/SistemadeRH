@@ -643,6 +643,35 @@ export type Database = {
           updated_at?: string
         }
       }
+      user_dislikes: {
+        Row: {
+          id: string
+          user_id: string
+          recipient_id: string
+          reason: string
+          message: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recipient_id: string
+          reason: string
+          message: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recipient_id?: string
+          reason?: string
+          message?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       daily_questions: {
         Row: {
           id: string

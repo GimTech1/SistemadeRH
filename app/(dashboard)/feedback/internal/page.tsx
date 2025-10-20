@@ -34,6 +34,10 @@ import {
   ThumbsUp,
   Target,
   Smile,
+  AlertTriangle,
+  Frown,
+  ThumbsDown,
+  XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -45,7 +49,15 @@ interface Colleague {
   department: string
   avatar: string
   starsReceived: number
+  dislikesReceived: number
   recentStars: Array<{
+    id: string
+    reason: string
+    message: string
+    from: string
+    date: string
+  }>
+  recentDislikes: Array<{
     id: string
     reason: string
     message: string
@@ -83,20 +95,33 @@ export default function InternalFeedbackPage() {
     used: 0,
     resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
   })
+  const [userDislikes, setUserDislikes] = useState({
+    available: 3,
+    used: 0,
+    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+  })
   const [starForm, setStarForm] = useState({
     reason: '',
     message: ''
   })
+  const [dislikeForm, setDislikeForm] = useState({
+    reason: '',
+    message: ''
+  })
   const [showStarModal, setShowStarModal] = useState(false)
+  const [showDislikeModal, setShowDislikeModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'give' | 'received'>('give')
   const [receivedStars, setReceivedStars] = useState<any[]>([])
+  const [receivedDislikes, setReceivedDislikes] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     loadCurrentUser()
     loadColleagues()
     loadUserStars()
+    loadUserDislikes()
     loadReceivedStars()
+    loadReceivedDislikes()
   }, [])
 
   const loadCurrentUser = async () => {
@@ -127,6 +152,23 @@ export default function InternalFeedbackPage() {
     }
   }
 
+  const loadUserDislikes = async () => {
+    try {
+      const response = await fetch('/api/dislikes')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUserDislikes({
+          available: data.available,
+          used: data.used,
+          resetDate: new Date(data.resetDate)
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dislikes do usuário:', error)
+    }
+  }
+
   const loadReceivedStars = async () => {
     try {
       const response = await fetch('/api/stars/received')
@@ -137,6 +179,19 @@ export default function InternalFeedbackPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar estrelas recebidas:', error)
+    }
+  }
+
+  const loadReceivedDislikes = async () => {
+    try {
+      const response = await fetch('/api/dislikes/received')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setReceivedDislikes(data.dislikes || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dislikes recebidos:', error)
     }
   }
 
@@ -178,6 +233,14 @@ export default function InternalFeedbackPage() {
         console.error('Erro ao buscar estrelas:', apiError)
       }
 
+      // Buscar TODOS os dislikes do sistema via API SQL direta (bypass RLS)
+      const dislikesResponse = await fetch('/api/dislikes/raw-sql')
+      const { dislikes: allDislikesData, total: dislikesTotal, error: dislikesApiError } = await dislikesResponse.json()
+
+      if (dislikesApiError || !dislikesResponse.ok) {
+        console.error('Erro ao buscar dislikes:', dislikesApiError)
+      }
+
       // Agrupar estrelas por usuário
       const starsByUser = new Map<string, any[]>()
       if (allStarsData) {
@@ -189,14 +252,32 @@ export default function InternalFeedbackPage() {
         }
       }
 
-      // Buscar estrelas para cada colega
-      const colleaguesWithStars = await Promise.all((colleaguesData || []).map(async (colleague: any) => {
+      // Agrupar dislikes por usuário
+      const dislikesByUser = new Map<string, any[]>()
+      if (allDislikesData) {
+        for (const dislike of allDislikesData as any[]) {
+          if (!dislikesByUser.has(dislike.recipient_id)) {
+            dislikesByUser.set(dislike.recipient_id, [])
+          }
+          dislikesByUser.get(dislike.recipient_id)!.push(dislike)
+        }
+      }
+
+      // Buscar estrelas e dislikes para cada colega
+      const colleaguesWithFeedback = await Promise.all((colleaguesData || []).map(async (colleague: any) => {
         // Obter estrelas recebidas por este colega
         const userStars = starsByUser.get(colleague.id) || []
         const totalStars = userStars.length
 
+        // Obter dislikes recebidos por este colega
+        const userDislikes = dislikesByUser.get(colleague.id) || []
+        const totalDislikes = userDislikes.length
+
         // Pegar as 3 estrelas mais recentes
         const recentStars = userStars.slice(0, 3)
+
+        // Pegar os 3 dislikes mais recentes
+        const recentDislikes = userDislikes.slice(0, 3)
 
         // Buscar nomes dos remetentes das estrelas recentes
         const starsWithSenders = await Promise.all(recentStars.map(async (star: any) => {
@@ -219,6 +300,27 @@ export default function InternalFeedbackPage() {
           }
         }))
 
+        // Buscar nomes dos remetentes dos dislikes recentes
+        const dislikesWithSenders = await Promise.all(recentDislikes.map(async (dislike: any) => {
+          const { data: senderData, error: senderError } = await supabase
+            .from('employees')
+            .select('full_name')
+            .eq('id', dislike.user_id)
+            .single()
+          
+          if (senderError) {
+            console.error(`Erro ao buscar remetente ${dislike.user_id}:`, senderError)
+          }
+          
+          return {
+            id: dislike.id,
+            reason: dislike.reason,
+            message: dislike.message,
+            from: (senderData as any)?.full_name || 'Usuário',
+            date: dislike.created_at
+          }
+        }))
+
         return {
           id: colleague.id,
           name: colleague.full_name || 'Usuário',
@@ -226,11 +328,13 @@ export default function InternalFeedbackPage() {
           department: departmentsMap.get(colleague.department) || colleague.department || 'Sem departamento',
           avatar: colleague.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
           starsReceived: totalStars,
-          recentStars: starsWithSenders
+          dislikesReceived: totalDislikes,
+          recentStars: starsWithSenders,
+          recentDislikes: dislikesWithSenders
         }
       }))
 
-      const formattedColleagues: Colleague[] = colleaguesWithStars
+      const formattedColleagues: Colleague[] = colleaguesWithFeedback
 
       setColleagues(formattedColleagues)
     } catch (error) {
@@ -252,6 +356,19 @@ export default function InternalFeedbackPage() {
     }
     setSelectedColleague(colleague)
     setShowStarModal(true)
+  }
+
+  const handleGiveDislike = (colleague: Colleague) => {
+    if (userDislikes.available <= 0) {
+      toast.error('Você não tem dislikes disponíveis este mês')
+      return
+    }
+    if (currentUserId && colleague.id === currentUserId) {
+      toast.error('Você não pode dar dislike para si mesmo')
+      return
+    }
+    setSelectedColleague(colleague)
+    setShowDislikeModal(true)
   }
 
   const handleSubmitStar = async () => {
@@ -308,6 +425,60 @@ export default function InternalFeedbackPage() {
     }
   }
 
+  const handleSubmitDislike = async () => {
+    if (!selectedColleague) return
+
+    if (!dislikeForm.reason.trim()) {
+      toast.error('Por favor, selecione um motivo')
+      return
+    }
+
+    if (!dislikeForm.message.trim()) {
+      toast.error('Por favor, escreva uma mensagem de feedback')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/dislikes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientId: selectedColleague.id,
+          reason: dislikeForm.reason,
+          message: dislikeForm.message
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao enviar dislike')
+      }
+
+      toast.success(`Dislike enviado para ${selectedColleague.name}!`)
+      
+      // Reset form
+      setSelectedColleague(null)
+      setShowDislikeModal(false)
+      setDislikeForm({
+        reason: '',
+        message: ''
+      })
+      
+      // Recarregar dados do servidor para garantir consistência
+      loadUserDislikes()
+      loadColleagues()
+    } catch (error) {
+      console.error('Erro ao enviar dislike:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar dislike')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getReasonIcon = (reason: string) => {
     switch (reason) {
       case '1': return Heart
@@ -344,6 +515,45 @@ export default function InternalFeedbackPage() {
       case '6': return 'text-pink-500 bg-pink-50'
       case '7': return 'text-orange-500 bg-orange-50'
       default: return 'text-gray-500 bg-gray-50'
+    }
+  }
+
+  const getDislikeReasonIcon = (reason: string) => {
+    switch (reason) {
+      case '1': return AlertTriangle
+      case '2': return Frown
+      case '3': return ThumbsDown
+      case '4': return XCircle
+      case '5': return Users
+      case '6': return Brain
+      case '7': return Zap
+      default: return AlertTriangle
+    }
+  }
+
+  const getDislikeReasonText = (reason: string) => {
+    switch (reason) {
+      case '1': return 'Comportamento inadequado'
+      case '2': return 'Falta de colaboração'
+      case '3': return 'Atitude negativa'
+      case '4': return 'Não cumpriu prazos'
+      case '5': return 'Falta de comunicação'
+      case '6': return 'Resistência a mudanças'
+      case '7': return 'Outro motivo'
+      default: return reason
+    }
+  }
+
+  const getDislikeReasonColor = (reason: string) => {
+    switch (reason) {
+      case '1': return 'text-red-600 bg-red-100'
+      case '2': return 'text-orange-600 bg-orange-100'
+      case '3': return 'text-yellow-600 bg-yellow-100'
+      case '4': return 'text-red-700 bg-red-100'
+      case '5': return 'text-purple-600 bg-purple-100'
+      case '6': return 'text-indigo-600 bg-indigo-100'
+      case '7': return 'text-gray-600 bg-gray-100'
+      default: return 'text-gray-600 bg-gray-100'
     }
   }
 
@@ -392,41 +602,83 @@ export default function InternalFeedbackPage() {
         </div>
       </div>
 
-      {/* Sistema de Estrelas Principal */}
-      <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
-        <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-[#E0E1DD]">
-              <Star className="h-6 w-6 text-[#778DA9]" />
+      {/* Sistema de Estrelas e Deslike */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Estrelas */}
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 rounded-xl bg-[#E0E1DD]">
+                <Star className="h-6 w-6 text-[#778DA9]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-roboto font-medium text-rich-black-900">Suas Estrelas do Mês</h2>
+                <p className="text-sm font-roboto font-light text-oxford-blue-600">Use suas 3 estrelas para agradecer colegas</p>
+              </div>
             </div>
-          <div>
-              <h2 className="text-xl font-roboto font-medium text-rich-black-900">Suas Estrelas do Mês</h2>
-              <p className="text-sm font-roboto font-light text-oxford-blue-600">Use suas 3 estrelas para agradecer colegas</p>
+            <div className="text-right">
+              <div className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {userStars.available}/3
+              </div>
+              <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-roboto font-semibold text-rich-black-900">
-              {userStars.available}/3
+          
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              {[...Array(3)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-8 w-8 ${
+                    i < userStars.available
+                      ? 'text-yellow-500 fill-yellow-500'
+                      : 'text-platinum-300'
+                  }`}
+                />
+              ))}
             </div>
-            <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
+            <div className="text-xs font-roboto font-light text-oxford-blue-500">
+              Reset em {userStars.resetDate.toLocaleDateString('pt-BR')}
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex space-x-2">
-            {[...Array(3)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-8 w-8 ${
-                  i < userStars.available
-                    ? 'text-yellow-500 fill-yellow-500'
-                    : 'text-platinum-300'
-                }`}
-              />
-            ))}
+
+        {/* Dislikes */}
+        <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6 border-l-4 border-l-[#415A77]">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 rounded-xl bg-[#E0E1DD]">
+                <ThumbsDown className="h-6 w-6 text-[#778DA9]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-roboto font-medium text-rich-black-900">Seus Dislikes do Mês</h2>
+                <p className="text-sm font-roboto font-light text-oxford-blue-600">Use seus 3 dislikes para dar feedback negativo</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-roboto font-semibold text-rich-black-900">
+                {userDislikes.available}/3
+              </div>
+              <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
+            </div>
           </div>
-          <div className="text-xs font-roboto font-light text-oxford-blue-500">
-            Reset em {userStars.resetDate.toLocaleDateString('pt-BR')}
+          
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              {[...Array(3)].map((_, i) => (
+                <ThumbsDown
+                  key={i}
+                  className={`h-8 w-8 ${
+                    i < userDislikes.available
+                      ? 'text-[#778DA9]'
+                      : 'text-platinum-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="text-xs font-roboto font-light text-oxford-blue-500">
+              Reset em {userDislikes.resetDate.toLocaleDateString('pt-BR')}
+            </div>
           </div>
         </div>
       </div>
@@ -521,7 +773,7 @@ export default function InternalFeedbackPage() {
           >
             <div className="flex items-center justify-center gap-2">
               <Gift className="h-4 w-4" />
-              Estrelas Recebidas
+              Feedback Recebido
             </div>
           </button>
         </div>
@@ -661,18 +913,32 @@ export default function InternalFeedbackPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => handleGiveStar(colleague)}
-                            disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
-                            className={`px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
-                              userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
-                                ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
-                                : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
-                            }`}
-                          >
-                            <Star className="h-4 w-4" />
-                            Dar Estrela
-                          </button>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleGiveStar(colleague)}
+                              disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                              className={`px-3 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
+                                userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                                  ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                                  : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                              }`}
+                            >
+                              <Star className="h-4 w-4" />
+                              Estrela
+                            </button>
+                            <button
+                              onClick={() => handleGiveDislike(colleague)}
+                              disabled={userDislikes.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                              className={`px-3 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
+                                userDislikes.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                                  ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                                  : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                              }`}
+                            >
+                              <ThumbsDown className="h-4 w-4" />
+                              Dislike
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -716,19 +982,33 @@ export default function InternalFeedbackPage() {
                       </div>
                     </div>
 
-                    {/* Botão de ação */}
-                    <button
-                      onClick={() => handleGiveStar(colleague)}
-                      disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
-                      className={`w-full py-2 px-4 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                        userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
-                          ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
-                          : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <Star className="h-4 w-4" />
-                      Dar Estrela
-                    </button>
+                    {/* Botões de ação */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleGiveStar(colleague)}
+                        disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                        className={`flex-1 py-2 px-3 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                          userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                            ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                            : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <Star className="h-4 w-4" />
+                        Estrela
+                      </button>
+                      <button
+                        onClick={() => handleGiveDislike(colleague)}
+                        disabled={userDislikes.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                        className={`flex-1 py-2 px-3 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                          userDislikes.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                            ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
+                            : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <ThumbsDown className="h-4 w-4" />
+                        Dislike
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {filteredColleagues.length === 0 && (
@@ -759,18 +1039,35 @@ export default function InternalFeedbackPage() {
                     </div>
                     
                     {/* Estrelas recebidas */}
-                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
+                    <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
                         <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-roboto font-medium text-oxford-blue-500">Estrelas Recebidas</span>
+                        <span className="text-sm font-roboto font-medium text-rich-black-900">Estrelas Recebidas</span>
                           <div className="flex items-center space-x-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <Star className="h-4 w-4 text-gray-600 fill-gray-600" />
                           <span className="font-roboto font-semibold text-rich-black-900">{colleague.starsReceived}</span>
                         </div>
                       </div>
-                      <div className="w-full bg-yellow-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                          className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-gray-400 to-slate-400 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${Math.min((colleague.starsReceived / 20) * 100, 100)}%` }}
+                          />
+                        </div>
+                    </div>
+
+                    {/* Dislikes recebidos */}
+                    <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-roboto font-medium text-rich-black-900">Dislikes Recebidos</span>
+                          <div className="flex items-center space-x-1">
+                            <ThumbsDown className="h-4 w-4 text-gray-600" />
+                          <span className="font-roboto font-semibold text-rich-black-900">{colleague.dislikesReceived}</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                          className="bg-gradient-to-r from-gray-400 to-slate-400 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((colleague.dislikesReceived / 10) * 100, 100)}%` }}
                           />
                         </div>
                     </div>
@@ -803,21 +1100,64 @@ export default function InternalFeedbackPage() {
                         })}
                       </div>
                     )}
+
+                    {/* Dislikes recentes */}
+                    {colleague.recentDislikes.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-roboto font-medium text-oxford-blue-500">Últimos dislikes:</p>
+                        {colleague.recentDislikes.slice(0, 2).map((dislike) => {
+                          const Icon = getDislikeReasonIcon(dislike.reason)
+                          const color = getDislikeReasonColor(dislike.reason)
+                          return (
+                            <div key={dislike.id} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className={`p-1 rounded ${color}`}>
+                                  <Icon className="h-3 w-3" />
+                                </div>
+                                <span className="text-xs font-roboto font-medium text-rich-black-900">
+                                  {getDislikeReasonText(dislike.reason)}
+                                </span>
+                              </div>
+                              <p className="text-xs font-roboto font-light text-oxford-blue-600 line-clamp-2">
+                                {dislike.message}
+                              </p>
+                              <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-1">
+                                Por {dislike.from}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Botão de ação */}
-                  <button
-                    onClick={() => handleGiveStar(colleague)}
-                    disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
-                    className={`w-full py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
-                      userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
-                        ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
-                        : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    Dar Estrela
-                  </button>
+                  {/* Botões de ação */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleGiveStar(colleague)}
+                      disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                      className={`flex-1 py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
+                        userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                          ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
+                          : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Star className="h-4 w-4 mr-2" />
+                      Estrela
+                    </button>
+                    <button
+                      onClick={() => handleGiveDislike(colleague)}
+                      disabled={userDislikes.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                      className={`flex-1 py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
+                        userDislikes.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                          ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
+                          : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <ThumbsDown className="h-4 w-4 mr-2" />
+                      Dislike
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -837,8 +1177,9 @@ export default function InternalFeedbackPage() {
           )}
         </>
       ) : (
-        /* Aba de Estrelas Recebidas */
+        /* Aba de Feedback Recebido */
         <div className="space-y-6">
+          {/* Estrelas Recebidas */}
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <h2 className="text-xl font-roboto font-medium text-rich-black-900 mb-4">Suas Estrelas Recebidas</h2>
             <div className="space-y-4">
@@ -882,6 +1223,56 @@ export default function InternalFeedbackPage() {
                   <h3 className="text-lg font-roboto font-light text-rich-black-900 mb-2">Nenhuma estrela recebida ainda</h3>
                   <p className="text-sm text-oxford-blue-600 font-roboto font-light">
                     Continue fazendo um bom trabalho e seus colegas reconhecerão!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Dislikes Recebidos */}
+          <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
+            <h2 className="text-xl font-roboto font-medium text-rich-black-900 mb-4">Seus Dislikes Recebidos</h2>
+            <div className="space-y-4">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="text-oxford-blue-600 font-roboto font-light">Carregando dislikes recebidos...</div>
+                </div>
+              ) : receivedDislikes.length > 0 ? (
+                receivedDislikes.map((dislike) => {
+                  const Icon = getDislikeReasonIcon(dislike.reason)
+                  const color = getDislikeReasonColor(dislike.reason)
+                  return (
+                    <div key={dislike.id} className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 border border-red-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-roboto font-medium text-rich-black-900">
+                              {getDislikeReasonText(dislike.reason)}
+                            </h3>
+                            <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
+                              {dislike.message}
+                            </p>
+                            <p className="text-xs font-roboto font-light text-oxford-blue-400 mt-2">
+                              De {dislike.sender?.full_name || 'Usuário'} • {new Date(dislike.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                        <ThumbsDown className="h-6 w-6 text-red-500" />
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <div className="h-16 w-16 bg-gradient-to-br from-platinum-100 to-platinum-200 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <ThumbsDown className="h-8 w-8 text-oxford-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-roboto font-light text-rich-black-900 mb-2">Nenhum dislike recebido</h3>
+                  <p className="text-sm text-oxford-blue-600 font-roboto font-light">
+                    Continue fazendo um bom trabalho!
                   </p>
                 </div>
               )}
@@ -974,6 +1365,96 @@ export default function InternalFeedbackPage() {
                 >
                   <Star className="h-4 w-4" />
                   Enviar Estrela
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para dar dislike */}
+      {showDislikeModal && selectedColleague && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-[#E0E1DD]">
+                  <ThumbsDown className="h-5 w-5 text-[#778DA9]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-roboto font-medium text-rich-black-900">Dar Dislike</h3>
+                  <p className="text-sm font-roboto font-light text-oxford-blue-600">Para {selectedColleague.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDislikeModal(false)
+                  setSelectedColleague(null)
+                  setDislikeForm({ reason: '', message: '' })
+                }}
+                className="text-oxford-blue-400 hover:text-oxford-blue-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Motivo do feedback negativo
+                </label>
+                <select
+                  value={dislikeForm.reason}
+                  onChange={(e) => setDislikeForm(prev => ({ ...prev, reason: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-no-repeat bg-right pr-8"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundSize: '1.5em 1.5em'
+                  }}
+                >
+                  <option value="">Selecione um motivo</option>
+                  <option value="1">Comportamento inadequado</option>
+                  <option value="2">Falta de colaboração</option>
+                  <option value="3">Atitude negativa</option>
+                  <option value="4">Não cumpriu prazos</option>
+                  <option value="5">Falta de comunicação</option>
+                  <option value="6">Resistência a mudanças</option>
+                  <option value="7">Outro motivo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-roboto font-medium text-rich-black-900 mb-2">
+                  Mensagem de feedback
+                </label>
+                <textarea
+                  value={dislikeForm.message}
+                  onChange={(e) => setDislikeForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 placeholder-oxford-blue-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Escreva uma mensagem de feedback construtivo..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowDislikeModal(false)
+                    setSelectedColleague(null)
+                    setDislikeForm({ reason: '', message: '' })
+                  }}
+                  className="px-4 py-2 text-oxford-blue-600 hover:text-oxford-blue-800 font-roboto font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmitDislike}
+                  disabled={loading}
+                  className="bg-[#1B263B] hover:bg-[#0D1B2A] text-white px-6 py-2 rounded-xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                  Enviar Dislike
                 </button>
               </div>
             </div>
