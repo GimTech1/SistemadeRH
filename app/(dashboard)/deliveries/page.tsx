@@ -324,11 +324,8 @@ export default function DeliveriesPage() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
-            Gerencie e acompanhe todas as entregas de projetos
+          Registre, acompanhe e documente o progresso dos projetos finalizados
           </h1>
-          <p className="text-sm font-roboto font-light text-oxford-blue-600 mt-1">
-            Registre, acompanhe e documente o progresso dos projetos finalizados
-          </p>
         </div>
         <button
           onClick={() => setIsNewDeliveryOpen(true)}
