@@ -125,7 +125,7 @@ export default function DashboardLayout({
       '/users': 'Usuários',
       '/organograma': 'Organograma',
       '/pace': 'PACE',
-      'profile': 'Perfil',
+      '/profile': 'Perfil',
       '/deliveries': 'Entregas',
     }
     if (map[pathname]) return map[pathname]
