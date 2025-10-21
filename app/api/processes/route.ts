@@ -4,7 +4,7 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const userRole = profile?.role === 'admin' || profile?.role === 'gerente' ? 
-      (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+    const userRole = (profile as any)?.role === 'admin' || (profile as any)?.role === 'gerente' ? 
+      ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
 
     // Construir query baseada no role
     let query = supabase
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const userRole = profile?.role === 'admin' || profile?.role === 'gerente' ? 
-      (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+    const userRole = (profile as any)?.role === 'admin' || (profile as any)?.role === 'gerente' ? 
+      ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
 
     if (userRole === 'employee') {
       return NextResponse.json({ error: 'Sem permissão para criar processos' }, { status: 403 })
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar processo
-    const { data: process, error } = await supabase
+    const { data: process, error } = await (supabase as any)
       .from('processes')
       .insert({
         title: title.trim(),

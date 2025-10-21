@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -37,11 +37,11 @@ export async function GET(
       .eq('id', user.id)
       .single()
 
-    const userRole = profile?.role === 'admin' || profile?.role === 'gerente' ? 
-      (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+    const userRole = (profile as any)?.role === 'admin' || (profile as any)?.role === 'gerente' ? 
+      ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
 
     // Se for employee, só pode ver processos públicos e publicados
-    if (userRole === 'employee' && (!process.is_public || process.status !== 'published')) {
+    if (userRole === 'employee' && (!(process as any).is_public || (process as any).status !== 'published')) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
@@ -57,7 +57,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -83,11 +83,11 @@ export async function PUT(
       .eq('id', user.id)
       .single()
 
-    const userRole = profile?.role === 'admin' || profile?.role === 'gerente' ? 
-      (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+    const userRole = (profile as any)?.role === 'admin' || (profile as any)?.role === 'gerente' ? 
+      ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
 
     // Só admin ou o criador pode editar
-    if (userRole !== 'admin' && existingProcess.created_by !== user.id) {
+    if (userRole !== 'admin' && (existingProcess as any).created_by !== user.id) {
       return NextResponse.json({ error: 'Sem permissão para editar este processo' }, { status: 403 })
     }
 
@@ -116,7 +116,7 @@ export async function PUT(
     if (flow_data !== undefined) updateData.flow_data = flow_data
     if (status !== undefined) updateData.status = status
 
-    const { data: process, error } = await supabase
+    const { data: process, error } = await (supabase as any)
       .from('processes')
       .update(updateData)
       .eq('id', params.id)
@@ -144,7 +144,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -170,16 +170,16 @@ export async function DELETE(
       .eq('id', user.id)
       .single()
 
-    const userRole = profile?.role === 'admin' || profile?.role === 'gerente' ? 
-      (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+    const userRole = (profile as any)?.role === 'admin' || (profile as any)?.role === 'gerente' ? 
+      ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
 
     // Só admin ou o criador pode excluir
-    if (userRole !== 'admin' && existingProcess.created_by !== user.id) {
+    if (userRole !== 'admin' && (existingProcess as any).created_by !== user.id) {
       return NextResponse.json({ error: 'Sem permissão para excluir este processo' }, { status: 403 })
     }
 
     // Excluir processo
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('processes')
       .delete()
       .eq('id', params.id)

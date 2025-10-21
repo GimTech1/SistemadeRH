@@ -38,6 +38,8 @@ interface Process {
   flow_data: any
   department_id: string | null
   is_public: boolean
+  departments?: { name: string } | null
+  profiles?: { full_name: string } | null
 }
 
 interface ProcessFormData {
@@ -113,8 +115,8 @@ export default function ProcessesPage() {
         .single()
 
       if (profile) {
-        const role = profile.role === 'admin' || profile.role === 'gerente' ? 
-          (profile.role === 'admin' ? 'admin' : 'manager') : 'employee'
+        const role = (profile as any).role === 'admin' || (profile as any).role === 'gerente' ? 
+          ((profile as any).role === 'admin' ? 'admin' : 'manager') : 'employee'
         setUserRole(role)
       }
     } catch (error) {
@@ -177,7 +179,7 @@ export default function ProcessesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('processes')
         .insert({
           title: formData.title,
@@ -216,7 +218,7 @@ export default function ProcessesPage() {
         return
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('processes')
         .update({
           title: formData.title,
@@ -270,7 +272,7 @@ export default function ProcessesPage() {
 
   const handlePublishProcess = async (processId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('processes')
         .update({ 
           status: 'published',
@@ -527,8 +529,7 @@ export default function ProcessesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Processos</h1>
-          <p className="text-gray-600">Gerencie e visualize os processos da empresa</p>
+          <h1 className="text-2xl font-bold text-gray-900">Gerencie e visualize os processos da empresa</h1>
         </div>
         
         {(userRole === 'admin' || userRole === 'manager') && (
@@ -548,8 +549,8 @@ export default function ProcessesPage() {
       {/* Filtros */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <Label htmlFor="search">Buscar</Label>
+          <div className="flex flex-col">
+            <Label htmlFor="search" className="mb-1">Buscar</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -557,19 +558,19 @@ export default function ProcessesPage() {
                 placeholder="Buscar processos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10"
               />
             </div>
           </div>
           
-          <div>
-            <Label htmlFor="category">Categoria</Label>
+          <div className="flex flex-col">
+            <Label htmlFor="category" className="mb-1">Categoria</Label>
             <div className="relative">
               <select
                 id="category"
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-10"
                 style={{
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -591,14 +592,14 @@ export default function ProcessesPage() {
             </div>
           </div>
           
-          <div>
-            <Label htmlFor="status">Status</Label>
+          <div className="flex flex-col">
+            <Label htmlFor="status" className="mb-1">Status</Label>
             <div className="relative">
               <select
                 id="status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-10"
                 style={{
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -619,20 +620,24 @@ export default function ProcessesPage() {
             </div>
           </div>
           
-          <div className="flex items-end">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchTerm('')
-                setFilterCategory('')
-                setFilterStatus('')
-              }}
-              className="w-full"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Limpar Filtros
-            </Button>
-          </div>
+           <div className="flex flex-col">
+             <Label className="mb-1 h-5"></Label>
+             <Button 
+               variant="outline" 
+               onClick={() => {
+                 setSearchTerm('')
+                 setFilterCategory('')
+                 setFilterStatus('')
+               }}
+               className="h-10 px-2 text-white text-xs flex items-center justify-center"
+               style={{ backgroundColor: '#4a7fb0' }}
+               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3a6a9a'}
+               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4a7fb0'}
+             >
+               <Filter className="w-3 h-3 mr-1" />
+               Limpar
+             </Button>
+           </div>
         </div>
       </Card>
 
