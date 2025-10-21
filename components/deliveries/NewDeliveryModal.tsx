@@ -13,6 +13,7 @@ import {
   Tag,
   DollarSign,
   Building,
+  ChevronDown,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -178,7 +179,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-lg border border-platinum-200 overflow-hidden">
+      <div className="relative z-10 w-full max-w-4xl max-h-[85vh] bg-white rounded-2xl shadow-lg border border-platinum-200 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-platinum-200">
           <h2 className="text-xl font-roboto font-medium text-rich-black-900">
@@ -193,7 +194,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto flex-1">
           <div className="space-y-6">
             {/* Informações Básicas */}
             <div className="space-y-4">
@@ -242,16 +243,19 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                   <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                     Tipo de Projeto
                   </label>
-                  <select
-                    value={formData.projectType}
-                    onChange={(e) => setFormData(prev => ({ ...prev, projectType: e.target.value }))}
-                    className="w-full p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  >
-                    <option value="Desenvolvimento">Desenvolvimento</option>
-                    <option value="Migração">Migração</option>
-                    <option value="Integração">Integração</option>
-                    <option value="Consultoria">Consultoria</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.projectType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, projectType: e.target.value }))}
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                    >
+                      <option value="Desenvolvimento">Desenvolvimento</option>
+                      <option value="Migração">Migração</option>
+                      <option value="Integração">Integração</option>
+                      <option value="Consultoria">Consultoria</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
@@ -284,30 +288,36 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                   <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                     Status
                   </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  >
-                    <option value="pending">Pendente</option>
-                    <option value="in_progress">Em Andamento</option>
-                    <option value="completed">Concluída</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                    >
+                      <option value="pending">Pendente</option>
+                      <option value="in_progress">Em Andamento</option>
+                      <option value="completed">Concluída</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                     Prioridade
                   </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
-                    className="w-full p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  >
-                    <option value="low">Baixa</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                    >
+                      <option value="low">Baixa</option>
+                      <option value="medium">Média</option>
+                      <option value="high">Alta</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -526,16 +536,16 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-platinum-200">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-platinum-200 bg-white">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-platinum-300 text-oxford-blue-700 hover:bg-platinum-50 transition-colors"
+            className="px-6 py-3 rounded-lg border border-platinum-300 text-oxford-blue-700 hover:bg-platinum-50 transition-colors font-roboto font-medium text-sm"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 rounded-lg text-white hover:opacity-90 transition-opacity flex items-center gap-2"
+            className="px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity flex items-center gap-2 font-roboto font-medium text-sm"
             style={{ backgroundColor: '#1B263B' }}
           >
             <Save className="h-4 w-4" />
