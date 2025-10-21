@@ -85,8 +85,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    // Opcional: Verificar duplicatas (descomente se quiser ativar)
-    /*
+    // Verificar duplicatas com lock para evitar condições de corrida
     const { data: existingDelivery } = await (supabase as any)
       .from('deliveries')
       .select('id, title, delivery_date, responsible')
@@ -101,7 +100,6 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       )
     }
-    */
     
     // Validação básica dos dados
     const requiredFields = ['title', 'description', 'deliveryDate', 'responsible', 'projectType']

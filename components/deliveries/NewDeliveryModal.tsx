@@ -54,6 +54,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loadingEmployees, setLoadingEmployees] = useState(false)
@@ -137,12 +138,13 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
     }
 
     // Prevenir duplo clique
-    if (uploading) {
+    if (uploading || isSubmitting) {
       return
     }
 
     try {
       setUploading(true)
+      setIsSubmitting(true)
       
       const deliveryData = {
         ...formData,
@@ -204,6 +206,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
       toast.error(error instanceof Error ? error.message : 'Erro ao criar entrega')
     } finally {
       setUploading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -767,12 +770,12 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
           </button>
           <button
             onClick={handleSave}
-            disabled={uploading}
+            disabled={uploading || isSubmitting}
             className="px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity flex items-center gap-2 font-roboto font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#1B263B' }}
           >
             <Save className="h-4 w-4" />
-            {uploading ? 'Salvando...' : 'Salvar Entrega'}
+            {uploading || isSubmitting ? 'Salvando...' : 'Salvar Entrega'}
           </button>
         </div>
       </div>
