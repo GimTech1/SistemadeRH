@@ -127,6 +127,7 @@ export default function DashboardLayout({
       '/pace': 'PACE',
       '/profile': 'Perfil',
       '/deliveries': 'Entregas',
+      '/processes': 'Processos',
     }
     if (map[pathname]) return map[pathname]
     const base = '/' + pathname.split('/').filter(Boolean)[0]

@@ -33,6 +33,7 @@ import {
   Star,
   BookMarked,
   Package,
+  Workflow,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -150,6 +151,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Entregas',
       icon: Package,
       href: '/deliveries',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
+      title: 'Processos',
+      icon: Workflow,
+      href: '/processes',
       roles: ['admin', 'manager', 'employee'],
     },
     {

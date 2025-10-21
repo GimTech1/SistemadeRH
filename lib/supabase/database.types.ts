@@ -730,6 +730,47 @@ export type Database = {
           created_at?: string
         }
       }
+      processes: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          category: string
+          status: 'draft' | 'published' | 'archived'
+          created_by: string
+          department_id: string | null
+          is_public: boolean
+          flow_data: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          category: string
+          status?: 'draft' | 'published' | 'archived'
+          created_by: string
+          department_id?: string | null
+          is_public?: boolean
+          flow_data?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          category?: string
+          status?: 'draft' | 'published' | 'archived'
+          created_by?: string
+          department_id?: string | null
+          is_public?: boolean
+          flow_data?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
