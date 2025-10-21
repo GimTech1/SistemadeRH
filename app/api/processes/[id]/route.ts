@@ -4,9 +4,10 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     
     // Verificar autenticação
@@ -22,7 +23,7 @@ export async function GET(
         departments(name),
         profiles!processes_created_by_fkey(full_name)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -54,9 +55,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     
     // Verificar autenticação
@@ -69,7 +71,7 @@ export async function PUT(
     const { data: existingProcess, error: fetchError } = await supabase
       .from('processes')
       .select('created_by')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !existingProcess) {
@@ -119,7 +121,7 @@ export async function PUT(
     const { data: process, error } = await (supabase as any)
       .from('processes')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         departments(name),
@@ -141,9 +143,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     
     // Verificar autenticação
@@ -156,7 +159,7 @@ export async function DELETE(
     const { data: existingProcess, error: fetchError } = await supabase
       .from('processes')
       .select('created_by')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !existingProcess) {
@@ -182,7 +185,7 @@ export async function DELETE(
     const { error } = await (supabase as any)
       .from('processes')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       console.error('Erro ao excluir processo:', error)

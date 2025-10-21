@@ -276,28 +276,28 @@ export default function ProcessFlowEditor({
       <div className="flex items-center space-x-2 p-4 border-b">
         <div className="flex items-center space-x-1">
           <Button
-            variant={selectedTool === 'select' ? 'default' : 'outline'}
+            variant={selectedTool === 'select' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setSelectedTool('select')}
           >
             <MousePointer className="w-4 h-4" />
           </Button>
           <Button
-            variant={selectedTool === 'process' ? 'default' : 'outline'}
+            variant={selectedTool === 'process' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setSelectedTool('process')}
           >
             <Square className="w-4 h-4" />
           </Button>
           <Button
-            variant={selectedTool === 'decision' ? 'default' : 'outline'}
+            variant={selectedTool === 'decision' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setSelectedTool('decision')}
           >
             <Diamond className="w-4 h-4" />
           </Button>
           <Button
-            variant={selectedTool === 'end' ? 'default' : 'outline'}
+            variant={selectedTool === 'end' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setSelectedTool('end')}
           >

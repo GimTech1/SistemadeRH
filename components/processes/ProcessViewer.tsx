@@ -234,14 +234,14 @@ export default function ProcessViewer({
       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
         <div className="flex items-center space-x-4">
           <Button
-            variant={showFlow ? 'default' : 'outline'}
+            variant={showFlow ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setShowFlow(true)}
           >
             Fluxo
           </Button>
           <Button
-            variant={!showFlow ? 'default' : 'outline'}
+            variant={!showFlow ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setShowFlow(false)}
           >
