@@ -226,7 +226,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
 
   const handleAddDocument = () => {
     if (!newDocument.trim()) {
-      toast.error('Digite o nome do documento')
+      toast.error('Selecione um documento')
       return
     }
     setFormData(prev => ({
@@ -245,7 +245,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
 
   const handleAddTrainedPerson = () => {
     if (!newTrainedPerson.trim()) {
-      toast.error('Digite o nome da pessoa treinada')
+      toast.error('Selecione uma pessoa treinada')
       return
     }
     setFormData(prev => ({
@@ -398,6 +398,22 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                       <option value="Migração">Migração</option>
                       <option value="Integração">Integração</option>
                       <option value="Consultoria">Consultoria</option>
+                      <option value="Manutenção">Manutenção</option>
+                      <option value="Modernização">Modernização</option>
+                      <option value="Implementação">Implementação</option>
+                      <option value="Customização">Customização</option>
+                      <option value="Treinamento">Treinamento</option>
+                      <option value="Auditoria">Auditoria</option>
+                      <option value="Análise">Análise</option>
+                      <option value="Pesquisa">Pesquisa</option>
+                      <option value="Prototipagem">Prototipagem</option>
+                      <option value="Testes">Testes</option>
+                      <option value="Documentação">Documentação</option>
+                      <option value="Suporte">Suporte</option>
+                      <option value="Otimização">Otimização</option>
+                      <option value="Segurança">Segurança</option>
+                      <option value="Backup">Backup</option>
+                      <option value="Recuperação">Recuperação</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
                   </div>
@@ -581,13 +597,25 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={newTrainedPerson}
-                      onChange={(e) => setNewTrainedPerson(e.target.value)}
-                      placeholder="Nome da pessoa treinada"
-                      className="flex-1 p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                    />
+                    <div className="relative flex-1">
+                      <select
+                        value={newTrainedPerson}
+                        onChange={(e) => setNewTrainedPerson(e.target.value)}
+                        className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                        style={{ backgroundImage: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                        disabled={loadingEmployees}
+                      >
+                        <option value="">
+                          {loadingEmployees ? 'Carregando funcionários...' : 'Selecione uma pessoa treinada'}
+                        </option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.full_name}>
+                            {employee.full_name} - {employee.position}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                    </div>
                     <button
                       onClick={handleAddTrainedPerson}
                       className="p-3 text-yinmn-blue-600 hover:bg-yinmn-blue-50 rounded-lg transition-colors"
