@@ -1,4 +1,4 @@
-# RH Performance - Sistema de Avaliação de Desempenho
+# RH IM - Sistema de Avaliação de Desempenho
 
 Sistema de RH para avaliação de desempenho baseado na metodologia CHA (Conhecimentos, Habilidades e Atitudes), desenvolvido com Next.js e Supabase.
 
