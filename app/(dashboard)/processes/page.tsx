@@ -620,8 +620,7 @@ export default function ProcessesPage() {
             </div>
           </div>
           
-           <div className="flex flex-col">
-             <Label className="mb-1 h-5"></Label>
+           <div className="flex flex-col justify-end">
              <Button 
                variant="outline" 
                onClick={() => {
