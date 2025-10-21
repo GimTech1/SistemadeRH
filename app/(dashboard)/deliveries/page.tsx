@@ -68,10 +68,19 @@ export default function DeliveriesPage() {
   useEffect(() => {
     const fetchDeliveries = async () => {
       try {
+        console.log('Carregando entregas...')
         const response = await fetch('/api/deliveries')
         if (response.ok) {
           const data = await response.json()
-          setDeliveries(data.deliveries || [])
+          console.log('Entregas carregadas:', data.deliveries?.length || 0)
+          
+          // Remover duplicatas baseado no ID
+          const uniqueDeliveries = (data.deliveries || []).filter((delivery: any, index: number, self: any[]) => 
+            index === self.findIndex((d: any) => d.id === delivery.id)
+          )
+          
+          console.log('Entregas únicas:', uniqueDeliveries.length)
+          setDeliveries(uniqueDeliveries)
         } else {
           const errorData = await response.json()
           console.error('Erro ao carregar entregas:', errorData.error)

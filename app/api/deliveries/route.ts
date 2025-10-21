@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    console.log('Entregas encontradas no banco:', deliveries?.length || 0)
+    
     // Transformar dados para o formato esperado pelo frontend
     const formattedDeliveries = deliveries?.map((delivery: any) => ({
       id: delivery.id,
@@ -84,6 +86,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Opcional: Verificar duplicatas (descomente se quiser ativar)
+    /*
+    const { data: existingDelivery } = await (supabase as any)
+      .from('deliveries')
+      .select('id, title, delivery_date, responsible')
+      .eq('title', body.title)
+      .eq('delivery_date', body.deliveryDate)
+      .eq('responsible', body.responsible)
+      .single()
+
+    if (existingDelivery) {
+      return NextResponse.json(
+        { error: `Já existe uma entrega com este título, data e responsável. Entrega existente: ${existingDelivery.title} em ${existingDelivery.delivery_date}` },
+        { status: 409 }
+      )
+    }
+    */
     
     // Validação básica dos dados
     const requiredFields = ['title', 'description', 'deliveryDate', 'responsible', 'projectType']

@@ -136,6 +136,11 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
       return
     }
 
+    // Prevenir duplo clique
+    if (uploading) {
+      return
+    }
+
     try {
       setUploading(true)
       
@@ -159,6 +164,9 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
 
       if (!response.ok) {
         const error = await response.json()
+        if (response.status === 409) {
+          throw new Error('Já existe uma entrega com este título, data e responsável. Tente alterar o título, data ou responsável.')
+        }
         throw new Error(error.error || 'Erro ao criar entrega')
       }
 
