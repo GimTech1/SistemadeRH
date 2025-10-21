@@ -22,6 +22,7 @@ import {
   Trash2,
   Save,
   X,
+  ChevronDown,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -566,16 +567,24 @@ export default function DeliveryDetailPage() {
                   Tipo de Projeto
                 </label>
                 {isEditing ? (
-                  <select
-                    value={editForm.projectType || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, projectType: e.target.value }))}
-                    className="w-full p-2 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  >
-                    <option value="Desenvolvimento">Desenvolvimento</option>
-                    <option value="Migração">Migração</option>
-                    <option value="Integração">Integração</option>
-                    <option value="Consultoria">Consultoria</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={editForm.projectType || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, projectType: e.target.value }))}
+                      className="w-full p-2 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ 
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
+                    >
+                      <option value="Desenvolvimento">Desenvolvimento</option>
+                      <option value="Migração">Migração</option>
+                      <option value="Integração">Integração</option>
+                      <option value="Consultoria">Consultoria</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 ) : (
                   <p className="text-sm font-roboto font-light text-oxford-blue-600 flex items-center gap-2">
                     <Package className="h-4 w-4" />
@@ -629,15 +638,23 @@ export default function DeliveryDetailPage() {
                   Status
                 </label>
                 {isEditing ? (
-                  <select
-                    value={editForm.status || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full p-2 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  >
-                    <option value="pending">Pendente</option>
-                    <option value="in_progress">Em Andamento</option>
-                    <option value="completed">Concluída</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={editForm.status || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value as any }))}
+                      className="w-full p-2 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ 
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
+                    >
+                      <option value="pending">Pendente</option>
+                      <option value="in_progress">Em Andamento</option>
+                      <option value="completed">Concluída</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 ) : (
                   <p className="text-sm font-roboto font-light text-oxford-blue-600 flex items-center gap-2">
                     {getStatusIcon(delivery.status)}

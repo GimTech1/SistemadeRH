@@ -247,7 +247,12 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                     <select
                       value={formData.projectType}
                       onChange={(e) => setFormData(prev => ({ ...prev, projectType: e.target.value }))}
-                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ 
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
                     >
                       <option value="Desenvolvimento">Desenvolvimento</option>
                       <option value="Migração">Migração</option>
@@ -292,7 +297,12 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ 
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
                     >
                       <option value="pending">Pendente</option>
                       <option value="in_progress">Em Andamento</option>
@@ -310,7 +320,12 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                     <select
                       value={formData.priority}
                       onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
-                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white"
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ 
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
                     >
                       <option value="low">Baixa</option>
                       <option value="medium">Média</option>
