@@ -2,6 +2,38 @@ import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/database.types'
 
+export async function GET() {
+  try {
+    const supabase = await createServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const { data: employees, error } = await (supabase as any)
+      .from('employees')
+      .select('id, full_name, position, department, is_active')
+      .eq('is_active', true)
+      .order('full_name', { ascending: true })
+
+    if (error) {
+      console.error('Erro ao buscar funcionários:', error)
+      return NextResponse.json(
+        { error: 'Erro ao buscar funcionários' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ employees: employees || [] })
+  } catch (error) {
+    console.error('Erro ao buscar funcionários:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json() as {

@@ -52,6 +52,13 @@ interface Delivery {
   createdAt: string
 }
 
+interface Employee {
+  id: string
+  full_name: string
+  position: string
+  department: string
+}
+
 export default function DeliveryDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -63,7 +70,28 @@ export default function DeliveryDetailPage() {
   const [newUpdate, setNewUpdate] = useState({ description: '', author: '' })
   const [newDocument, setNewDocument] = useState('')
   const [newTrainedPerson, setNewTrainedPerson] = useState('')
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(false)
 
+  // Carregar funcionários
+  const loadEmployees = async () => {
+    try {
+      setLoadingEmployees(true)
+      const response = await fetch('/api/employees')
+      if (response.ok) {
+        const data = await response.json()
+        setEmployees(data.employees || [])
+      } else {
+        console.error('Erro ao carregar funcionários')
+        toast.error('Erro ao carregar lista de funcionários')
+      }
+    } catch (error) {
+      console.error('Erro ao carregar funcionários:', error)
+      toast.error('Erro ao carregar lista de funcionários')
+    } finally {
+      setLoadingEmployees(false)
+    }
+  }
 
   useEffect(() => {
     const loadDelivery = async () => {
@@ -96,6 +124,7 @@ export default function DeliveryDetailPage() {
     }
 
     loadDelivery()
+    loadEmployees() // Carregar funcionários também
   }, [params.id, router, searchParams])
 
   const getStatusColor = (status: string) => {
@@ -381,12 +410,25 @@ export default function DeliveryDetailPage() {
                   Responsável
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.responsible || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, responsible: e.target.value }))}
-                    className="w-full p-2 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <select
+                      value={editForm.responsible || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, responsible: e.target.value }))}
+                      className="w-full p-2 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ backgroundImage: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      disabled={loadingEmployees}
+                    >
+                      <option value="">
+                        {loadingEmployees ? 'Carregando funcionários...' : 'Selecione um responsável'}
+                      </option>
+                      {employees.map((employee) => (
+                        <option key={employee.id} value={employee.full_name}>
+                          {employee.full_name} - {employee.position}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 ) : (
                   <p className="text-sm font-roboto font-light text-oxford-blue-600 flex items-center gap-2">
                     <User className="h-4 w-4" />

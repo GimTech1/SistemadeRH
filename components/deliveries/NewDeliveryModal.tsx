@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   X,
   Save,
@@ -14,6 +14,7 @@ import {
   DollarSign,
   Building,
   ChevronDown,
+  Upload,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -21,6 +22,13 @@ interface NewDeliveryModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (delivery: any) => void
+}
+
+interface Employee {
+  id: string
+  full_name: string
+  position: string
+  department: string
 }
 
 export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliveryModalProps) {
@@ -44,30 +52,149 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
     tags: [] as string[]
   })
 
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(false)
   const [newDocument, setNewDocument] = useState('')
   const [newTrainedPerson, setNewTrainedPerson] = useState('')
   const [newTag, setNewTag] = useState('')
   const [newUpdate, setNewUpdate] = useState({ description: '', author: '' })
 
-  const handleSave = () => {
+  // Carregar funcionários quando o modal abrir
+  useEffect(() => {
+    if (isOpen) {
+      loadEmployees()
+    }
+  }, [isOpen])
+
+  const loadEmployees = async () => {
+    try {
+      setLoadingEmployees(true)
+      const response = await fetch('/api/employees')
+      if (response.ok) {
+        const data = await response.json()
+        setEmployees(data.employees || [])
+      } else {
+        console.error('Erro ao carregar funcionários')
+        toast.error('Erro ao carregar lista de funcionários')
+      }
+    } catch (error) {
+      console.error('Erro ao carregar funcionários:', error)
+      toast.error('Erro ao carregar lista de funcionários')
+    } finally {
+      setLoadingEmployees(false)
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files) {
+      const validFiles = Array.from(files).filter(file => {
+        const allowedTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/plain',
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp'
+        ]
+        const maxSize = 50 * 1024 * 1024 // 50MB
+        
+        if (!allowedTypes.includes(file.type)) {
+          toast.error(`Arquivo ${file.name} não é um formato válido.`)
+          return false
+        }
+        
+        if (file.size > maxSize) {
+          toast.error(`Arquivo ${file.name} é muito grande. Tamanho máximo: 50MB.`)
+          return false
+        }
+        
+        return true
+      })
+
+      setUploadedFiles(prev => [...prev, ...validFiles])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSave = async () => {
     // Validação básica
     if (!formData.title.trim() || !formData.description.trim() || !formData.deliveryDate || !formData.responsible) {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
-    const delivery = {
-      ...formData,
-      budget: formData.budget ? Number(formData.budget) : undefined,
-      training: {
-        ...formData.training,
-        trainingDate: formData.training.trainingDate || undefined
+    try {
+      setUploading(true)
+      
+      const deliveryData = {
+        ...formData,
+        budget: formData.budget ? Number(formData.budget) : undefined,
+        training: {
+          ...formData.training,
+          trainingDate: formData.training.trainingDate || undefined
+        }
       }
-    }
 
-    onSave(delivery)
-    onClose()
-    resetForm()
+      // Primeiro, criar a entrega
+      const response = await fetch('/api/deliveries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(deliveryData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao criar entrega')
+      }
+
+      const { delivery } = await response.json()
+
+      // Se há arquivos para upload, fazer upload de cada um
+      if (uploadedFiles.length > 0) {
+        for (const file of uploadedFiles) {
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('delivery_id', delivery.id)
+          formData.append('description', `Documento anexado: ${file.name}`)
+
+          const uploadResponse = await fetch('/api/deliveries/upload', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!uploadResponse.ok) {
+            const error = await uploadResponse.json()
+            console.error('Erro ao fazer upload do arquivo:', error)
+            toast.error(`Erro ao fazer upload de ${file.name}`)
+          }
+        }
+      }
+
+      toast.success('Entrega criada com sucesso!')
+      onSave(delivery)
+      onClose()
+      resetForm()
+    } catch (error) {
+      console.error('Erro ao salvar entrega:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar entrega')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const resetForm = () => {
@@ -94,6 +221,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
     setNewTrainedPerson('')
     setNewTag('')
     setNewUpdate({ description: '', author: '' })
+    setUploadedFiles([])
   }
 
   const handleAddDocument = () => {
@@ -230,13 +358,25 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                   <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                     Responsável *
                   </label>
-                  <input
-                    type="text"
-                    value={formData.responsible}
-                    onChange={(e) => setFormData(prev => ({ ...prev, responsible: e.target.value }))}
-                    className="w-full p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                    placeholder="Nome do responsável"
-                  />
+                  <div className="relative">
+                    <select
+                      value={formData.responsible}
+                      onChange={(e) => setFormData(prev => ({ ...prev, responsible: e.target.value }))}
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ backgroundImage: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      disabled={loadingEmployees}
+                    >
+                      <option value="">
+                        {loadingEmployees ? 'Carregando funcionários...' : 'Selecione um responsável'}
+                      </option>
+                      {employees.map((employee) => (
+                        <option key={employee.id} value={employee.full_name}>
+                          {employee.full_name} - {employee.position}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
@@ -353,38 +493,55 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
             <div className="space-y-4">
               <h3 className="text-lg font-roboto font-medium text-rich-black-900">Documentação</h3>
               
-              <div className="flex items-center gap-2">
+              {/* Upload de arquivos */}
+              <div className="border-2 border-dashed border-platinum-300 rounded-lg p-6 text-center hover:border-yinmn-blue-400 transition-colors">
                 <input
-                  type="text"
-                  value={newDocument}
-                  onChange={(e) => setNewDocument(e.target.value)}
-                  placeholder="Nome do documento"
-                  className="flex-1 p-3 border border-platinum-300 rounded-lg text-rich-black-900 focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp"
                 />
-                <button
-                  onClick={handleAddDocument}
-                  className="p-3 text-yinmn-blue-600 hover:bg-yinmn-blue-50 rounded-lg transition-colors"
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center gap-2"
                 >
-                  <Plus className="h-5 w-5" />
-                </button>
+                  <Upload className="h-8 w-8 text-oxford-blue-400" />
+                  <span className="text-sm font-roboto font-medium text-oxford-blue-600">
+                    Clique para selecionar arquivos
+                  </span>
+                  <span className="text-xs font-roboto font-light text-oxford-blue-500">
+                    PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, GIF, WEBP (máx. 50MB cada)
+                  </span>
+                </label>
               </div>
 
-              <div className="space-y-2">
-                {formData.documentation.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-platinum-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-oxford-blue-400" />
-                      <span className="text-sm font-roboto font-medium text-rich-black-900">{doc}</span>
+              {/* Lista de arquivos selecionados */}
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-roboto font-medium text-rich-black-900">Arquivos selecionados:</h4>
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-platinum-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-oxford-blue-400" />
+                        <div>
+                          <span className="text-sm font-roboto font-medium text-rich-black-900">{file.name}</span>
+                          <span className="text-xs font-roboto font-light text-oxford-blue-500 ml-2">
+                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleRemoveDocument(index)}
-                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Treinamento */}
@@ -560,11 +717,12 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity flex items-center gap-2 font-roboto font-medium text-sm"
+            disabled={uploading}
+            className="px-6 py-3 rounded-lg text-white hover:opacity-90 transition-opacity flex items-center gap-2 font-roboto font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#1B263B' }}
           >
             <Save className="h-4 w-4" />
-            Salvar Entrega
+            {uploading ? 'Salvando...' : 'Salvar Entrega'}
           </button>
         </div>
       </div>
