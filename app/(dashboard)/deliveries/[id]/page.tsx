@@ -74,6 +74,8 @@ export default function DeliveryDetailPage() {
   const [loadingEmployees, setLoadingEmployees] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Carregar funcionários
   const loadEmployees = async () => {
@@ -388,6 +390,32 @@ export default function DeliveryDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!delivery) return
+
+    try {
+      setDeleting(true)
+      
+      const response = await fetch(`/api/deliveries/${delivery.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast.success('Entrega excluída com sucesso!')
+        router.push('/deliveries')
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Erro ao excluir entrega')
+      }
+    } catch (error) {
+      console.error('Erro ao excluir entrega:', error)
+      toast.error('Erro ao excluir entrega')
+    } finally {
+      setDeleting(false)
+      setShowDeleteModal(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -436,6 +464,13 @@ export default function DeliveryDetailPage() {
               >
                 <Edit className="h-4 w-4" />
                 Editar
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir
               </button>
             </>
           ) : (
@@ -1024,6 +1059,60 @@ export default function DeliveryDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">
+                  Excluir Entrega
+                </h3>
+                <p className="text-sm font-roboto font-light text-oxford-blue-600">
+                  Esta ação não pode ser desfeita
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-sm font-roboto font-light text-rich-black-700 mb-6">
+              Tem certeza que deseja excluir a entrega <strong>"{delivery?.title}"</strong>? 
+              Todos os dados relacionados serão permanentemente removidos.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg border border-platinum-300 text-oxford-blue-700 hover:bg-platinum-50 transition-colors flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
