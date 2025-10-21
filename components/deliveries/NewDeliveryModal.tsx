@@ -55,6 +55,7 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [requestId, setRequestId] = useState<string | null>(null)
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loadingEmployees, setLoadingEmployees] = useState(false)
@@ -142,6 +143,10 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
       return
     }
 
+    // Gerar ID único para esta requisição
+    const currentRequestId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
+    setRequestId(currentRequestId)
+
     try {
       setUploading(true)
       setIsSubmitting(true)
@@ -155,11 +160,13 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
         }
       }
 
+
       // Primeiro, criar a entrega
       const response = await fetch('/api/deliveries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Request-ID': currentRequestId,
         },
         body: JSON.stringify(deliveryData),
       })

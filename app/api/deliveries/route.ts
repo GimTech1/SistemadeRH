@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Cache para evitar requisições duplicadas
+const requestCache = new Map<string, { timestamp: number, status: string }>()
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -84,6 +87,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const requestId = request.headers.get('X-Request-ID')
+    
+    
+    // Verificar se já processamos esta requisição
+    if (requestId && requestCache.has(requestId)) {
+      const cached = requestCache.get(requestId)!
+      const now = Date.now()
+      
+      // Cache válido por 30 segundos
+      if (now - cached.timestamp < 30000) {
+        return NextResponse.json(
+          { error: 'Requisição duplicada detectada' },
+          { status: 409 }
+        )
+      }
+    }
+    
+    // Marcar requisição como processando
+    if (requestId) {
+      requestCache.set(requestId, { timestamp: Date.now(), status: 'processing' })
+    }
     
     // Verificar duplicatas com lock para evitar condições de corrida
     const { data: existingDelivery } = await (supabase as any)
@@ -217,6 +241,11 @@ export async function POST(request: NextRequest) {
       if (tagsError) {
         console.error('Erro ao criar tags:', tagsError)
       }
+    }
+
+    // Marcar requisição como concluída
+    if (requestId) {
+      requestCache.set(requestId, { timestamp: Date.now(), status: 'completed' })
     }
 
     return NextResponse.json({

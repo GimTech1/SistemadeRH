@@ -168,26 +168,8 @@ export default function DeliveriesPage() {
   }
 
   const handleSaveNewDelivery = async (newDelivery: any) => {
-    try {
-      const response = await fetch('/api/deliveries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newDelivery),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setDeliveries(prev => [...prev, data.delivery])
-      } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Erro ao criar entrega')
-      }
-    } catch (error) {
-      console.error('Erro ao criar entrega:', error)
-      toast.error('Erro ao criar entrega')
-    }
+    // A entrega já foi criada pelo modal, apenas atualizar a lista
+    setDeliveries(prev => [...prev, newDelivery])
   }
 
   const projectTypes = ['all', ...new Set(deliveries.map(d => d.projectType))]
