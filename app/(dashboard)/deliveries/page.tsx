@@ -68,18 +68,15 @@ export default function DeliveriesPage() {
   useEffect(() => {
     const fetchDeliveries = async () => {
       try {
-        console.log('Carregando entregas...')
         const response = await fetch('/api/deliveries')
         if (response.ok) {
           const data = await response.json()
-          console.log('Entregas carregadas:', data.deliveries?.length || 0)
           
           // Remover duplicatas baseado no ID
           const uniqueDeliveries = (data.deliveries || []).filter((delivery: any, index: number, self: any[]) => 
             index === self.findIndex((d: any) => d.id === delivery.id)
           )
           
-          console.log('Entregas únicas:', uniqueDeliveries.length)
           setDeliveries(uniqueDeliveries)
         } else {
           const errorData = await response.json()
@@ -183,7 +180,6 @@ export default function DeliveriesPage() {
       if (response.ok) {
         const data = await response.json()
         setDeliveries(prev => [...prev, data.delivery])
-        toast.success('Nova entrega criada com sucesso!')
       } else {
         const errorData = await response.json()
         toast.error(errorData.error || 'Erro ao criar entrega')

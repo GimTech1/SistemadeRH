@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
     const filePath = `deliveries/${deliveryId}/${fileName}`
 
     // Upload do arquivo para o Supabase Storage
-    console.log('Tentando fazer upload para:', filePath)
     const { error: uploadError } = await supabase.storage
       .from('delivery-documents')
       .upload(filePath, file)
@@ -82,15 +81,11 @@ export async function POST(request: NextRequest) {
         error: `Erro ao fazer upload do arquivo: ${uploadError.message}` 
       }, { status: 500 })
     }
-    
-    console.log('Upload realizado com sucesso para:', filePath)
 
     // Obter URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
       .from('delivery-documents')
       .getPublicUrl(filePath)
-
-    console.log('URL pública gerada:', publicUrl)
 
     // Salvar metadados no banco de dados
     const documentData: any = {

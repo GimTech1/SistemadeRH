@@ -31,8 +31,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('Entregas encontradas no banco:', deliveries?.length || 0)
-    
     // Transformar dados para o formato esperado pelo frontend
     const formattedDeliveries = deliveries?.map((delivery: any) => ({
       id: delivery.id,
