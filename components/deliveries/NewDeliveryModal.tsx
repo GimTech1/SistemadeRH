@@ -180,7 +180,9 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
           if (!uploadResponse.ok) {
             const error = await uploadResponse.json()
             console.error('Erro ao fazer upload do arquivo:', error)
-            toast.error(`Erro ao fazer upload de ${file.name}`)
+            toast.error(`Erro ao fazer upload de ${file.name}: ${error.error || 'Erro desconhecido'}`)
+          } else {
+            console.log(`Upload de ${file.name} realizado com sucesso`)
           }
         }
       }
@@ -698,13 +700,25 @@ export default function NewDeliveryModal({ isOpen, onClose, onSave }: NewDeliver
                   <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                     Autor
                   </label>
-                  <input
-                    type="text"
-                    value={newUpdate.author}
-                    onChange={(e) => setNewUpdate(prev => ({ ...prev, author: e.target.value }))}
-                    className="w-full p-3 border border-platinum-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                    placeholder="Nome do autor"
-                  />
+                  <div className="relative">
+                    <select
+                      value={newUpdate.author}
+                      onChange={(e) => setNewUpdate(prev => ({ ...prev, author: e.target.value }))}
+                      className="w-full p-3 pr-10 border border-platinum-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                      style={{ backgroundImage: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      disabled={loadingEmployees}
+                    >
+                      <option value="">
+                        {loadingEmployees ? 'Carregando funcionários...' : 'Selecione o autor'}
+                      </option>
+                      {employees.map((employee) => (
+                        <option key={employee.id} value={employee.full_name}>
+                          {employee.full_name} - {employee.position}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                  </div>
                 </div>
                 <button
                   onClick={handleAddUpdate}

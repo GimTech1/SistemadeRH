@@ -50,7 +50,14 @@ export async function GET(
       priority: delivery.priority,
       createdAt: delivery.created_at,
       updatedAt: delivery.updated_at,
-      documentation: delivery.delivery_documents?.map((doc: any) => doc.filename) || [],
+      documentation: delivery.delivery_documents?.map((doc: any) => ({
+        id: doc.id,
+        filename: doc.filename,
+        file_url: doc.file_url,
+        file_size: doc.file_size,
+        mime_type: doc.mime_type,
+        description: doc.description
+      })) || [],
       training: {
         provided: delivery.delivery_trainings?.[0]?.provided || false,
         trainingDate: delivery.delivery_trainings?.[0]?.training_date,

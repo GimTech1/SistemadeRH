@@ -130,9 +130,13 @@ export async function POST(request: NextRequest) {
         uploaded_by: user.id
       }))
 
-      await supabase
+      const { error: docError } = await supabase
         .from('delivery_documents')
         .insert(documents)
+      
+      if (docError) {
+        console.error('Erro ao criar documentos:', docError)
+      }
     }
 
     // Criar treinamento se existir
@@ -148,15 +152,23 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
+      if (trainingError) {
+        console.error('Erro ao criar treinamento:', trainingError)
+      }
+
       if (!trainingError && body.training.trainedPeople && body.training.trainedPeople.length > 0) {
         const trainedPeople = body.training.trainedPeople.map((personName: string) => ({
           training_id: training.id,
           person_name: personName
         }))
 
-        await supabase
+        const { error: peopleError } = await supabase
           .from('delivery_trained_people')
           .insert(trainedPeople)
+        
+        if (peopleError) {
+          console.error('Erro ao criar pessoas treinadas:', peopleError)
+        }
       }
     }
 
@@ -182,9 +194,13 @@ export async function POST(request: NextRequest) {
         tag_name: tagName
       }))
 
-      await supabase
+      const { error: tagsError } = await supabase
         .from('delivery_tags')
         .insert(tags)
+      
+      if (tagsError) {
+        console.error('Erro ao criar tags:', tagsError)
+      }
     }
 
     return NextResponse.json({

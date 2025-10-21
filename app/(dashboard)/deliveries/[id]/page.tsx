@@ -72,6 +72,8 @@ export default function DeliveryDetailPage() {
   const [newTrainedPerson, setNewTrainedPerson] = useState('')
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loadingEmployees, setLoadingEmployees] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
 
   // Carregar funcionários
   const loadEmployees = async () => {
@@ -90,6 +92,90 @@ export default function DeliveryDetailPage() {
       toast.error('Erro ao carregar lista de funcionários')
     } finally {
       setLoadingEmployees(false)
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files) {
+      const validFiles = Array.from(files).filter(file => {
+        const allowedTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/plain',
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp'
+        ]
+        const maxSize = 50 * 1024 * 1024 // 50MB
+        
+        if (!allowedTypes.includes(file.type)) {
+          toast.error(`Arquivo ${file.name} não é um formato válido.`)
+          return false
+        }
+        
+        if (file.size > maxSize) {
+          toast.error(`Arquivo ${file.name} é muito grande. Tamanho máximo: 50MB.`)
+          return false
+        }
+        
+        return true
+      })
+
+      setUploadedFiles(prev => [...prev, ...validFiles])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const uploadFiles = async () => {
+    if (uploadedFiles.length === 0) return
+
+    try {
+      setUploading(true)
+      
+      for (const file of uploadedFiles) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('delivery_id', delivery!.id)
+        formData.append('description', `Documento anexado: ${file.name}`)
+
+        const uploadResponse = await fetch('/api/deliveries/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json()
+          console.error('Erro ao fazer upload do arquivo:', error)
+          toast.error(`Erro ao fazer upload de ${file.name}`)
+        } else {
+          toast.success(`Arquivo ${file.name} enviado com sucesso!`)
+        }
+      }
+
+      // Recarregar a entrega para mostrar os novos documentos
+      const response = await fetch(`/api/deliveries/${delivery!.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDelivery(data.delivery)
+        setEditForm(data.delivery)
+      }
+
+      setUploadedFiles([])
+    } catch (error) {
+      console.error('Erro ao fazer upload dos arquivos:', error)
+      toast.error('Erro ao fazer upload dos arquivos')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -270,6 +356,36 @@ export default function DeliveryDetailPage() {
         trainedPeople: prev.training?.trainedPeople?.filter((_, i) => i !== index) || []
       }
     }))
+  }
+
+  const handleDownloadDocument = async (document: any) => {
+    if (typeof document === 'object' && document.id) {
+      try {
+        // Buscar URL assinada da API
+        const response = await fetch(`/api/deliveries/download?documentId=${document.id}`)
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Erro ao gerar URL de download')
+        }
+
+        const { downloadUrl, filename } = await response.json()
+        
+        // Criar um link temporário para download
+        const link = window.document.createElement('a')
+        link.href = downloadUrl
+        link.download = filename || document.filename
+        link.target = '_blank'
+        window.document.body.appendChild(link)
+        link.click()
+        window.document.body.removeChild(link)
+      } catch (error) {
+        console.error('Erro ao fazer download:', error)
+        toast.error((error as Error).message || 'Erro ao fazer download do documento')
+      }
+    } else {
+      toast.error('ID do documento não disponível')
+    }
   }
 
   if (loading) {
@@ -579,34 +695,90 @@ export default function DeliveryDetailPage() {
           {/* Documentação */}
           <div className="bg-white rounded-2xl shadow-sm border border-platinum-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Documentação</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">Documentação</h3>
+                <span className="text-sm text-oxford-blue-500">
+                  ({currentDelivery?.documentation?.length || 0} documentos)
+                </span>
+              </div>
               {isEditing && (
                 <div className="flex items-center gap-2">
                   <input
-                    type="text"
-                    value={newDocument}
-                    onChange={(e) => setNewDocument(e.target.value)}
-                    placeholder="Nome do documento"
-                    className="px-3 py-1 border border-platinum-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload-edit"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp"
                   />
-                  <button
-                    onClick={handleAddDocument}
-                    className="p-1 text-yinmn-blue-600 hover:bg-yinmn-blue-50 rounded-lg transition-colors"
+                  <label
+                    htmlFor="file-upload-edit"
+                    className="px-3 py-1 border border-platinum-300 rounded-lg text-sm hover:bg-platinum-50 cursor-pointer transition-colors flex items-center gap-2"
                   >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                    <Upload className="h-4 w-4" />
+                    Selecionar Arquivos
+                  </label>
+                  {uploadedFiles.length > 0 && (
+                    <button
+                      onClick={uploadFiles}
+                      disabled={uploading}
+                      className="px-3 py-1 bg-yinmn-blue-600 text-white rounded-lg hover:bg-yinmn-blue-700 transition-colors text-sm font-roboto font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploading ? 'Enviando...' : 'Enviar Arquivos'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+            
+            {/* Lista de arquivos selecionados para upload */}
+            {uploadedFiles.length > 0 && (
+              <div className="mb-4 p-3 bg-platinum-50 rounded-lg">
+                <h4 className="text-sm font-roboto font-medium text-rich-black-900 mb-2">Arquivos selecionados:</h4>
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-platinum-200 mb-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-oxford-blue-400" />
+                      <div>
+                        <span className="text-sm font-roboto font-medium text-rich-black-900">{file.name}</span>
+                        <span className="text-xs font-roboto font-light text-oxford-blue-500 ml-2">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeFile(index)}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="space-y-2">
               {(currentDelivery?.documentation || []).map((doc, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-platinum-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-oxford-blue-400" />
-                    <span className="text-sm font-roboto font-medium text-rich-black-900">{doc}</span>
+                    <div>
+                      <span className="text-sm font-roboto font-medium text-rich-black-900">
+                        {typeof doc === 'string' ? doc : (doc as any).filename}
+                      </span>
+                      {typeof doc === 'object' && (doc as any).file_size && (
+                        <span className="text-xs text-oxford-blue-500 ml-2">
+                          ({((doc as any).file_size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-1 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded transition-colors">
+                    <button 
+                      onClick={() => handleDownloadDocument(doc)}
+                      className="p-1 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded transition-colors"
+                      title="Baixar documento"
+                    >
                       <Download className="h-4 w-4" />
                     </button>
                     {isEditing && (
@@ -747,13 +919,25 @@ export default function DeliveryDetailPage() {
                     <label className="block text-sm font-roboto font-medium text-oxford-blue-500 mb-1">
                       Autor
                     </label>
-                    <input
-                      type="text"
-                      value={newUpdate.author}
-                      onChange={(e) => setNewUpdate(prev => ({ ...prev, author: e.target.value }))}
-                      className="w-full p-2 border border-platinum-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent"
-                      placeholder="Nome do autor"
-                    />
+                    <div className="relative">
+                      <select
+                        value={newUpdate.author}
+                        onChange={(e) => setNewUpdate(prev => ({ ...prev, author: e.target.value }))}
+                        className="w-full p-2 pr-10 border border-platinum-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yinmn-blue-500 focus:border-transparent appearance-none bg-white no-native-select-arrow"
+                        style={{ backgroundImage: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                        disabled={loadingEmployees}
+                      >
+                        <option value="">
+                          {loadingEmployees ? 'Carregando funcionários...' : 'Selecione o autor'}
+                        </option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.full_name}>
+                            {employee.full_name} - {employee.position}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-oxford-blue-400 pointer-events-none" />
+                    </div>
                   </div>
                   <button
                     onClick={handleAddUpdate}

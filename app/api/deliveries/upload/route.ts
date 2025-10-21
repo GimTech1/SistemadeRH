@@ -71,33 +71,46 @@ export async function POST(request: NextRequest) {
     const filePath = `deliveries/${deliveryId}/${fileName}`
 
     // Upload do arquivo para o Supabase Storage
+    console.log('Tentando fazer upload para:', filePath)
     const { error: uploadError } = await supabase.storage
       .from('delivery-documents')
       .upload(filePath, file)
 
     if (uploadError) {
       console.error('Erro no upload:', uploadError)
-      return NextResponse.json({ error: 'Erro ao fazer upload do arquivo' }, { status: 500 })
+      return NextResponse.json({ 
+        error: `Erro ao fazer upload do arquivo: ${uploadError.message}` 
+      }, { status: 500 })
     }
+    
+    console.log('Upload realizado com sucesso para:', filePath)
 
     // Obter URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
       .from('delivery-documents')
       .getPublicUrl(filePath)
 
+    console.log('URL pública gerada:', publicUrl)
+
     // Salvar metadados no banco de dados
+    const documentData: any = {
+      delivery_id: deliveryId,
+      filename: file.name,
+      file_path: filePath,
+      file_url: publicUrl,
+      file_size: file.size,
+      mime_type: file.type,
+      uploaded_by: user.id
+    }
+
+    // Adicionar description apenas se a coluna existir
+    if (description) {
+      documentData.description = description
+    }
+
     const { data: document, error: dbError } = await (supabase as any)
       .from('delivery_documents')
-      .insert({
-        delivery_id: deliveryId,
-        filename: file.name,
-        file_path: filePath,
-        file_url: publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
-        description: description || null,
-        uploaded_by: user.id
-      })
+      .insert(documentData)
       .select()
       .single()
 
