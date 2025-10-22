@@ -17,7 +17,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  Save
+  Save,
+  ChevronDown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -693,15 +694,23 @@ export default function PacePage() {
               
               <div>
                 <Label htmlFor="questionType">Tipo de Pergunta</Label>
-                <select
-                  id="questionType"
-                  value={newQuestionType}
-                  onChange={(e) => setNewQuestionType(e.target.value as 'text' | 'multiple_choice')}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                >
-                  <option value="text">Texto Livre</option>
-                  <option value="multiple_choice">Múltipla Escolha</option>
-                </select>
+                <div className="relative">
+                  <select
+                    id="questionType"
+                    value={newQuestionType}
+                    onChange={(e) => setNewQuestionType(e.target.value as 'text' | 'multiple_choice')}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 appearance-none bg-white no-native-select-arrow"
+                    style={{ 
+                      backgroundImage: 'none',
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none'
+                    }}
+                  >
+                    <option value="text">Texto Livre</option>
+                    <option value="multiple_choice">Múltipla Escolha</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
               </div>
 
               {newQuestionType === 'multiple_choice' && (
@@ -783,15 +792,23 @@ export default function PacePage() {
                       
                       <div>
                         <Label htmlFor={`editQuestionType-${question.id}`}>Tipo de Pergunta</Label>
-                        <select
-                          id={`editQuestionType-${question.id}`}
-                          value={editQuestionType}
-                          onChange={(e) => setEditQuestionType(e.target.value as 'text' | 'multiple_choice')}
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                        >
-                          <option value="text">Texto Livre</option>
-                          <option value="multiple_choice">Múltipla Escolha</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            id={`editQuestionType-${question.id}`}
+                            value={editQuestionType}
+                            onChange={(e) => setEditQuestionType(e.target.value as 'text' | 'multiple_choice')}
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 appearance-none bg-white no-native-select-arrow"
+                            style={{ 
+                              backgroundImage: 'none',
+                              WebkitAppearance: 'none',
+                              MozAppearance: 'none'
+                            }}
+                          >
+                            <option value="text">Texto Livre</option>
+                            <option value="multiple_choice">Múltipla Escolha</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
                       </div>
 
                       {editQuestionType === 'multiple_choice' && (
