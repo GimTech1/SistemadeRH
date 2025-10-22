@@ -16,6 +16,7 @@ import {
   FilePlus2,
   Settings,
   LogOut,
+  Paperclip,
   Menu,
   X,
   Building,
@@ -181,7 +182,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
         },
         {
           title: 'Entregas',
-          icon: Package,
+          icon: Paperclip,
           href: '/deliveries',
           roles: ['admin', 'manager', 'employee'],
         },
