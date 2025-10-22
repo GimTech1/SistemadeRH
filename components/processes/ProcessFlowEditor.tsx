@@ -135,14 +135,25 @@ export default function ProcessFlowEditor({
         addNode(selectedTool as any, x, y)
         setSelectedTool('select')
       }
+    } else if (isConnecting) {
+      // Cancelar conexão se clicar fora dos nós
+      setIsConnecting(false)
+      setConnectionStart(null)
     }
   }
 
   const handleNodeClick = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedNode(nodeId)
+    
     if (selectedTool === 'select') {
-      startConnection(nodeId)
+      if (isConnecting && connectionStart && connectionStart !== nodeId) {
+        // Finalizar conexão
+        endConnection(nodeId)
+      } else if (!isConnecting) {
+        // Iniciar nova conexão
+        startConnection(nodeId)
+      }
     }
   }
 
@@ -307,6 +318,13 @@ export default function ProcessFlowEditor({
         
         <div className="flex-1" />
         
+        {isConnecting && (
+          <div className="flex items-center text-sm text-green-600 mr-4">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+            Conectando nós... Clique em outro nó para finalizar
+          </div>
+        )}
+        
         <Button variant="outline" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
@@ -393,13 +411,28 @@ export default function ProcessFlowEditor({
                 width={node.width + 4}
                 height={node.height + 4}
                 fill="transparent"
-                stroke={selectedNode === node.id ? '#3b82f6' : 'transparent'}
+                stroke={
+                  selectedNode === node.id 
+                    ? '#3b82f6' 
+                    : connectionStart === node.id 
+                      ? '#10b981' 
+                      : 'transparent'
+                }
                 strokeWidth="2"
                 className="cursor-pointer"
                 onClick={(e) => handleNodeClick(node.id, e)}
                 onDoubleClick={() => handleNodeDoubleClick(node.id)}
-                onMouseDown={(e) => handleNodeClick(node.id, e)}
-                onMouseUp={() => endConnection(node.id)}
+                onMouseDown={(e) => {
+                  if (selectedTool === 'select' && !isConnecting) {
+                    setIsDragging(true)
+                    setDragStart({ x: e.clientX, y: e.clientY })
+                  }
+                }}
+                onMouseUp={() => {
+                  if (isDragging) {
+                    setIsDragging(false)
+                  }
+                }}
               />
             </g>
           ))}
@@ -446,9 +479,10 @@ export default function ProcessFlowEditor({
         <p><strong>Instruções:</strong></p>
         <p>• Selecione uma ferramenta e clique no canvas para adicionar nós</p>
         <p>• Clique e arraste para mover nós</p>
-        <p>• Clique em um nó e depois em outro para conectar</p>
+        <p>• Clique em um nó (fica verde) e depois em outro para conectar</p>
         <p>• Duplo-clique em um nó para editar o rótulo</p>
         <p>• Clique em uma conexão para removê-la</p>
+        <p>• Clique fora dos nós para cancelar conexão</p>
       </div>
     </div>
   )

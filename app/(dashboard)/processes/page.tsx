@@ -315,7 +315,7 @@ export default function ProcessesPage() {
   const handleSaveFlow = (flowData: any) => {
     setFormData(prev => ({ ...prev, flow_data: flowData }))
     setEditingFlow(false)
-    toast.success('Fluxo salvo com sucesso')
+    toast.success('Fluxo salvo temporariamente. Lembre-se de salvar o processo!')
   }
 
   const handleCancelFlow = () => {
@@ -499,7 +499,15 @@ export default function ProcessesPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <Button
                 variant="outline"
-                onClick={() => setCurrentView('list')}
+                onClick={() => {
+                  if (formData.flow_data) {
+                    const confirmExit = window.confirm(
+                      'Você tem um fluxo salvo que será perdido. Tem certeza que deseja cancelar?'
+                    )
+                    if (!confirmExit) return
+                  }
+                  setCurrentView('list')
+                }}
                 className="w-full sm:w-auto"
               >
                 Cancelar
@@ -510,10 +518,10 @@ export default function ProcessesPage() {
                   variant="outline"
                   onClick={handleEditFlow}
                   disabled={!formData.title.trim()}
-                  className="w-full sm:w-auto"
+                  className={`w-full sm:w-auto ${formData.flow_data ? 'border-green-500 text-green-600' : ''}`}
                 >
                   <Workflow className="w-4 h-4 mr-2" />
-                  Editar Fluxo
+                  {formData.flow_data ? 'Editar Fluxo (Salvo)' : 'Editar Fluxo'}
                 </Button>
                 
                 <Button
@@ -522,6 +530,11 @@ export default function ProcessesPage() {
                   disabled={!formData.title.trim()}
                 >
                   {currentView === 'create' ? 'Criar Processo' : 'Salvar Alterações'}
+                  {formData.flow_data && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                      Fluxo incluído
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>
