@@ -408,32 +408,35 @@ export default function ProcessFlowEditor({
 
       {/* Node Label Editor */}
       {editingNode && (
-        <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border">
-          <h3 className="font-medium mb-2">Editar Rótulo</h3>
-          <input
-            type="text"
-            value={nodeLabel}
-            onChange={(e) => setNodeLabel(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveNodeLabel()
-              if (e.key === 'Escape') {
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl border max-w-md w-full mx-4">
+            <h3 className="font-medium mb-4 text-lg">Editar Rótulo do Nó</h3>
+            <input
+              type="text"
+              value={nodeLabel}
+              onChange={(e) => setNodeLabel(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              placeholder="Digite o nome do nó"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveNodeLabel()
+                if (e.key === 'Escape') {
+                  setEditingNode(null)
+                  setNodeLabel('')
+                }
+              }}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button size="sm" variant="outline" onClick={() => {
                 setEditingNode(null)
                 setNodeLabel('')
-              }
-            }}
-          />
-          <div className="flex justify-end space-x-2 mt-3">
-            <Button size="sm" variant="outline" onClick={() => {
-              setEditingNode(null)
-              setNodeLabel('')
-            }}>
-              Cancelar
-            </Button>
-            <Button size="sm" onClick={saveNodeLabel}>
-              Salvar
-            </Button>
+              }}>
+                Cancelar
+              </Button>
+              <Button size="sm" onClick={saveNodeLabel}>
+                Salvar
+              </Button>
+            </div>
           </div>
         </div>
       )}
