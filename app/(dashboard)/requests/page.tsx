@@ -226,14 +226,14 @@ export default function RequestsPage() {
   }
 
   return (
-    <div className="py-6">
+    <div className="py-6 px-4 sm:px-0">
       <div className="mb-6">
-        <h1 className="text-3xl font-roboto text-rich-black-900" style={{ fontWeight: 500 }}>Crie e acompanhe pedidos de equipamentos e recursos</h1>
+        <h1 className="text-2xl sm:text-3xl font-roboto text-rich-black-900" style={{ fontWeight: 500 }}>Crie e acompanhe pedidos de equipamentos e recursos</h1>
       </div>
 
-      <Card className="p-6 mb-8">
-        <h2 className="text-xl mb-4 text-rich-black-900" style={{ fontWeight: 500 }}>Formulário de Pedido</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <Card className="p-4 sm:p-6 mb-8">
+        <h2 className="text-lg sm:text-xl mb-4 text-rich-black-900" style={{ fontWeight: 500 }}>Formulário de Pedido</h2>
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <Label htmlFor="department">Setor</Label>
             <div className="relative mt-2">
@@ -311,25 +311,27 @@ export default function RequestsPage() {
         </form>
       </Card>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {[
-          { key: 'all', label: 'Todas' },
-          { key: 'requested', label: 'Solicitado' },
-          { key: 'approved', label: 'Aprovado' },
-          { key: 'rejected', label: 'Não Aprovado' },
-          { key: 'done', label: 'Concluído' },
-        ].map(t => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key as any)}
-            className={cn(
-              'px-4 py-2 rounded-xl text-sm border',
-              activeTab === t.key ? 'bg-yinmn-blue-600 text-white border-yinmn-blue-600' : 'bg-white text-rich-black-900 border-platinum-300 hover:bg-platinum-100'
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="mb-4">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          {[
+            { key: 'all', label: 'Todas' },
+            { key: 'requested', label: 'Solicitado' },
+            { key: 'approved', label: 'Aprovado' },
+            { key: 'rejected', label: 'Não Aprovado' },
+            { key: 'done', label: 'Concluído' },
+          ].map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key as any)}
+              className={cn(
+                'px-3 py-2 rounded-xl text-sm border flex-shrink-0',
+                activeTab === t.key ? 'bg-yinmn-blue-600 text-white border-yinmn-blue-600' : 'bg-white text-rich-black-900 border-platinum-300 hover:bg-platinum-100'
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -337,34 +339,39 @@ export default function RequestsPage() {
           <Card className="p-6 text-sm text-oxford-blue-700">Nenhuma solicitação nesta etapa.</Card>
         )}
         {filteredByTab.map(item => (
-          <Card key={item.id} className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-rich-black-900 font-medium">{item.employeeName} • {item.department || 'Sem setor'}</p>
-              <p className="text-sm text-oxford-blue-700">{item.description}</p>
-              <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {item.status === 'done' ? (
-                <span className="text-xs px-3 py-1 rounded-xl bg-platinum-100 text-oxford-blue-700">
-                  Este pedido está concluído e não pode ter o status alterado.
-                </span>
-              ) : (
-                <>
-                  {activeTab !== 'approved' && (
-                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
-                  )}
-                  {activeTab !== 'rejected' && (
-                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
-                  )}
-                  {activeTab !== 'done' && (
-                    <Button variant="secondary" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
-                  )}
-                </>
-              )}
+          <Card key={item.id} className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1 flex-1">
+                <p className="text-rich-black-900 font-medium">{item.employeeName} • {item.department || 'Sem setor'}</p>
+                <p className="text-sm text-oxford-blue-700">{item.description}</p>
+                <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {item.status === 'done' ? (
+                  <span className="text-xs px-3 py-1 rounded-xl bg-platinum-100 text-oxford-blue-700">
+                    Este pedido está concluído e não pode ter o status alterado.
+                  </span>
+                ) : (
+                  <>
+                    {activeTab !== 'approved' && (
+                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
+                    )}
+                    {activeTab !== 'rejected' && (
+                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
+                    )}
+                    {activeTab !== 'done' && (
+                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </Card>
         ))}
       </div>
+      
+      {/* Espaçamento no final da página para mobile */}
+      <div className="h-8 sm:h-12"></div>
     </div>
   )
 }
