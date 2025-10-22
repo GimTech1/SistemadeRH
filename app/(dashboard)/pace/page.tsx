@@ -575,8 +575,8 @@ export default function PacePage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Users className="w-6 h-6 text-gray-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Departamentos</p>
@@ -587,8 +587,8 @@ export default function PacePage() {
 
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-gray-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Perguntas Ativas</p>
@@ -601,8 +601,8 @@ export default function PacePage() {
 
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-gray-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Respostas Hoje</p>
@@ -615,8 +615,8 @@ export default function PacePage() {
 
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Clock className="w-6 h-6 text-orange-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Clock className="w-6 h-6 text-gray-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Funcionários</p>
