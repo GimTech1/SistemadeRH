@@ -298,10 +298,10 @@ export default function InvoicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 sm:px-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
+          <h1 className="text-xl sm:text-2xl font-roboto font-medium text-rich-black-900 tracking-wide">
             {activeTab === 'sent' ? 'Envie e gerencie suas notas fiscais' : 'Gerencie as notas fiscais recebidas'}
           </h1>
         </div>
@@ -337,8 +337,8 @@ export default function InvoicesPage() {
       )}
 
       {activeTab === 'sent' && (
-        <Card className="p-6">
-        <div className="space-y-6">
+        <Card className="p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 flex flex-col">
               <Label htmlFor="recipient" className="text-sm font-medium text-gray-700">
@@ -423,116 +423,120 @@ export default function InvoicesPage() {
       )}
 
       {files.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             {activeTab === 'sent' ? 'Suas Notas Fiscais' : 'Notas Fiscais Recebidas'} ({files.length})
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-3 sm:space-y-4">
             {files.map((file) => (
               <div
                 key={file.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
-                <div className="flex items-center space-x-3">
-                  {getStatusIcon(file.status)}
-                  <div>
-                    <p className="font-medium text-gray-900">{file.file_name}</p>
-                    <p className="text-sm text-gray-500">
-                      {formatFileSize(file.file_size)} • {getStatusText(file.status)}
-                      {file.status === 'approved' && (
-                        <span className="ml-1">• {file.payment_status === 'paid' ? 'Pagamento efetuado' : 'Pagamento pendente'}</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {activeTab === 'sent' 
-                        ? `Para: ${file.recipient?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
-                        : `De: ${file.sender?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
-                      }
-                    </p>
-                    {file.description && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {file.description}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start space-x-3 flex-1">
+                    {getStatusIcon(file.status)}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate">{file.file_name}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatFileSize(file.file_size)} • {getStatusText(file.status)}
+                        {file.status === 'approved' && (
+                          <span className="ml-1">• {file.payment_status === 'paid' ? 'Pagamento efetuado' : 'Pagamento pendente'}</span>
+                        )}
                       </p>
-                    )}
+                      <p className="text-xs text-gray-400">
+                        {activeTab === 'sent' 
+                          ? `Para: ${file.recipient?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
+                          : `De: ${file.sender?.full_name || 'N/A'} • Enviado em ${new Date(file.created_at).toLocaleDateString('pt-BR')}`
+                        }
+                      </p>
+                      {file.description && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {file.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => window.open(file.file_url, '_blank')}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Visualizar
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => window.open(file.file_url, '_blank')}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Download
-                  </Button>
-                  {activeTab === 'sent' ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleDelete(file.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Deletar
-                    </Button>
-                  ) : (
-                    <>
-                      {file.status === 'pending' && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleStatusUpdate(file.id, 'approved')}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Aprovar
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleStatusUpdate(file.id, 'rejected')}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Rejeitar
-                          </Button>
-                        </>
-                      )}
-                      {file.status === 'approved' && (
-                        file.payment_status !== 'paid' ? (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handlePaymentUpdate(file.id, 'paid')}
-                            disabled={updatingPaymentId === file.id}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            {updatingPaymentId === file.id ? 'Marcando como pago...' : 'Marcar como pago'}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handlePaymentUpdate(file.id, 'pending')}
-                            disabled={updatingPaymentId === file.id}
-                            className="text-gray-700 hover:text-gray-800 hover:bg-gray-100"
-                          >
-                            {updatingPaymentId === file.id ? 'Atualizando...' : 'Definir como pendente'}
-                          </Button>
-                        )
-                      )}
-                    </>
-                  )}
+                   <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-2">
+                     <Button
+                       variant="secondary"
+                       size="sm"
+                       onClick={() => window.open(file.file_url, '_blank')}
+                       className="w-full sm:w-auto sm:flex-none"
+                     >
+                       <Eye className="w-4 h-4 mr-1" />
+                       Visualizar
+                     </Button>
+                     <Button
+                       variant="secondary"
+                       size="sm"
+                       onClick={() => window.open(file.file_url, '_blank')}
+                       className="w-full sm:w-auto sm:flex-none"
+                     >
+                       <Download className="w-4 h-4 mr-1" />
+                       Download
+                     </Button>
+                     {activeTab === 'sent' ? (
+                       <Button
+                         variant="secondary"
+                         size="sm"
+                         onClick={() => handleDelete(file.id)}
+                         className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto sm:flex-none"
+                       >
+                         <Trash2 className="w-4 h-4" />
+                         Deletar
+                       </Button>
+                     ) : (
+                       <>
+                         {file.status === 'pending' && (
+                           <>
+                             <Button
+                               variant="secondary"
+                               size="sm"
+                               onClick={() => handleStatusUpdate(file.id, 'approved')}
+                               className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto sm:flex-none"
+                             >
+                               <CheckCircle className="w-4 h-4 mr-1" />
+                               Aprovar
+                             </Button>
+                             <Button
+                               variant="secondary"
+                               size="sm"
+                               onClick={() => handleStatusUpdate(file.id, 'rejected')}
+                               className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto sm:flex-none"
+                             >
+                               <X className="w-4 h-4 mr-1" />
+                               Rejeitar
+                             </Button>
+                           </>
+                         )}
+                         {file.status === 'approved' && (
+                           file.payment_status !== 'paid' ? (
+                             <Button
+                               variant="secondary"
+                               size="sm"
+                               onClick={() => handlePaymentUpdate(file.id, 'paid')}
+                               disabled={updatingPaymentId === file.id}
+                               className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto sm:flex-none"
+                             >
+                               <CheckCircle className="w-4 h-4 mr-1" />
+                               {updatingPaymentId === file.id ? 'Marcando como pago...' : 'Marcar como pago'}
+                             </Button>
+                           ) : (
+                             <Button
+                               variant="secondary"
+                               size="sm"
+                               onClick={() => handlePaymentUpdate(file.id, 'pending')}
+                               disabled={updatingPaymentId === file.id}
+                               className="text-gray-700 hover:text-gray-800 hover:bg-gray-100 w-full sm:w-auto sm:flex-none"
+                             >
+                               {updatingPaymentId === file.id ? 'Atualizando...' : 'Definir como pendente'}
+                             </Button>
+                           )
+                         )}
+                       </>
+                     )}
+                   </div>
                 </div>
               </div>
             ))}
@@ -554,6 +558,9 @@ export default function InvoicesPage() {
           </p>
         </Card>
       )}
+      
+      {/* Espaçamento no final da página para mobile */}
+      <div className="h-8 sm:h-12"></div>
     </div>
   )
 }
