@@ -306,37 +306,39 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
           </button>
         </div>
 
-        <nav className="flex-1 p-2 flex flex-col justify-between">
-          <ul className="space-y-1">
-            {filteredMenuItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-              
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
-                      shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2",
-                      isActive 
-                        ? "bg-gray-700 text-white shadow-sm" 
-                        : "text-white hover:bg-gray-700 hover:text-white"
-                    )}
-                    title={!shouldExpand ? item.title : undefined}
-                  >
-                    <Icon className={cn(
-                      "flex-shrink-0",
-                      shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
-                    )} />
-                    {shouldExpand && <span className="tracking-wide text-xs">{item.title}</span>}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+        <nav className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto scrollbar-hide p-2">
+            <ul className="space-y-1">
+              {filteredMenuItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
+                        shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2",
+                        isActive 
+                          ? "bg-gray-700 text-white shadow-sm" 
+                          : "text-white hover:bg-gray-700 hover:text-white"
+                      )}
+                      title={!shouldExpand ? item.title : undefined}
+                    >
+                      <Icon className={cn(
+                        "flex-shrink-0",
+                        shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
+                      )} />
+                      {shouldExpand && <span className="tracking-wide text-xs">{item.title}</span>}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
 
-          <div className="border-t border-gray-600 pt-2 mt-2 flex-shrink-0">
+          <div className="border-t border-gray-600 pt-2 mt-2 flex-shrink-0 p-2">
             <div className="mb-2 space-y-1">
               <Link
                 href="/profile"
