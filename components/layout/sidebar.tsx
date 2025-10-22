@@ -17,6 +17,7 @@ import {
   Settings,
   LogOut,
   Paperclip,
+  Notebook,
   Menu,
   X,
   Building,
@@ -34,6 +35,7 @@ import {
   Star,
   BookMarked,
   Package,
+  UserRoundPen,
   Workflow,
   DollarSign,
 } from 'lucide-react'
@@ -80,7 +82,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     },
     {
       title: 'Gestão',
-      icon: Users,
+      icon: Notebook,
       isGroup: true,
       roles: ['admin', 'manager'],
       children: [
@@ -98,7 +100,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
         },
         {
           title: 'Usuários',
-          icon: Users,
+          icon: UserRoundPen,
           href: '/users',
           roles: ['admin'],
         },
