@@ -527,6 +527,9 @@ export default function ProcessesPage() {
             </div>
           </div>
         </Card>
+        
+        {/* Espaçamento no final da página para mobile */}
+        <div className="h-8 sm:h-12"></div>
       </div>
     )
   }
