@@ -27,6 +27,7 @@ import {
   UserCircle,
   ChevronLeft,
   ChevronRight,
+  ChartLine,
   Home,
   Calendar,
   GitBranch,
@@ -120,7 +121,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       children: [
         {
           title: 'Avaliações',
-          icon: ClipboardCheck,
+          icon: ChartLine,
           href: '/evaluations',
           roles: ['admin', 'manager'],
         },
