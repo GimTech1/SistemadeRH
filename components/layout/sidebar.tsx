@@ -34,6 +34,7 @@ import {
   BookMarked,
   Package,
   Workflow,
+  DollarSign,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -52,6 +53,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   const [internalOpen, setInternalOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const supabase: SupabaseClient<Database> = createClient()
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
@@ -76,100 +78,132 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: ['admin', 'manager'],
     },
     {
-      title: 'Colaboradores',
+      title: 'Gestão',
       icon: Users,
-      href: '/employees',
+      isGroup: true,
       roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Departamentos',
-      icon: Building,
-      href: '/departments',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Metas',
-      icon: Target,
-      href: '/goals',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Solicitações',
-      icon: FilePlus2,
-      href: '/requests',
-      roles: ['admin', 'manager', 'employee'],
+      children: [
+        {
+          title: 'Colaboradores',
+          icon: Users,
+          href: '/employees',
+          roles: ['admin', 'manager'],
+        },
+        {
+          title: 'Departamentos',
+          icon: Building,
+          href: '/departments',
+          roles: ['admin', 'manager'],
+        },
+        {
+          title: 'Usuários',
+          icon: Users,
+          href: '/users',
+          roles: ['admin'],
+        },
+        {
+          title: 'Organograma',
+          icon: GitBranch,
+          href: '/organograma',
+          roles: ['admin', 'manager'],
+        },
+      ],
     },
     {
       title: 'Avaliações',
       icon: ClipboardCheck,
-      href: '/evaluations',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Ciclos de Avaliação',
-      icon: Calendar,
-      href: '/cycles',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Notas Fiscais',
-      icon: Receipt,
-      href: '/invoices',
+      isGroup: true,
       roles: ['admin', 'manager', 'employee'],
+      children: [
+        {
+          title: 'Avaliações',
+          icon: ClipboardCheck,
+          href: '/evaluations',
+          roles: ['admin', 'manager'],
+        },
+        {
+          title: 'Ciclos de Avaliação',
+          icon: Calendar,
+          href: '/cycles',
+          roles: ['admin', 'manager'],
+        },
+        {
+          title: 'Avaliar Colegas',
+          icon: Star,
+          href: '/feedback/internal',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
+          title: 'Habilidades CHA',
+          icon: Award,
+          href: '/skills',
+          roles: [''],
+        },
+        {
+          title: 'PACE',
+          icon: BookMarked,
+          href: '/pace',
+          roles: ['admin', 'manager', 'employee'],
+        },
+      ],
     },
     {
-      title: 'Gastos',
-      icon: Wallet,
-      href: '/expenses',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Habilidades CHA',
-      icon: Award,
-      href: '/skills',
-      roles: [''],
-    },
-    {
-      title: 'Avaliar Colegas',
-      icon: Star,
-      href: '/feedback',
-      roles: [''],
-    },
-    {
-      title: 'PACE',
-      icon: BookMarked,
-      href: '/pace',
+      title: 'Financeiro',
+      icon: DollarSign,
+      isGroup: true,
       roles: ['admin', 'manager', 'employee'],
+      children: [
+        {
+          title: 'Notas Fiscais',
+          icon: Receipt,
+          href: '/invoices',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
+          title: 'Gastos',
+          icon: Wallet,
+          href: '/expenses',
+          roles: ['admin', 'manager'],
+        },
+      ],
     },
     {
-      title: 'Avaliar Colegas',
-      icon: Star,
-      href: '/feedback/internal',
-      roles: ['admin', 'manager', 'employee'],
-    },
-    {
-      title: 'Entregas',
+      title: 'Operacional',
       icon: Package,
-      href: '/deliveries',
+      isGroup: true,
       roles: ['admin', 'manager', 'employee'],
-    },
-    {
-      title: 'Processos',
-      icon: Workflow,
-      href: '/processes',
-      roles: ['admin', 'manager', 'employee'],
-    },
-    {
-      title: 'Reuniões',
-      icon: Calendar,
-      href: '/meetings',
-      roles: ['admin', 'manager'],
-    },
-    {
-      title: 'Organograma',
-      icon: GitBranch,
-      href: '/organograma',
-      roles: ['admin', 'manager'],
+      children: [
+        {
+          title: 'Solicitações',
+          icon: FilePlus2,
+          href: '/requests',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
+          title: 'Entregas',
+          icon: Package,
+          href: '/deliveries',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
+          title: 'Processos',
+          icon: Workflow,
+          href: '/processes',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
+          title: 'Reuniões',
+          icon: Calendar,
+          href: '/meetings',
+          roles: ['admin', 'manager'],
+        },
+        {
+          title: 'Metas',
+          icon: Target,
+          href: '/goals',
+          roles: ['admin', 'manager'],
+        },
+      ],
     },
     {
       title: 'Relatórios',
@@ -177,15 +211,33 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       href: '/reports',
       roles: ['admin', 'manager'],
     },
-    {
-      title: 'Usuários',
-      icon: Users,
-      href: '/users',
-      roles: ['admin'],
-    },
   ]
 
+  const toggleGroup = (groupTitle: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(groupTitle)) {
+        newSet.delete(groupTitle)
+      } else {
+        newSet.add(groupTitle)
+      }
+      return newSet
+    })
+  }
+
   const filteredMenuItems = menuItems.filter(item => {
+    if (item.isGroup) {
+      // Para grupos, verificar se pelo menos um filho tem acesso
+      return item.children?.some(child => {
+        if (!child.roles.includes(userRole)) return false
+        if (child.href === '/meetings') {
+          if (!userId) return false
+          return allowedMeetingUserIds.includes(userId)
+        }
+        return true
+      }) || false
+    }
+    
     if (!item.roles.includes(userRole)) return false
     if (item.href === '/meetings') {
       if (!userId) return false
@@ -312,11 +364,79 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
               {filteredMenuItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
+                const isGroup = item.isGroup
+                const isExpanded = expandedGroups.has(item.title)
+                
+                if (isGroup) {
+                  return (
+                    <li key={item.title}>
+                      <button
+                        onClick={() => toggleGroup(item.title)}
+                        className={cn(
+                          "w-full flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
+                          shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2",
+                          "text-white hover:bg-gray-700 hover:text-white"
+                        )}
+                        title={!shouldExpand ? item.title : undefined}
+                      >
+                        <Icon className={cn(
+                          "flex-shrink-0",
+                          shouldExpand ? "w-4 h-4 mr-3" : "w-4 h-4"
+                        )} />
+                        {shouldExpand && (
+                          <>
+                            <span className="tracking-wide text-xs flex-1 text-left">{item.title}</span>
+                            <ChevronDown className={cn(
+                              "w-4 h-4 transition-transform duration-200",
+                              isExpanded ? "rotate-180" : ""
+                            )} />
+                          </>
+                        )}
+                      </button>
+                      
+                      {shouldExpand && isExpanded && item.children && (
+                        <ul className="ml-4 mt-1 space-y-1">
+                          {item.children
+                            .filter(child => {
+                              if (!child.roles.includes(userRole)) return false
+                              if (child.href === '/meetings') {
+                                if (!userId) return false
+                                return allowedMeetingUserIds.includes(userId)
+                              }
+                              return true
+                            })
+                            .map((child) => {
+                              const ChildIcon = child.icon
+                              const isChildActive = pathname === child.href
+                              
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    className={cn(
+                                      "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
+                                      "px-4 py-2",
+                                      isChildActive 
+                                        ? "bg-gray-700 text-white shadow-sm" 
+                                        : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                    )}
+                                  >
+                                    <ChildIcon className="w-4 h-4 mr-3 flex-shrink-0" />
+                                    <span className="tracking-wide text-xs">{child.title}</span>
+                                  </Link>
+                                </li>
+                              )
+                            })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
                 
                 return (
-                  <li key={item.href}>
+                  <li key={item.href || item.title}>
                     <Link
-                      href={item.href}
+                      href={item.href || '#'}
                       className={cn(
                         "flex items-center rounded-xl text-sm font-roboto font-medium transition-all duration-300",
                         shouldExpand ? "px-4 py-2" : "justify-center px-2 py-2",
