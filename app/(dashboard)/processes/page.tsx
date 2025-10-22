@@ -385,19 +385,22 @@ export default function ProcessesPage() {
   // Formulário de criação/edição
   if (currentView === 'create' || currentView === 'edit') {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => setCurrentView('list')}>
+      <div className="space-y-6 px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          <button 
+            onClick={() => setCurrentView('list')}
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
-          </Button>
-          <h1 className="text-2xl font-bold">
+          </button>
+          <h1 className="text-xl sm:text-2xl font-bold">
             {currentView === 'create' ? 'Criar Novo Processo' : 'Editar Processo'}
           </h1>
         </div>
 
-        <Card className="p-6">
-          <div className="space-y-4">
+        <Card className="p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
               <Label htmlFor="title">Título *</Label>
               <Input
@@ -420,7 +423,7 @@ export default function ProcessesPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="category">Categoria</Label>
                   <div className="relative">
@@ -480,30 +483,34 @@ export default function ProcessesPage() {
                 </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-start space-x-2">
               <input
                 type="checkbox"
                 id="is_public"
                 checked={formData.is_public}
                 onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
-                className="mr-2"
+                className="mt-1 flex-shrink-0"
               />
-              <Label htmlFor="is_public">Processo público (visível para todos os colaboradores)</Label>
+              <Label htmlFor="is_public" className="text-sm leading-relaxed">
+                Processo público (visível para todos os colaboradores)
+              </Label>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <Button
                 variant="outline"
                 onClick={() => setCurrentView('list')}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   onClick={handleEditFlow}
                   disabled={!formData.title.trim()}
+                  className="w-full sm:w-auto"
                 >
                   <Workflow className="w-4 h-4 mr-2" />
                   Editar Fluxo
@@ -511,7 +518,7 @@ export default function ProcessesPage() {
                 
                 <Button
                   onClick={currentView === 'create' ? handleCreateProcess : handleEditProcess}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                   disabled={!formData.title.trim()}
                 >
                   {currentView === 'create' ? 'Criar Processo' : 'Salvar Alterações'}
