@@ -14,6 +14,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
+import ProcessApprovalStatus from './ProcessApprovalStatus'
 
 interface ProcessViewerProps {
   process: {
@@ -422,6 +423,15 @@ export default function ProcessViewer({
                 <h3 className="text-lg font-semibold mb-4">Descrição</h3>
                 <p className="text-gray-700 whitespace-pre-wrap">{process.description}</p>
               </Card>
+            )}
+
+            {/* Status de Aprovação */}
+            {process.flow_data && (
+              <ProcessApprovalStatus
+                processId={process.id}
+                flowData={process.flow_data}
+                canApprove={canEdit}
+              />
             )}
 
             {/* Metadados do Fluxo */}

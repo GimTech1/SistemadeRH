@@ -272,7 +272,8 @@ export default function ProcessesPage() {
 
   const handlePublishProcess = async (processId: string) => {
     try {
-      const { error } = await (supabase as any)
+      // Primeiro, atualizar o status do processo
+      const { error: processError } = await (supabase as any)
         .from('processes')
         .update({ 
           status: 'published',
@@ -280,9 +281,49 @@ export default function ProcessesPage() {
         })
         .eq('id', processId)
 
-      if (error) throw error
+      if (processError) throw processError
 
-      toast.success('Processo publicado com sucesso')
+      // Buscar o processo para obter o flow_data
+      const { data: process, error: fetchError } = await supabase
+        .from('processes')
+        .select('flow_data')
+        .eq('id', processId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Criar aprovações se houver flow_data com departamentos
+      if (process && (process as any).flow_data) {
+        try {
+          const response = await fetch('/api/processes/create-approvals', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              process_id: processId,
+              flow_data: (process as any).flow_data
+            })
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.approvals && data.approvals.length > 0) {
+              toast.success(`Processo publicado! ${data.approvals.length} aprovações criadas.`)
+            } else {
+              toast.success('Processo publicado com sucesso')
+            }
+          } else {
+            toast.success('Processo publicado com sucesso')
+          }
+        } catch (approvalError) {
+          console.error('Erro ao criar aprovações:', approvalError)
+          toast.success('Processo publicado com sucesso')
+        }
+      } else {
+        toast.success('Processo publicado com sucesso')
+      }
+
       loadProcesses()
     } catch (error) {
       console.error('Erro ao publicar processo:', error)

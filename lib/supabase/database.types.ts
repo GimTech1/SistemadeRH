@@ -771,6 +771,44 @@ export type Database = {
           updated_at?: string
         }
       }
+      process_approvals: {
+        Row: {
+          id: string
+          process_id: string
+          department_id: string
+          manager_id: string
+          status: 'pending' | 'approved' | 'rejected'
+          comments: string | null
+          created_at: string
+          updated_at: string
+          approved_at: string | null
+          rejected_at: string | null
+        }
+        Insert: {
+          id?: string
+          process_id: string
+          department_id: string
+          manager_id: string
+          status?: 'pending' | 'approved' | 'rejected'
+          comments?: string | null
+          created_at?: string
+          updated_at?: string
+          approved_at?: string | null
+          rejected_at?: string | null
+        }
+        Update: {
+          id?: string
+          process_id?: string
+          department_id?: string
+          manager_id?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          comments?: string | null
+          created_at?: string
+          updated_at?: string
+          approved_at?: string | null
+          rejected_at?: string | null
+        }
+      }
       saved_hours: {
         Row: {
           id: string

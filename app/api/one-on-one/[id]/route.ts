@@ -16,7 +16,7 @@ const updateOneOnOneSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -26,6 +26,8 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const { data, error } = await (supabase as any)
       .from('one_on_one_meetings')
       .select(`
@@ -33,7 +35,7 @@ export async function GET(
         manager:profiles!one_on_one_meetings_manager_id_fkey(full_name, position),
         employee:profiles!one_on_one_meetings_employee_id_fkey(full_name, position)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -65,7 +67,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -75,6 +77,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const validatedData = updateOneOnOneSchema.parse(body)
 
@@ -82,7 +85,7 @@ export async function PUT(
     const { data: currentMeeting, error: fetchError } = await (supabase as any)
       .from('one_on_one_meetings')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError) {
@@ -129,7 +132,7 @@ export async function PUT(
     const { data, error } = await (supabase as any)
       .from('one_on_one_meetings')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         manager:profiles!one_on_one_meetings_manager_id_fkey(full_name, position),
@@ -152,7 +155,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -162,11 +165,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Buscar a reunião atual
     const { data: currentMeeting, error: fetchError } = await (supabase as any)
       .from('one_on_one_meetings')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError) {
@@ -190,7 +195,7 @@ export async function DELETE(
     const { error } = await (supabase as any)
       .from('one_on_one_meetings')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       return NextResponse.json({ error: 'Erro ao deletar reunião' }, { status: 500 })

@@ -12,8 +12,10 @@ import {
   Square, 
   Diamond,
   Type,
-  MousePointer
+  MousePointer,
+  Building
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface FlowNode {
   id: string
@@ -24,6 +26,8 @@ interface FlowNode {
   height: number
   label: string
   color: string
+  department_id?: string | null
+  department_name?: string
 }
 
 interface FlowConnection {
@@ -52,11 +56,15 @@ export default function ProcessFlowEditor({
   const [connectionStart, setConnectionStart] = useState<string | null>(null)
   const [editingNode, setEditingNode] = useState<string | null>(null)
   const [nodeLabel, setNodeLabel] = useState('')
+  const [departments, setDepartments] = useState<any[]>([])
+  const [showDepartmentSelector, setShowDepartmentSelector] = useState(false)
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
   
   const svgRef = useRef<SVGSVGElement>(null)
   const [svgOffset, setSvgOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const supabase = createClient()
 
   useEffect(() => {
     if (initialData?.nodes) {
@@ -65,7 +73,22 @@ export default function ProcessFlowEditor({
     if (initialData?.connections) {
       setConnections(initialData.connections)
     }
+    loadDepartments()
   }, [initialData])
+
+  const loadDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('id, name')
+        .order('name')
+
+      if (error) throw error
+      setDepartments(data || [])
+    } catch (error) {
+      console.error('Erro ao carregar departamentos:', error)
+    }
+  }
 
   const addNode = (type: 'start' | 'process' | 'decision' | 'end', x: number, y: number) => {
     const newNode: FlowNode = {
@@ -80,12 +103,19 @@ export default function ProcessFlowEditor({
              type === 'decision' ? 'Decisão' : 'Processo',
       color: type === 'start' ? '#10b981' : 
              type === 'end' ? '#ef4444' : 
-             type === 'decision' ? '#f59e0b' : '#3b82f6'
+             type === 'decision' ? '#f59e0b' : '#3b82f6',
+      department_id: undefined,
+      department_name: undefined
     }
     
     setNodes(prev => [...prev, newNode])
     setEditingNode(newNode.id)
     setNodeLabel(newNode.label)
+    
+    // Se for um nó de processo, mostrar seletor de departamento
+    if (type === 'process') {
+      setShowDepartmentSelector(true)
+    }
   }
 
   const updateNode = (nodeId: string, updates: Partial<FlowNode>) => {
@@ -157,13 +187,6 @@ export default function ProcessFlowEditor({
     }
   }
 
-  const handleNodeDoubleClick = (nodeId: string) => {
-    setEditingNode(nodeId)
-    const node = nodes.find(n => n.id === nodeId)
-    if (node) {
-      setNodeLabel(node.label)
-    }
-  }
 
   const saveNodeLabel = () => {
     if (editingNode && nodeLabel.trim()) {
@@ -171,6 +194,27 @@ export default function ProcessFlowEditor({
     }
     setEditingNode(null)
     setNodeLabel('')
+  }
+
+  const handleDepartmentSelect = (departmentId: string) => {
+    const department = departments.find(d => d.id === departmentId)
+    if (editingNode && department) {
+      updateNode(editingNode, { 
+        department_id: departmentId,
+        department_name: department.name 
+      })
+    }
+    setShowDepartmentSelector(false)
+    setSelectedDepartment(null)
+  }
+
+  const handleNodeDoubleClick = (nodeId: string) => {
+    setEditingNode(nodeId)
+    const node = nodes.find(n => n.id === nodeId)
+    if (node) {
+      setNodeLabel(node.label)
+      setSelectedDepartment(node.department_id || null)
+    }
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -395,7 +439,7 @@ export default function ProcessFlowEditor({
               {getNodeShape(node)}
               <text
                 x={node.x + node.width / 2}
-                y={node.y + node.height / 2}
+                y={node.y + node.height / 2 - 5}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="white"
@@ -405,6 +449,19 @@ export default function ProcessFlowEditor({
               >
                 {node.label}
               </text>
+              {node.department_name && (
+                <text
+                  x={node.x + node.width / 2}
+                  y={node.y + node.height / 2 + 10}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="white"
+                  fontSize="10"
+                  className="pointer-events-none select-none"
+                >
+                  {node.department_name}
+                </text>
+              )}
               <rect
                 x={node.x - 2}
                 y={node.y - 2}
@@ -440,7 +497,7 @@ export default function ProcessFlowEditor({
       </div>
 
       {/* Node Label Editor */}
-      {editingNode && (
+      {editingNode && !showDepartmentSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl border max-w-md w-full mx-4">
             <h3 className="font-medium mb-4 text-lg">Editar Rótulo do Nó</h3>
@@ -474,6 +531,40 @@ export default function ProcessFlowEditor({
         </div>
       )}
 
+      {/* Department Selector */}
+      {showDepartmentSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl border max-w-md w-full mx-4">
+            <h3 className="font-medium mb-4 text-lg">Selecionar Departamento</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Este nó de processo precisa de aprovação de qual departamento?
+            </p>
+            <div className="space-y-2 mb-4">
+              {departments.map(dept => (
+                <button
+                  key={dept.id}
+                  onClick={() => handleDepartmentSelect(dept.id)}
+                  className="w-full text-left px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <div className="flex items-center">
+                    <Building className="w-4 h-4 mr-2 text-gray-500" />
+                    {dept.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button size="sm" variant="outline" onClick={() => {
+                setShowDepartmentSelector(false)
+                setSelectedDepartment(null)
+              }}>
+                Pular
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Instructions */}
       <div className="absolute bottom-4 right-4 bg-white p-3 rounded-lg shadow-lg border text-sm text-gray-600">
         <p><strong>Instruções:</strong></p>
@@ -481,6 +572,7 @@ export default function ProcessFlowEditor({
         <p>• Clique e arraste para mover nós</p>
         <p>• Clique em um nó (fica verde) e depois em outro para conectar</p>
         <p>• Duplo-clique em um nó para editar o rótulo</p>
+        <p>• Nós de processo precisam de departamento para aprovação</p>
         <p>• Clique em uma conexão para removê-la</p>
         <p>• Clique fora dos nós para cancelar conexão</p>
       </div>
