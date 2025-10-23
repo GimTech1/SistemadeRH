@@ -236,6 +236,7 @@ export default function InternalFeedbackPage() {
         `)
         .order('full_name', { ascending: true })
 
+
       if (colleaguesError) {
         console.error('Erro ao carregar colegas:', colleaguesError)
         return
@@ -287,6 +288,11 @@ export default function InternalFeedbackPage() {
           }
           dislikesByUser.get(dislike.recipient_id)!.push(dislike)
         }
+        
+        // Ordenar dislikes por data decrescente para cada usuário
+        for (const [userId, dislikes] of dislikesByUser.entries()) {
+          dislikes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        }
       }
 
       // Buscar estrelas e dislikes para cada colega
@@ -298,12 +304,14 @@ export default function InternalFeedbackPage() {
         // Obter dislikes recebidos por este colega
         const userDislikes = dislikesByUser.get(colleague.id) || []
         const totalDislikes = userDislikes.length
+        
 
         // Pegar as 3 estrelas mais recentes
         const recentStars = userStars.slice(0, 3)
 
-        // Pegar os 3 dislikes mais recentes
+        // Pegar os 3 dislikes mais recentes (já ordenados por data decrescente)
         const recentDislikes = userDislikes.slice(0, 3)
+        
 
         // Buscar nomes dos remetentes das estrelas recentes
         const starsWithSenders = await Promise.all(recentStars.map(async (star: any) => {
@@ -1115,7 +1123,7 @@ export default function InternalFeedbackPage() {
                     {colleague.recentStars.length > 0 && (
                       <div className="space-y-2">
                         <p className="text-xs font-roboto font-medium text-oxford-blue-500">Últimas estrelas:</p>
-                        {colleague.recentStars.slice(0, 2).map((star) => {
+                        {colleague.recentStars.map((star) => {
                           const Icon = getReasonIcon(star.reason)
                           const color = getReasonColor(star.reason)
                           return (
@@ -1144,7 +1152,7 @@ export default function InternalFeedbackPage() {
                     {colleague.recentDislikes.length > 0 && (
                       <div className="space-y-2">
                         <p className="text-xs font-roboto font-medium text-oxford-blue-500">Últimos dislikes:</p>
-                        {colleague.recentDislikes.slice(0, 2).map((dislike) => {
+                        {colleague.recentDislikes.map((dislike) => {
                           const Icon = getDislikeReasonIcon(dislike.reason)
                           const color = getDislikeReasonColor(dislike.reason)
                           return (

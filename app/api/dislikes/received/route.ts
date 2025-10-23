@@ -20,10 +20,7 @@ export async function GET() {
         message,
         created_at,
         user_id,
-        recipient_id,
-        sender:user_id (
-          full_name
-        )
+        recipient_id
       `)
       .eq('recipient_id', user.id)
       .order('created_at', { ascending: false })
