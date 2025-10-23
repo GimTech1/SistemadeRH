@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -226,17 +225,17 @@ export default function SavedHoursPage() {
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="space-y-6 pb-12">
         <div className="max-w-4xl mx-auto">
-          <Card className="p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="bg-white rounded-lg shadow-sm border border-red-200 p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-roboto font-medium text-rich-black-900 mb-2">
               Acesso Negado
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm font-roboto font-light text-oxford-blue-500">
               Esta página é exclusiva do departamento de Tecnologia.
             </p>
-          </Card>
+          </div>
         </div>
       </div>
     )
@@ -244,11 +243,8 @@ export default function SavedHoursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-oxford-blue-400">Carregando...</div>
       </div>
     )
   }
@@ -267,82 +263,104 @@ export default function SavedHoursPage() {
   })) : []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Horas Economizadas
-              </h1>
-              <p className="text-gray-600">
-                Acompanhe o impacto das soluções desenvolvidas pela equipe de Tecnologia
-              </p>
+    <div className="space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-tight">Horas Economizadas</h1>
+          <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">
+            Acompanhe o impacto das soluções desenvolvidas pela equipe de Tecnologia
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowForm(!showForm)}
+          className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 whitespace-nowrap"
+        >
+          {showForm ? (
+            <>
+              <X className="w-4 h-4 mr-2" />
+              Cancelar
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Registro
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Estatísticas principais */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="bg-white rounded-lg border-l-4 border-l-[#415A77] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-[#E0E1DD] rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-[#778DA9]" />
+                </div>
+                <div>
+                  <p className="text-2xl font-roboto font-bold text-rich-black-900">{stats?.totalHours.toFixed(1) || 0}h</p>
+                  <p className="text-sm font-roboto font-medium text-rich-black-900">Total de Horas</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-roboto font-light text-oxford-blue-500">Tempo economizado</p>
+              </div>
             </div>
-            <Button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {showForm ? (
-                <>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancelar
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Novo Registro
-                </>
-              )}
-            </Button>
           </div>
         </div>
 
-        {/* Estatísticas principais */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <Clock className="w-8 h-8" />
-              <div className="text-right">
-                <p className="text-sm opacity-90">Total de Horas</p>
-                <p className="text-3xl font-bold">{stats?.totalHours.toFixed(1) || 0}h</p>
+        <div className="bg-white rounded-lg border-l-4 border-l-[#415A77] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-[#E0E1DD] rounded-lg flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-[#778DA9]" />
+                </div>
+                <div>
+                  <p className="text-2xl font-roboto font-bold text-rich-black-900">{stats?.totalRecords || 0}</p>
+                  <p className="text-sm font-roboto font-medium text-rich-black-900">Projetos</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-roboto font-light text-oxford-blue-500">Registros cadastrados</p>
               </div>
             </div>
-            <p className="text-sm opacity-90">Tempo economizado</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <Zap className="w-8 h-8" />
-              <div className="text-right">
-                <p className="text-sm opacity-90">Projetos</p>
-                <p className="text-3xl font-bold">{stats?.totalRecords || 0}</p>
-              </div>
-            </div>
-            <p className="text-sm opacity-90">Registros cadastrados</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-8 h-8" />
-              <div className="text-right">
-                <p className="text-sm opacity-90">Média por Projeto</p>
-                <p className="text-3xl font-bold">
-                  {stats?.totalRecords ? (stats.totalHours / stats.totalRecords).toFixed(1) : 0}h
-                </p>
-              </div>
-            </div>
-            <p className="text-sm opacity-90">Horas por registro</p>
-          </Card>
+          </div>
         </div>
 
-        {/* Formulário */}
-        {showForm && (
-          <Card className="p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg border-l-4 border-l-[#415A77] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-[#E0E1DD] rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#778DA9]" />
+                </div>
+                <div>
+                  <p className="text-2xl font-roboto font-bold text-rich-black-900">
+                    {stats?.totalRecords ? (stats.totalHours / stats.totalRecords).toFixed(1) : 0}h
+                  </p>
+                  <p className="text-sm font-roboto font-medium text-rich-black-900">Média/Projeto</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-roboto font-light text-oxford-blue-500">Horas por registro</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Formulário */}
+      {showForm && (
+        <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+          <div className="p-6 border-b border-platinum-200">
+            <h3 className="text-lg font-roboto font-medium text-rich-black-900">
               {editingId ? 'Editar Registro' : 'Novo Registro'}
-            </h2>
+            </h3>
+          </div>
+          <div className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -413,17 +431,19 @@ export default function SavedHoursPage() {
                 </Button>
               </div>
             </form>
-          </Card>
-        )}
+          </div>
+        </div>
+      )}
 
-        {/* Gráficos */}
-        {stats && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Evolução Mensal
-              </h3>
+      {/* Gráficos */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+            <div className="p-6 border-b border-platinum-200">
+              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Evolução Mensal</h3>
+              <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">Horas economizadas ao longo do tempo</p>
+            </div>
+            <div className="p-6">
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -440,13 +460,15 @@ export default function SavedHoursPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </Card>
+            </div>
+          </div>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Horas por Tipo
-              </h3>
+          <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+            <div className="p-6 border-b border-platinum-200">
+              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Horas por Tipo</h3>
+              <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">Distribuição por categoria</p>
+            </div>
+            <div className="p-6">
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={typeData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -457,76 +479,78 @@ export default function SavedHoursPage() {
                   <Bar dataKey="horas" fill="#10b981" name="Horas" />
                 </BarChart>
               </ResponsiveContainer>
-            </Card>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Lista de registros */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Registros
-          </h2>
-          <div className="space-y-4">
+      {/* Lista de registros */}
+      <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+        <div className="p-6 border-b border-platinum-200">
+          <h3 className="text-lg font-roboto font-medium text-rich-black-900">Registros</h3>
+          <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">Histórico de horas economizadas</p>
+        </div>
+        <div className="p-6">
+          <div className="space-y-3">
             {records.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum registro encontrado</p>
-                <p className="text-sm">Comece adicionando seu primeiro registro de horas economizadas</p>
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Nenhum registro encontrado</p>
+                <p className="text-xs text-gray-400">Comece adicionando seu primeiro registro de horas economizadas</p>
               </div>
             ) : (
               records.map((record) => (
                 <div
                   key={record.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate">
                           {record.title}
-                        </h3>
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                        </h4>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
                           {record.type}
                         </span>
                       </div>
                       {record.description && (
-                        <p className="text-gray-600 text-sm mb-2">
+                        <p className="text-gray-600 text-xs mb-2 line-clamp-2">
                           {record.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {record.hours_saved}h economizadas
+                          <Clock className="w-3 h-3" />
+                          {record.hours_saved}h
                         </span>
                         <span>
                           {new Date(record.created_at).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
                         onClick={() => handleEdit(record)}
-                        variant="outline"
-                        size="sm"
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar"
                       >
                         <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         onClick={() => handleDelete(record.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50"
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   )
