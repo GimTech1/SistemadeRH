@@ -267,10 +267,7 @@ export default function SavedHoursPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-tight">Horas Economizadas</h1>
-          <p className="text-sm font-roboto font-light text-oxford-blue-500 mt-1">
-            Acompanhe o impacto das soluções desenvolvidas pela equipe de Tecnologia
-          </p>
+          <h1 className="text-2xl font-roboto font-medium text-rich-black-900 tracking-tight">Acompanhe o impacto das soluções desenvolvidas pela equipe de Tecnologia</h1>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
