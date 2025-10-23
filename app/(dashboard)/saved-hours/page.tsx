@@ -274,7 +274,8 @@ export default function SavedHoursPage() {
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-yinmn-blue-600 hover:bg-yinmn-blue-700 whitespace-nowrap"
+          className="text-white px-6 py-3 rounded-2xl font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+          style={{ backgroundColor: '#1B263B' }}
         >
           {showForm ? (
             <>
@@ -374,22 +375,22 @@ export default function SavedHoursPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="type">Tipo *</Label>
-                  <select
-                    id="type"
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    {TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                 <div>
+                   <Label htmlFor="type">Tipo *</Label>
+                   <select
+                     id="type"
+                     value={formData.type}
+                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                     required
+                   >
+                     {TYPES.map((type) => (
+                       <option key={type} value={type}>
+                         {type}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
 
                 <div>
                   <Label htmlFor="hours_saved">Horas Economizadas *</Label>
