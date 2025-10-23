@@ -59,6 +59,7 @@ export default function OneOnOnePage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [userRole, setUserRole] = useState<string>('')
   const [userId, setUserId] = useState<string>('')
+  const [userDepartment, setUserDepartment] = useState<string>('')
   const supabase = createClient()
 
   useEffect(() => {
@@ -73,11 +74,24 @@ export default function OneOnOnePage() {
         setUserId(user.id)
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, department_id')
           .eq('id', user.id)
           .single()
         if (profile && (profile as any).role) {
           setUserRole((profile as any).role)
+          
+          // Buscar nome do departamento se houver department_id
+          if ((profile as any).department_id) {
+            const { data: deptData } = await supabase
+              .from('departments')
+              .select('name')
+              .eq('id', (profile as any).department_id)
+              .single()
+            
+            if (deptData) {
+              setUserDepartment((deptData as any).name)
+            }
+          }
         }
       }
     } catch (error) {
@@ -190,7 +204,15 @@ export default function OneOnOnePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerencie reuniões individuais entre gestores e funcionários</h1>
+          <h1 className="text-2xl font-bold text-gray-900">One-on-One Meetings</h1>
+          <p className="text-gray-600">
+            Gerencie reuniões individuais entre gestores e funcionários
+            {userDepartment && (
+              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                {userDepartment}
+              </span>
+            )}
+          </p>
         </div>
         {(userRole === 'admin' || userRole === 'gerente') && (
           <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2" style={{ backgroundColor: '#1b263b' }}>

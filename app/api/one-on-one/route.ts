@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
       `)
       .order('meeting_date', { ascending: false })
 
-    // Filtros baseados no papel do usuário
+    // Filtros baseados no papel do usuário e departamento
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, id')
+      .select('role, id, department_id')
       .eq('id', user.id)
       .single()
 
@@ -59,8 +59,23 @@ export async function GET(request: NextRequest) {
         // Funcionários só veem suas próprias reuniões
         query = query.eq('employee_id', user.id)
       } else if ((profile as any).role === 'gerente') {
-        // Gerentes veem reuniões onde são manager ou employee
-        query = query.or(`manager_id.eq.${user.id},employee_id.eq.${user.id}`)
+        // Gerentes veem reuniões onde são manager ou employee, mas apenas do seu departamento
+        if ((profile as any).department_id) {
+          // Buscar funcionários do mesmo departamento
+          const { data: departmentEmployees } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('department_id', (profile as any).department_id)
+          
+          if (departmentEmployees && departmentEmployees.length > 0) {
+            const employeeIds = departmentEmployees.map((emp: any) => emp.id)
+            query = query.or(`manager_id.eq.${user.id},employee_id.in.(${employeeIds.join(',')})`)
+          } else {
+            query = query.eq('manager_id', user.id)
+          }
+        } else {
+          query = query.or(`manager_id.eq.${user.id},employee_id.eq.${user.id}`)
+        }
       }
     }
     // Admins veem todas as reuniões
@@ -80,13 +95,11 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Erro ao buscar reuniões:', error)
       return NextResponse.json({ error: 'Erro ao buscar reuniões' }, { status: 500 })
     }
 
     return NextResponse.json({ data })
   } catch (error) {
-    console.error('Erro na API:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -106,12 +119,34 @@ export async function POST(request: NextRequest) {
     // Verificar se o usuário tem permissão para criar reuniões
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, department_id')
       .eq('id', user.id)
       .single()
 
     if (!profile || !(profile as any).role || ((profile as any).role !== 'admin' && (profile as any).role !== 'gerente')) {
       return NextResponse.json({ error: 'Sem permissão para criar reuniões' }, { status: 403 })
+    }
+
+    // Se for gerente, verificar se está criando reunião com pessoas do seu departamento
+    if ((profile as any).role === 'gerente' && (profile as any).department_id) {
+      // Verificar se o manager e employee são do mesmo departamento
+      const { data: managerProfile } = await supabase
+        .from('profiles')
+        .select('department_id')
+        .eq('id', validatedData.manager_id)
+        .single()
+
+      const { data: employeeProfile } = await supabase
+        .from('profiles')
+        .select('department_id')
+        .eq('id', validatedData.employee_id)
+        .single()
+
+      if (!managerProfile || !employeeProfile || 
+          (managerProfile as any).department_id !== (profile as any).department_id ||
+          (employeeProfile as any).department_id !== (profile as any).department_id) {
+        return NextResponse.json({ error: 'Você só pode criar reuniões com pessoas do seu departamento' }, { status: 403 })
+      }
     }
 
     // Verificar se o manager_id é válido (deve ser admin ou gerente)
@@ -149,7 +184,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Erro ao criar reunião:', error)
       return NextResponse.json({ error: 'Erro ao criar reunião' }, { status: 500 })
     }
 

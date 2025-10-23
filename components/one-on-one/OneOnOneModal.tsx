@@ -69,16 +69,50 @@ export function OneOnOneModal({ isOpen, onClose, onSuccess, meeting, isEdit = fa
 
   const loadProfiles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, position, role')
-        .order('full_name')
+      // Primeiro, buscar o perfil do usuário atual para obter o departamento
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-      if (error) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('department_id, role')
+        .eq('id', user.id)
+        .single()
+
+      if (!currentProfile) return
+
+      // Se for admin, carregar todos os perfis
+      if ((currentProfile as any).role === 'admin') {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, position, role')
+          .order('full_name')
+
+        if (error) return
+        setProfiles(data || [])
         return
       }
 
-      setProfiles(data || [])
+      // Se não for admin, filtrar por departamento
+      if ((currentProfile as any).department_id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, position, role')
+          .eq('department_id', (currentProfile as any).department_id)
+          .order('full_name')
+
+        if (error) return
+        setProfiles(data || [])
+      } else {
+        // Se não tiver departamento, carregar apenas o próprio perfil
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, position, role')
+          .eq('id', user.id)
+
+        if (error) return
+        setProfiles(data || [])
+      }
     } catch (error) {
       // Erro ao carregar perfis
     }
