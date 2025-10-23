@@ -771,6 +771,38 @@ export type Database = {
           updated_at?: string
         }
       }
+      saved_hours: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          type: string
+          hours_saved: number
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          type: string
+          hours_saved: number
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          type?: string
+          hours_saved?: number
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

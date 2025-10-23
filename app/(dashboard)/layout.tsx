@@ -128,6 +128,7 @@ export default function DashboardLayout({
       '/profile': 'Perfil',
       '/deliveries': 'Entregas',
       '/processes': 'Processos',
+      '/saved-hours': 'Horas Economizadas',
     }
     if (map[pathname]) return map[pathname]
     const base = '/' + pathname.split('/').filter(Boolean)[0]

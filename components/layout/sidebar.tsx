@@ -39,6 +39,7 @@ import {
   UserRoundPen,
   Workflow,
   DollarSign,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -62,6 +63,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
   const [userName, setUserName] = useState<string>('Usuário')
   const [userPosition, setUserPosition] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
+  const [userDepartment, setUserDepartment] = useState<string | null>(null)
   const allowedMeetingUserIds = [
     'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
     'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
@@ -215,6 +217,13 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       href: '/reports',
       roles: ['admin', 'manager'],
     },
+    {
+      title: 'Horas Economizadas',
+      icon: Clock,
+      href: '/saved-hours',
+      roles: ['admin', 'manager', 'employee'],
+      requiresDepartment: 'Tecnologia',
+    },
   ]
 
   const toggleGroup = (groupTitle: string) => {
@@ -246,6 +255,11 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     if (item.href === '/meetings') {
       if (!userId) return false
       return allowedMeetingUserIds.includes(userId)
+    }
+    // @ts-ignore - requiresDepartment é uma propriedade opcional
+    if (item.requiresDepartment) {
+      // @ts-ignore
+      return userDepartment === item.requiresDepartment
     }
     return true
   })
@@ -290,15 +304,32 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
         else if (user.email) setUserName(user.email)
         if (metaPosition) setUserPosition(metaPosition)
 
-        const { data: profile } = await supabase
+        const profileResult = await supabase
           .from('profiles')
-          .select('full_name, position')
+          .select('full_name, position, department_id')
           .eq('id', user.id)
-          .single<{ full_name: string; position: string | null }>()
+          .single()
+        
+        const profile = profileResult.data as any
 
         if (profile) {
           setUserName(profile.full_name || 'Usuário')
           setUserPosition(profile.position || '')
+          
+          // Buscar nome do departamento se houver department_id
+          if (profile.department_id) {
+            const deptResult = await supabase
+              .from('departments')
+              .select('name')
+              .eq('id', profile.department_id)
+              .single()
+            
+            const dept = deptResult.data as any
+            
+            if (dept) {
+              setUserDepartment(dept.name)
+            }
+          }
         }
       } catch (error) {
       }
