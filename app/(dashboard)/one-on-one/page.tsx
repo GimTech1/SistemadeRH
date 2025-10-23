@@ -81,7 +81,7 @@ export default function OneOnOnePage() {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar informações do usuário:', error)
+      // Erro ao carregar informações do usuário
     }
   }
 
@@ -97,7 +97,6 @@ export default function OneOnOnePage() {
         toast.error(result.error || 'Erro ao carregar reuniões')
       }
     } catch (error) {
-      console.error('Erro ao carregar reuniões:', error)
       toast.error('Erro ao carregar reuniões')
     } finally {
       setLoading(false)
@@ -124,7 +123,6 @@ export default function OneOnOnePage() {
         toast.error(result.error || 'Erro ao aprovar reunião')
       }
     } catch (error) {
-      console.error('Erro ao aprovar reunião:', error)
       toast.error('Erro ao aprovar reunião')
     }
   }
@@ -145,7 +143,6 @@ export default function OneOnOnePage() {
         toast.error(result.error || 'Erro ao deletar reunião')
       }
     } catch (error) {
-      console.error('Erro ao deletar reunião:', error)
       toast.error('Erro ao deletar reunião')
     }
   }

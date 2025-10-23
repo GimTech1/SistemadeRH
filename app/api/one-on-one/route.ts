@@ -156,9 +156,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Dados inválidos', details: error.issues }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Dados inválidos', 
+        details: error.issues,
+        message: 'Verifique os campos obrigatórios e formatos'
+      }, { status: 400 })
     }
-    console.error('Erro na API:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

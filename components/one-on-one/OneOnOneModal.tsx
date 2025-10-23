@@ -75,13 +75,12 @@ export function OneOnOneModal({ isOpen, onClose, onSuccess, meeting, isEdit = fa
         .order('full_name')
 
       if (error) {
-        console.error('Erro ao carregar perfis:', error)
         return
       }
 
       setProfiles(data || [])
     } catch (error) {
-      console.error('Erro ao carregar perfis:', error)
+      // Erro ao carregar perfis
     }
   }
 
@@ -93,12 +92,20 @@ export function OneOnOneModal({ isOpen, onClose, onSuccess, meeting, isEdit = fa
       const url = isEdit ? `/api/one-on-one/${meeting.id}` : '/api/one-on-one'
       const method = isEdit ? 'PUT' : 'POST'
 
+      // Converter datas para formato ISO correto
+      const dataToSend = {
+        ...formData,
+        meeting_date: formData.meeting_date ? new Date(formData.meeting_date).toISOString() : formData.meeting_date,
+        expected_date: formData.expected_date ? new Date(formData.expected_date).toISOString() : formData.expected_date,
+      }
+
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       })
 
       if (response.ok) {
@@ -110,7 +117,6 @@ export function OneOnOneModal({ isOpen, onClose, onSuccess, meeting, isEdit = fa
         toast.error(result.error || 'Erro ao salvar reunião')
       }
     } catch (error) {
-      console.error('Erro ao salvar reunião:', error)
       toast.error('Erro ao salvar reunião')
     } finally {
       setLoading(false)

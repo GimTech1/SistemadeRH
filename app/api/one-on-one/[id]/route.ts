@@ -37,7 +37,6 @@ export async function GET(
       .single()
 
     if (error) {
-      console.error('Erro ao buscar reunião:', error)
       return NextResponse.json({ error: 'Reunião não encontrada' }, { status: 404 })
     }
 
@@ -60,7 +59,6 @@ export async function GET(
 
     return NextResponse.json({ data })
   } catch (error) {
-    console.error('Erro na API:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -140,7 +138,6 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Erro ao atualizar reunião:', error)
       return NextResponse.json({ error: 'Erro ao atualizar reunião' }, { status: 500 })
     }
 
@@ -149,7 +146,6 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Dados inválidos', details: error.issues }, { status: 400 })
     }
-    console.error('Erro na API:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -197,13 +193,11 @@ export async function DELETE(
       .eq('id', params.id)
 
     if (error) {
-      console.error('Erro ao deletar reunião:', error)
       return NextResponse.json({ error: 'Erro ao deletar reunião' }, { status: 500 })
     }
 
     return NextResponse.json({ message: 'Reunião deletada com sucesso' })
   } catch (error) {
-    console.error('Erro na API:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
