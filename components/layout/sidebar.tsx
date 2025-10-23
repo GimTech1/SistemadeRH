@@ -119,7 +119,7 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       title: 'Avaliações',
       icon: ClipboardCheck,
       isGroup: true,
-      roles: ['admin', 'manager', 'employee'],
+      roles: ['admin', 'manager'],
       children: [
         {
           title: 'Avaliações',
