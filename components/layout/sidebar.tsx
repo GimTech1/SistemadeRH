@@ -204,6 +204,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
           roles: ['admin', 'manager'],
         },
         {
+          title: 'One on One',
+          icon: Users,
+          href: '/one-on-one',
+          roles: ['admin', 'manager', 'employee'],
+        },
+        {
           title: 'Metas',
           icon: Target,
           href: '/goals',

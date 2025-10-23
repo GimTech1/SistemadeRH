@@ -128,6 +128,7 @@ export default function DashboardLayout({
       '/profile': 'Perfil',
       '/deliveries': 'Entregas',
       '/processes': 'Processos',
+      '/one-on-one': 'One on One',
       '/saved-hours': 'Horas Economizadas',
     }
     if (map[pathname]) return map[pathname]

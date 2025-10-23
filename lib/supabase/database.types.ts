@@ -803,6 +803,53 @@ export type Database = {
           updated_at?: string
         }
       }
+      one_on_one_meetings: {
+        Row: {
+          id: string
+          manager_id: string
+          employee_id: string
+          meeting_date: string
+          participants: string[]
+          description: string | null
+          agreements: string | null
+          expected_date: string | null
+          manager_approved: boolean
+          employee_approved: boolean
+          status: 'scheduled' | 'completed' | 'cancelled'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          manager_id: string
+          employee_id: string
+          meeting_date: string
+          participants: string[]
+          description?: string | null
+          agreements?: string | null
+          expected_date?: string | null
+          manager_approved?: boolean
+          employee_approved?: boolean
+          status?: 'scheduled' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          manager_id?: string
+          employee_id?: string
+          meeting_date?: string
+          participants?: string[]
+          description?: string | null
+          agreements?: string | null
+          expected_date?: string | null
+          manager_approved?: boolean
+          employee_approved?: boolean
+          status?: 'scheduled' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
