@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [showTooltip, setShowTooltip] = useState(false)
+  const [userRole, setUserRole] = useState<'admin' | 'gerente' | 'employee'>('employee')
   
   // Funções para lidar com hover no gráfico de donut
   const handleMouseEnter = (index: number, event: React.MouseEvent) => {
@@ -143,7 +144,32 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboardData()
+    checkUserRole()
   }, [])
+
+  const checkUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single<{ role: string | null }>()
+      
+      const role = (profile?.role || '').toLowerCase().trim()
+      if (role === 'admin' || role === 'administrador') {
+        setUserRole('admin')
+      } else if (role === 'gerente' || role === 'manager') {
+        setUserRole('gerente')
+      } else {
+        setUserRole('employee')
+      }
+    } catch (error) {
+      console.error('Erro ao verificar role do usuário:', error)
+    }
+  }
 
   // Atualiza automaticamente quando a tabela public.goals mudar
   useEffect(() => {
@@ -732,67 +758,70 @@ export default function DashboardPage() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
-          <div className="p-6 border-b border-platinum-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Avaliações Recentes</h3>
-              <Link href="/evaluations" className="text-sm font-roboto font-medium text-yinmn-blue-600 hover:text-yinmn-blue-700">
-                Ver todas
-              </Link>
+        {/* Tabela de Avaliações Recentes - apenas para gerentes e admin */}
+        {(userRole === 'admin' || userRole === 'gerente') && (
+          <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+            <div className="p-6 border-b border-platinum-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">Avaliações Recentes</h3>
+                <Link href="/evaluations" className="text-sm font-roboto font-medium text-yinmn-blue-600 hover:text-yinmn-blue-700">
+                  Ver todas
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs font-roboto font-light text-oxford-blue-500 uppercase tracking-wider">
-                    <th className="pb-4 font-light">Colaborador</th>
-                    <th className="pb-4 font-light">Departamento</th>
-                    <th className="pb-4 font-light">Data</th>
-                    <th className="pb-4 text-right font-light">Nota</th>
-                    <th className="pb-4 text-right font-light">Variação</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-platinum-100">
-                  {data.recentEvaluations.map((evaluation: any, index: number) => (
-                    <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yinmn-blue-100 to-yinmn-blue-200/50 flex items-center justify-center text-sm font-roboto font-medium text-yinmn-blue-700">
-                            {evaluation.name.split(' ').map((n: string) => n[0]).join('')}
-                          </div>
-                          <span className="font-roboto font-medium text-rich-black-900">{evaluation.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.department || '—'}</td>
-                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.date}</td>
-                      <td className="py-4 text-right">
-                        {typeof evaluation.score === 'number' ? (
-                          <span className="font-roboto font-semibold text-rich-black-900">{evaluation.score}</span>
-                        ) : (
-                          <span className="text-oxford-blue-400">—</span>
-                        )}
-                      </td>
-                      <td className="py-4 text-right">
-                        {typeof evaluation.change === 'number' ? (
-                          <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
-                            evaluation.change >= 0 
-                              ? 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50' 
-                              : 'text-red-700 bg-red-50/80 border border-red-200/50'
-                          }`}>
-                            {evaluation.change > 0 ? `+${evaluation.change.toFixed(1)}` : evaluation.change.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-oxford-blue-400">—</span>
-                        )}
-                      </td>
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-xs font-roboto font-light text-oxford-blue-500 uppercase tracking-wider">
+                      <th className="pb-4 font-light">Colaborador</th>
+                      <th className="pb-4 font-light">Departamento</th>
+                      <th className="pb-4 font-light">Data</th>
+                      <th className="pb-4 text-right font-light">Nota</th>
+                      <th className="pb-4 text-right font-light">Variação</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-platinum-100">
+                    {data.recentEvaluations.map((evaluation: any, index: number) => (
+                      <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yinmn-blue-100 to-yinmn-blue-200/50 flex items-center justify-center text-sm font-roboto font-medium text-yinmn-blue-700">
+                              {evaluation.name.split(' ').map((n: string) => n[0]).join('')}
+                            </div>
+                            <span className="font-roboto font-medium text-rich-black-900">{evaluation.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.department || '—'}</td>
+                        <td className="py-4 text-oxford-blue-600 font-roboto font-light">{evaluation.date}</td>
+                        <td className="py-4 text-right">
+                          {typeof evaluation.score === 'number' ? (
+                            <span className="font-roboto font-semibold text-rich-black-900">{evaluation.score}</span>
+                          ) : (
+                            <span className="text-oxford-blue-400">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 text-right">
+                          {typeof evaluation.change === 'number' ? (
+                            <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
+                              evaluation.change >= 0 
+                                ? 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50' 
+                                : 'text-red-700 bg-red-50/80 border border-red-200/50'
+                            }`}>
+                              {evaluation.change > 0 ? `+${evaluation.change.toFixed(1)}` : evaluation.change.toFixed(1)}
+                            </span>
+                          ) : (
+                            <span className="text-oxford-blue-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
           <div className="p-6 border-b border-platinum-200">
             <div className="flex items-center justify-between">
