@@ -822,117 +822,120 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-        <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
-          <div className="p-6 border-b border-platinum-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-roboto font-medium text-rich-black-900">Próximos Prazos</h3>
-              <button
-                className="p-1 hover:bg-platinum-50 rounded-lg transition-colors"
-                onClick={exportDeadlinesAsCSV}
-                aria-label="Exportar prazos"
-                title="Exportar CSV"
-              >
-                <Download className="w-4 h-4 text-oxford-blue-400" />
-              </button>
+        {/* Tabela de Próximos Prazos - apenas para gerentes e admin */}
+        {(userRole === 'admin' || userRole === 'gerente') && (
+          <div className="bg-white rounded-lg shadow-sm border border-platinum-200">
+            <div className="p-6 border-b border-platinum-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">Próximos Prazos</h3>
+                <button
+                  className="p-1 hover:bg-platinum-50 rounded-lg transition-colors"
+                  onClick={exportDeadlinesAsCSV}
+                  aria-label="Exportar prazos"
+                  title="Exportar CSV"
+                >
+                  <Download className="w-4 h-4 text-oxford-blue-400" />
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="p-6">
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs font-roboto font-light text-oxford-blue-500 uppercase tracking-wider">
-                    <th className="pb-4 font-light">Tarefa</th>
-                    <th className="pb-4 font-light">Data</th>
-                    <th className="pb-4 font-light">Tipo</th>
-                    <th className="pb-4 font-light">Dias Restantes</th>
-                    <th className="pb-4 text-right font-light">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-platinum-100">
-                  {data.upcomingDeadlines.map((deadline: any, index: number) => (
-                    <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-amber-600" />
+            <div className="p-6">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-xs font-roboto font-light text-oxford-blue-500 uppercase tracking-wider">
+                      <th className="pb-4 font-light">Tarefa</th>
+                      <th className="pb-4 font-light">Data</th>
+                      <th className="pb-4 font-light">Tipo</th>
+                      <th className="pb-4 font-light">Dias Restantes</th>
+                      <th className="pb-4 text-right font-light">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-platinum-100">
+                    {data.upcomingDeadlines.map((deadline: any, index: number) => (
+                      <tr key={index} className="text-sm hover:bg-platinum-50/50 transition-colors">
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center">
+                              <Clock className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <span className="font-roboto font-medium text-rich-black-900">{deadline.title}</span>
                           </div>
-                          <span className="font-roboto font-medium text-rich-black-900">{deadline.title}</span>
+                        </td>
+                        <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.date}</td>
+                        <td className="py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-roboto font-medium ${
+                            deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
+                            deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
+                            'bg-purple-50 text-purple-700 border border-purple-200/50'
+                          }`}>
+                            {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
+                          </span>
+                        </td>
+                        <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.daysLeft} dias</td>
+                        <td className="py-4 text-right">
+                          <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
+                            deadline.status === 'Urgente' 
+                              ? 'text-red-700 bg-red-50/80 border border-red-200/50' 
+                              : deadline.status === 'Em andamento'
+                              ? 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
+                              : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
+                          }`}>
+                            {deadline.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4">
+                {data.upcomingDeadlines.map((deadline: any, index: number) => (
+                  <div key={index} className="bg-platinum-50/30 rounded-lg p-4 border border-platinum-200">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-5 h-5 text-amber-600" />
                         </div>
-                      </td>
-                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.date}</td>
-                      <td className="py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-roboto font-medium ${
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-roboto font-medium text-rich-black-900 text-sm leading-tight">{deadline.title}</h4>
+                          <p className="text-xs font-roboto font-light text-oxford-blue-500 mt-1">{deadline.date}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center text-xs font-roboto font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                        deadline.status === 'Urgente' 
+                          ? 'text-red-700 bg-red-50/80 border border-red-200/50' 
+                          : deadline.status === 'Em andamento'
+                          ? 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
+                          : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
+                      }`}>
+                        {deadline.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-roboto font-medium ${
                           deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
                           deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
                           'bg-purple-50 text-purple-700 border border-purple-200/50'
                         }`}>
                           {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
                         </span>
-                      </td>
-                      <td className="py-4 text-oxford-blue-600 font-roboto font-light">{deadline.daysLeft} dias</td>
-                      <td className="py-4 text-right">
-                        <span className={`inline-flex items-center text-xs font-roboto font-medium px-3 py-1 rounded-full ${
-                          deadline.status === 'Urgente' 
-                            ? 'text-red-700 bg-red-50/80 border border-red-200/50' 
-                            : deadline.status === 'Em andamento'
-                            ? 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
-                            : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
-                        }`}>
-                          {deadline.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-              {data.upcomingDeadlines.map((deadline: any, index: number) => (
-                <div key={index} className="bg-platinum-50/30 rounded-lg p-4 border border-platinum-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-5 h-5 text-amber-600" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-roboto font-medium text-rich-black-900 text-sm leading-tight">{deadline.title}</h4>
-                        <p className="text-xs font-roboto font-light text-oxford-blue-500 mt-1">{deadline.date}</p>
+                      <div className="text-right">
+                        <span className="text-sm font-roboto font-medium text-oxford-blue-600">{deadline.daysLeft} dias</span>
+                        <p className="text-xs font-roboto font-light text-oxford-blue-500">restantes</p>
                       </div>
                     </div>
-                    <span className={`inline-flex items-center text-xs font-roboto font-medium px-2 py-1 rounded-full flex-shrink-0 ${
-                      deadline.status === 'Urgente' 
-                        ? 'text-red-700 bg-red-50/80 border border-red-200/50' 
-                        : deadline.status === 'Em andamento'
-                        ? 'text-amber-700 bg-amber-50/80 border border-amber-200/50'
-                        : 'text-emerald-700 bg-emerald-50/80 border border-emerald-200/50'
-                    }`}>
-                      {deadline.status}
-                    </span>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-roboto font-medium ${
-                        deadline.type === 'evaluation' ? 'bg-yinmn-blue-50 text-yinmn-blue-700 border border-yinmn-blue-200/50' :
-                        deadline.type === 'goal' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
-                        'bg-purple-50 text-purple-700 border border-purple-200/50'
-                      }`}>
-                        {deadline.type === 'evaluation' ? 'Avaliação' : 'Meta'}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-roboto font-medium text-oxford-blue-600">{deadline.daysLeft} dias</span>
-                      <p className="text-xs font-roboto font-light text-oxford-blue-500">restantes</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link href="/requests" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
