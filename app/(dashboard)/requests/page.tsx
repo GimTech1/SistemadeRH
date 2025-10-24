@@ -26,6 +26,7 @@ type RequestItem = {
   employeeName: string
   departmentId: string
   department: string
+  title: string
   description: string
   urgency: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
   status: RequestStatus
@@ -41,6 +42,7 @@ export default function RequestsPage() {
 
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [departmentId, setDepartmentId] = useState('')
+  const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [urgency, setUrgency] = useState<'Pequena' | 'Média' | 'Grande' | 'Urgente' | ''>('')
   const [submitting, setSubmitting] = useState(false)
@@ -138,8 +140,8 @@ export default function RequestsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedEmployee || !description || !urgency || !departmentId) {
-      toast.error('Preencha colaborador, setor, descrição e urgência')
+    if (!selectedEmployee || !title || !description || !urgency || !departmentId) {
+      toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
@@ -152,7 +154,7 @@ export default function RequestsPage() {
         .insert({
           employee_id: selectedEmployee,
           department_id: departmentId,
-          description: description.trim(),
+          description: `${title.trim()} - ${description.trim()}`,
           urgency,
           status: 'requested',
         } as any)
@@ -170,6 +172,7 @@ export default function RequestsPage() {
         employeeName: employee?.name || 'Colaborador',
         departmentId,
         department: dept?.name || '—',
+        title: title.trim(),
         description: description.trim(),
         urgency: urgency as any,
         status: 'requested',
@@ -179,6 +182,7 @@ export default function RequestsPage() {
       setRequests(prev => [item, ...prev])
       setSelectedEmployee('')
       setDepartmentId('')
+      setTitle('')
       setDescription('')
       setUrgency('')
       toast.success('Solicitação criada')
@@ -214,17 +218,26 @@ export default function RequestsPage() {
           .order('created_at', { ascending: false })
         if (error) throw error
 
-        const mapped: RequestItem[] = (data || []).map((r: any) => ({
-          id: r.id,
-          employeeId: r.employee_id,
-          employeeName: r.employees?.full_name || employees.find(e => e.id === r.employee_id)?.name || 'Colaborador',
-          departmentId: r.department_id,
-          department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
-          description: r.description,
-          urgency: r.urgency,
-          status: r.status,
-          createdAt: r.created_at,
-        }))
+        const mapped: RequestItem[] = (data || []).map((r: any) => {
+          // Extrair título e descrição da string combinada
+          const fullDescription = r.description || ''
+          const titleDescSplit = fullDescription.split(' - ')
+          const title = titleDescSplit[0] || 'Sem título'
+          const description = titleDescSplit.slice(1).join(' - ') || fullDescription
+          
+          return {
+            id: r.id,
+            employeeId: r.employee_id,
+            employeeName: r.employees?.full_name || employees.find(e => e.id === r.employee_id)?.name || 'Colaborador',
+            departmentId: r.department_id,
+            department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
+            title,
+            description,
+            urgency: r.urgency,
+            status: r.status,
+            createdAt: r.created_at,
+          }
+        })
         setRequests(mapped)
       } catch (err) {
         toast.error('Não foi possível carregar solicitações')
@@ -329,8 +342,13 @@ export default function RequestsPage() {
           </div>
 
           <div>
-            <Label htmlFor="description">Qual seria o pedido e o motivo?</Label>
-            <Input id="description" placeholder="Ex.: Notebook para novo colaborador" value={description} onChange={e => setDescription(e.target.value)} className="mt-2" />
+            <Label htmlFor="title">Título do Pedido</Label>
+            <Input id="title" placeholder="Ex.: Solicitação de Notebook" value={title} onChange={e => setTitle(e.target.value)} className="mt-2" />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Descrição e Motivo</Label>
+            <Input id="description" placeholder="Ex.: Necessário para novo colaborador do setor de vendas" value={description} onChange={e => setDescription(e.target.value)} className="mt-2" />
           </div>
 
           <div>
@@ -392,6 +410,7 @@ export default function RequestsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1 flex-1">
                 <p className="text-rich-black-900 font-medium">{item.employeeName} • {item.department || 'Sem setor'}</p>
+                <p className="text-sm font-medium text-rich-black-900">{item.title}</p>
                 <p className="text-sm text-oxford-blue-700">{item.description}</p>
                 <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
               </div>
