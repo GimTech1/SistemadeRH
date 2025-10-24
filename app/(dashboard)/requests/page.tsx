@@ -48,6 +48,37 @@ export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestStatus | 'all'>('requested')
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loadingRequests, setLoadingRequests] = useState(false)
+  
+  // Estados para controle de permissões
+  const [userRole, setUserRole] = useState<'admin' | 'gerente' | 'employee'>('employee')
+  const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null)
+
+  // Carregar informações do usuário e verificar permissões
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) return
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, department_id')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError || !profile) return
+
+        const role = (profile as any).role?.toLowerCase() || 'employee'
+        setUserRole(role === 'admin' || role === 'administrador' ? 'admin' : 
+                   role === 'gerente' || role === 'manager' ? 'gerente' : 'employee')
+        setUserDepartmentId((profile as any).department_id)
+      } catch (error) {
+        console.error('Erro ao carregar informações do usuário:', error)
+      }
+    }
+
+    loadUserInfo()
+  }, [supabase])
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -207,6 +238,17 @@ export default function RequestsPage() {
     }
   }, [supabase, departments, employees])
 
+  // Função para verificar se o usuário pode aprovar requests
+  const canApproveRequest = (request: RequestItem) => {
+    // Admin pode aprovar qualquer request
+    if (userRole === 'admin') return true
+    
+    // Gerente pode aprovar apenas requests do seu departamento
+    if (userRole === 'gerente' && userDepartmentId === request.departmentId) return true
+    
+    return false
+  }
+
   const handleUpdateStatus = async (id: string, status: RequestStatus) => {
     try {
       const current = requests.find(r => r.id === id)
@@ -214,6 +256,13 @@ export default function RequestsPage() {
         toast.error('Não é possível alterar o status de um pedido concluído')
         return
       }
+      
+      // Verificar se o usuário tem permissão para alterar o status
+      if (!canApproveRequest(current!)) {
+        toast.error('Você não tem permissão para alterar o status desta solicitação')
+        return
+      }
+      
       const { error } = await (supabase as any)
         .from('requests')
         .update({ status } as any)
@@ -353,14 +402,25 @@ export default function RequestsPage() {
                   </span>
                 ) : (
                   <>
-                    {activeTab !== 'approved' && (
-                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
+                    {/* Mostrar botões apenas para admin ou gerente */}
+                    {canApproveRequest(item) && (
+                      <>
+                        {activeTab !== 'approved' && (
+                          <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
+                        )}
+                        {activeTab !== 'rejected' && (
+                          <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
+                        )}
+                        {activeTab !== 'done' && (
+                          <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
+                        )}
+                      </>
                     )}
-                    {activeTab !== 'rejected' && (
-                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
-                    )}
-                    {activeTab !== 'done' && (
-                      <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
+                    {/* Mostrar mensagem para usuários sem permissão */}
+                    {!canApproveRequest(item) && userRole === 'employee' && (
+                      <span className="text-xs px-3 py-1 rounded-xl bg-platinum-100 text-oxford-blue-700">
+                        Apenas gerentes e administradores podem aprovar solicitações
+                      </span>
                     )}
                   </>
                 )}
