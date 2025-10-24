@@ -937,52 +937,55 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link href="/requests" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#E0E1DD] rounded-lg flex items-center justify-center group-hover:bg-[#d6d8d4] transition-colors">
-              <FileText className="w-6 h-6 text-[#778DA9]" />
+      {/* Cards de atalho - apenas para gerentes e admin */}
+      {(userRole === 'admin' || userRole === 'gerente') && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Link href="/requests" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#E0E1DD] rounded-lg flex items-center justify-center group-hover:bg-[#d6d8d4] transition-colors">
+                <FileText className="w-6 h-6 text-[#778DA9]" />
+              </div>
+              <div>
+                <h4 className="font-roboto font-medium text-rich-black-900">Solicitações</h4>
+                <p className="text-sm font-roboto font-light text-oxford-blue-500">Criar e acompanhar pedidos</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-roboto font-medium text-rich-black-900">Solicitações</h4>
-              <p className="text-sm font-roboto font-light text-oxford-blue-500">Criar e acompanhar pedidos</p>
+          </Link>
+          <Link href="/evaluations/new" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-yinmn-blue-100 rounded-lg flex items-center justify-center group-hover:bg-yinmn-blue-200 transition-colors">
+                <ClipboardCheck className="w-6 h-6 text-yinmn-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-roboto font-medium text-rich-black-900">Nova Avaliação</h4>
+                <p className="text-sm font-roboto font-light text-oxford-blue-500">Criar avaliação de desempenho</p>
+              </div>
             </div>
+          </Link>
+          <Link href="/goals" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                <Target className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h4 className="font-roboto font-medium text-rich-black-900">Gerenciar Metas</h4>
+                <p className="text-sm font-roboto font-light text-oxford-blue-500">Definir e acompanhar objetivos</p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/reports" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                <FileText className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="font-roboto font-medium text-rich-black-900">Relatórios</h4>
+                <p className="text-sm font-roboto font-light text-oxford-blue-500">Gerar análises detalhadas</p>
           </div>
-        </Link>
-        <Link href="/evaluations/new" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-yinmn-blue-100 rounded-lg flex items-center justify-center group-hover:bg-yinmn-blue-200 transition-colors">
-              <ClipboardCheck className="w-6 h-6 text-yinmn-blue-600" />
             </div>
-            <div>
-              <h4 className="font-roboto font-medium text-rich-black-900">Nova Avaliação</h4>
-              <p className="text-sm font-roboto font-light text-oxford-blue-500">Criar avaliação de desempenho</p>
-            </div>
-          </div>
-        </Link>
-        <Link href="/goals" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-              <Target className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <h4 className="font-roboto font-medium text-rich-black-900">Gerenciar Metas</h4>
-              <p className="text-sm font-roboto font-light text-oxford-blue-500">Definir e acompanhar objetivos</p>
-            </div>
-          </div>
-        </Link>
-        <Link href="/reports" className="bg-white rounded-lg p-6 shadow-sm border border-platinum-200 hover:shadow-md transition-shadow duration-300 group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-              <FileText className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h4 className="font-roboto font-medium text-rich-black-900">Relatórios</h4>
-              <p className="text-sm font-roboto font-light text-oxford-blue-500">Gerar análises detalhadas</p>
+          </Link>
         </div>
-          </div>
-        </Link>
-      </div>
+      )}
     </div>
   )
 }
