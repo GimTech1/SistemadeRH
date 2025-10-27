@@ -62,11 +62,11 @@ export default function InvoicesPage() {
 
   const recipients: Recipient[] = [
     { id: 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José Fernando Cunha' },
-    { id: 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947', name: 'Bianca dos Santos Leandro' }
+    { id: '0d0bf6c3-bda8-47a2-864b-425575d13194', name: 'Bianca dos Santos Leandro' }
   ]
 
   const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
-  const biancaId = 'f21989d6-c1f5-4b49-ae2e-3abaefa9a947'
+  const biancaId = '0d0bf6c3-bda8-47a2-864b-425575d13194'
   const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
   const isSpecialUser = [joseId, biancaId, newAllowedId].includes(currentUserId)
 
