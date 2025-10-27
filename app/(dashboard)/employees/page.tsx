@@ -50,12 +50,10 @@ export default function EmployeesPage() {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [userId, setUserId] = useState<string | null>(null)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  // Mantido como referência caso volte o envio de convites por e-mail
-  // const [inviteEmail, setInviteEmail] = useState('')
-  // const [sendingInvite, setSendingInvite] = useState(false)
+
 
   // ID específico que deve ter bypass para ver os botões
-  const BYPASS_USER_ID = 'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3'
+  const BYPASS_USER_ID = process.env.NEXT_PUBLIC_BYPASS_USER_ID || 'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3'
 
   // Função para verificar se o usuário pode ver os botões de ação
   const canViewActionButtons = () => {
