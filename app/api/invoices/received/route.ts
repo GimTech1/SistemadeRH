@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Verificar se o usuário está autorizado a acessar recebidas
     const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
-    const biandaId = '2005804d-9527-4300-aaf5-720d36e080a5'
+    const biandaId = '0d0bf6c3-bda8-47a2-864b-425575d13194'
     const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
     const allowedIds = [joseId, biandaId, newAllowedId]
     
