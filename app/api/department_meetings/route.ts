@@ -1,16 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
-// Estrutura esperada da tabela `department_meetings` no Supabase:
-// - id: uuid (pk)
-// - department_id: uuid (fk -> departments.id)
-// - date: date
-// - scheduled_time: text (HH:MM) opcional
-// - done: boolean (default false)
-// - done_at: timestamptz null
-// - created_by: uuid (fk -> profiles.id) opcional
-// Unique (department_id, date)
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -18,14 +8,15 @@ export async function GET(request: Request) {
     const supabase = await createServerClient()
     const { data: auth } = await supabase.auth.getUser()
     const userId = auth?.user?.id
-    const allowed = [
-      'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
-      'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
-      '02088194-3439-411d-bdfb-05a255d8be24',
-      '8370f649-8379-4f7b-b618-63bf4511b901',
-      '5e6734c0-491a-4355-87cb-cce6f36c0350',
-    ]
-    if (!userId || !allowed.includes(userId)) {
+    
+    const allowedIds = process.env.ALLOWED_MEETINGS_IDS?.split(',') || []
+    
+    if (allowedIds.length === 0) {
+      console.error('Variável de ambiente não configurada: ALLOWED_MEETINGS_IDS')
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
+    
+    if (!userId || !allowedIds.includes(userId)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
@@ -51,14 +42,15 @@ export async function POST(request: Request) {
     const supabase = await createServerClient()
     const { data: auth } = await supabase.auth.getUser()
     const userId = auth?.user?.id
-    const allowed = [
-      'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
-      'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
-      '02088194-3439-411d-bdfb-05a255d8be24',
-      '8370f649-8379-4f7b-b618-63bf4511b901',
-      '5e6734c0-491a-4355-87cb-cce6f36c0350',
-    ]
-    if (!userId || !allowed.includes(userId)) {
+    
+    const allowedIds = process.env.ALLOWED_MEETINGS_IDS?.split(',') || []
+    
+    if (allowedIds.length === 0) {
+      console.error('Variável de ambiente não configurada: ALLOWED_MEETINGS_IDS')
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
+    
+    if (!userId || !allowedIds.includes(userId)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 

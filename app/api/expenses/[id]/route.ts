@@ -1,16 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-const APPROVERS = [
-  'b8f68ba9-891c-4ca1-b765-43fee671928f',
-  '02088194-3439-411d-bdfb-05a255d8be24',
-]
+const APPROVERS = process.env.EXPENSES_APPROVERS?.split(',') || []
+
+if (APPROVERS.length === 0) {
+  console.error('Variável de ambiente não configurada: EXPENSES_APPROVERS')
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (APPROVERS.length === 0) {
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
+    
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {

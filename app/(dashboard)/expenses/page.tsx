@@ -93,8 +93,13 @@ export default function ExpensesPage() {
       if (profile) {
         setUserRole(profile.role)
         setUserDepartmentId(profile.department_id)
-        const SUPER_IDS = ['b8f68ba9-891c-4ca1-b765-43fee671928f', '02088194-3439-411d-bdfb-05a255d8be24']
-        const APPROVERS = ['b8f68ba9-891c-4ca1-b765-43fee671928f', '02088194-3439-411d-bdfb-05a255d8be24']
+        const SUPER_IDS = process.env.NEXT_PUBLIC_SUPER_EXPENSES_IDS?.split(',') || []
+        const APPROVERS = process.env.NEXT_PUBLIC_EXPENSES_APPROVERS?.split(',') || []
+        
+        if (SUPER_IDS.length === 0 || APPROVERS.length === 0) {
+          console.error('Variáveis de ambiente não configuradas: NEXT_PUBLIC_SUPER_EXPENSES_IDS, NEXT_PUBLIC_EXPENSES_APPROVERS')
+          return
+        }
         setCanViewAll(profile.role === 'admin' || SUPER_IDS.includes(user.id))
         setCanApprove(APPROVERS.includes(user.id))
       }

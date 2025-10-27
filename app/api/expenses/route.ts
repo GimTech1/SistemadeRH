@@ -2,13 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Usuários com visão total dos gastos
-const SUPER_VIEWER_IDS = [
-  'b8f68ba9-891c-4ca1-b765-43fee671928f',
-  '02088194-3439-411d-bdfb-05a255d8be24',
-]
+const SUPER_VIEWER_IDS = process.env.SUPER_EXPENSES_IDS?.split(',') || []
+
+if (SUPER_VIEWER_IDS.length === 0) {
+  console.error('Variável de ambiente não configurada: SUPER_EXPENSES_IDS')
+}
 
 export async function GET(request: NextRequest) {
   try {
+    if (SUPER_VIEWER_IDS.length === 0) {
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
+    
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {

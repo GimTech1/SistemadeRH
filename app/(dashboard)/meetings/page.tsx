@@ -77,12 +77,12 @@ export default function MeetingsPage() {
     return Math.round(avg * 10) / 10
   }, [auditMetrics])
   const allowedUserIds = useMemo(() => [
-    'd4f6ea0c-0ddc-41a4-a6d4-163fea1916c3',
-    'c8ee5614-8730-477e-ba59-db4cd8b83ce8',
-    '02088194-3439-411d-bdfb-05a255d8be24',
-    '8370f649-8379-4f7b-b618-63bf4511b901',
-    '5e6734c0-491a-4355-87cb-cce6f36c0350',
-  ], [])
+    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_1,
+    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_2,
+    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_3,
+    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_4,
+    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_5,
+  ].filter(Boolean), [])
 
   const total = departments.length
   const doneCount = useMemo(() => departments.reduce((acc, d) => acc + (meetingsByDept[d.id]?.done ? 1 : 0), 0), [departments, meetingsByDept])
