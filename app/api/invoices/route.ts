@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar notas fiscais: todas se usuário for autorizado especial; caso contrário, apenas as do próprio usuário
-    const specialViewerId = '02088194-3439-411d-bdfb-05a255d8be24'
+    const specialViewerId = process.env.NEW_ALLOWED_ID
     const baseQuery = supabase
       .from('invoice_files')
       .select(`

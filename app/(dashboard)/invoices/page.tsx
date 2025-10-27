@@ -61,13 +61,13 @@ export default function InvoicesPage() {
   const supabase: SupabaseClient<Database> = createClient()
 
   const recipients: Recipient[] = [
-    { id: 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José Fernando Cunha' },
-    { id: '0d0bf6c3-bda8-47a2-864b-425575d13194', name: 'Bianca dos Santos Leandro' }
+    { id: process.env.NEXT_PUBLIC_JOSE_ID || 'b8f68ba9-891c-4ca1-b765-43fee671928f', name: 'José Fernando Cunha' },
+    { id: process.env.NEXT_PUBLIC_BIANCA_ID || '0d0bf6c3-bda8-47a2-864b-425575d13194', name: 'Bianca dos Santos Leandro' }
   ]
 
-  const joseId = 'b8f68ba9-891c-4ca1-b765-43fee671928f'
-  const biancaId = '0d0bf6c3-bda8-47a2-864b-425575d13194'
-  const newAllowedId = '02088194-3439-411d-bdfb-05a255d8be24'
+  const joseId = process.env.NEXT_PUBLIC_JOSE_ID || 'b8f68ba9-891c-4ca1-b765-43fee671928f'
+  const biancaId = process.env.NEXT_PUBLIC_BIANCA_ID || '0d0bf6c3-bda8-47a2-864b-425575d13194'
+  const newAllowedId = process.env.NEXT_PUBLIC_NEW_ALLOWED_ID || '02088194-3439-411d-bdfb-05a255d8be24'
   const isSpecialUser = [joseId, biancaId, newAllowedId].includes(currentUserId)
 
   useEffect(() => {
