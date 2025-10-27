@@ -9,10 +9,16 @@ export async function GET(request: Request) {
     const { data: auth } = await supabase.auth.getUser()
     const userId = auth?.user?.id
     
-    const allowedIds = process.env.ALLOWED_MEETINGS_IDS?.split(',') || []
+    const allowedIds = [
+      process.env.MEETINGS_USER_ID_1,
+      process.env.MEETINGS_USER_ID_2,
+      process.env.MEETINGS_USER_ID_3,
+      process.env.MEETINGS_USER_ID_4,
+      process.env.MEETINGS_USER_ID_5,
+    ].filter(Boolean)
     
     if (allowedIds.length === 0) {
-      console.error('Variável de ambiente não configurada: ALLOWED_MEETINGS_IDS')
+      console.error('Variáveis de ambiente não configuradas: MEETINGS_USER_ID_1 a MEETINGS_USER_ID_5')
       return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
     }
     
@@ -43,10 +49,16 @@ export async function POST(request: Request) {
     const { data: auth } = await supabase.auth.getUser()
     const userId = auth?.user?.id
     
-    const allowedIds = process.env.ALLOWED_MEETINGS_IDS?.split(',') || []
+    const allowedIds = [
+      process.env.MEETINGS_USER_ID_1,
+      process.env.MEETINGS_USER_ID_2,
+      process.env.MEETINGS_USER_ID_3,
+      process.env.MEETINGS_USER_ID_4,
+      process.env.MEETINGS_USER_ID_5,
+    ].filter(Boolean)
     
     if (allowedIds.length === 0) {
-      console.error('Variável de ambiente não configurada: ALLOWED_MEETINGS_IDS')
+      console.error('Variáveis de ambiente não configuradas: MEETINGS_USER_ID_1 a MEETINGS_USER_ID_5')
       return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
     }
     

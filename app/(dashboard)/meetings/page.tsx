@@ -76,13 +76,21 @@ export default function MeetingsPage() {
     const avg = values.reduce((a, b) => a + b, 0) / values.length
     return Math.round(avg * 10) / 10
   }, [auditMetrics])
-  const allowedUserIds = useMemo(() => [
-    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_1,
-    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_2,
-    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_3,
-    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_4,
-    process.env.NEXT_PUBLIC_MEETINGS_USER_ID_5,
-  ].filter(Boolean), [])
+  const allowedUserIds = useMemo(() => {
+    const ids = [
+      process.env.NEXT_PUBLIC_MEETINGS_USER_ID_1,
+      process.env.NEXT_PUBLIC_MEETINGS_USER_ID_2,
+      process.env.NEXT_PUBLIC_MEETINGS_USER_ID_3,
+      process.env.NEXT_PUBLIC_MEETINGS_USER_ID_4,
+      process.env.NEXT_PUBLIC_MEETINGS_USER_ID_5,
+    ].filter(Boolean)
+    
+    if (ids.length === 0) {
+      console.error('Variáveis de ambiente não configuradas: NEXT_PUBLIC_MEETINGS_USER_ID_1 a NEXT_PUBLIC_MEETINGS_USER_ID_5')
+    }
+    
+    return ids
+  }, [])
 
   const total = departments.length
   const doneCount = useMemo(() => departments.reduce((acc, d) => acc + (meetingsByDept[d.id]?.done ? 1 : 0), 0), [departments, meetingsByDept])
