@@ -18,7 +18,13 @@ export async function PATCH(
     const joseId = process.env.JOSE_ID
     const biancaId = process.env.BIANCA_ID
     const newAllowedId = process.env.NEW_ALLOWED_ID
-    const allowedIds = [joseId, biancaId, newAllowedId].filter(Boolean)
+    
+    if (!joseId || !biancaId || !newAllowedId) {
+      console.error('Variáveis de ambiente não configuradas: JOSE_ID, BIANCA_ID, NEW_ALLOWED_ID')
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
+    
+    const allowedIds = [joseId, biancaId, newAllowedId]
     
     if (!allowedIds.includes(user.id)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })

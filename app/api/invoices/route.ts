@@ -13,6 +13,11 @@ export async function GET(request: NextRequest) {
 
     // Buscar notas fiscais: todas se usuário for autorizado especial; caso contrário, apenas as do próprio usuário
     const specialViewerId = process.env.NEW_ALLOWED_ID
+    
+    if (!specialViewerId) {
+      console.error('Variável de ambiente não configurada: NEW_ALLOWED_ID')
+      return NextResponse.json({ error: 'Configuração do servidor incompleta' }, { status: 500 })
+    }
     const baseQuery = supabase
       .from('invoice_files')
       .select(`
