@@ -1257,7 +1257,6 @@ export default function EmployeeProfilePage() {
             { id: 'family', label: 'Família', icon: Users },
             { id: 'education', label: 'Formação', icon: GraduationCap },
             { id: 'financial', label: 'Financeiro', icon: DollarSign },
-            { id: 'performance', label: 'Desempenho', icon: TrendingUp },
           ].map((tab) => {
             const Icon = tab.icon
             return (
@@ -1578,33 +1577,6 @@ export default function EmployeeProfilePage() {
                 <Field label="Conta" value={employee.account || '-'} />
                 <Field label="Tipo de Conta" value={employee.account_type || '-'} />
                 <Field label="Chave PIX" value={employee.pix_key || '-'} />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'performance' && (
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Desempenho</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <div className="text-slate-400 mb-4">
-                    <Activity className="h-12 w-12 mx-auto" />
-                  </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Dados de Desempenho</h3>
-                  <p className="text-slate-600 mb-4">
-                    Os dados de desempenho serão exibidos aqui quando estiverem disponíveis.
-                  </p>
-                  <div className="text-sm text-slate-500">
-                    <p>• Avaliações de desempenho</p>
-                    <p>• Feedbacks e comentários</p>
-                    <p>• Metas e objetivos</p>
-                    <p>• Histórico de avaliações</p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
