@@ -10,7 +10,9 @@ export async function PUT(
     const { id } = await context.params
     const body = await request.json() as {
       name?: string
+      full_name?: string | null
       email?: string
+      personal_email?: string | null
       position?: string
       department?: string
       is_active?: boolean
@@ -21,6 +23,7 @@ export async function PUT(
       marital_status?: string
       nationality?: string
       phone?: string | null
+      mobile?: string | null
       emergency_contact?: string | null
       emergency_phone?: string | null
       address?: string | null
@@ -70,7 +73,9 @@ export async function PUT(
     const supabase = await createServerClient()
     const baseUpdate: Record<string, any> = {
       ...(name ? { full_name: name } : {}),
+      ...(typeof body.full_name !== 'undefined' ? { full_name: body.full_name } : {}),
       email: body.email || null,
+      personal_email: body.personal_email ?? null,
       position: body.position || null,
       department: body.department || null,
       ...(typeof body.is_active !== 'undefined' ? { is_active: body.is_active } : {}),
@@ -81,6 +86,7 @@ export async function PUT(
       marital_status: body.marital_status || null,
       nationality: body.nationality || null,
       phone: body.phone ?? null,
+      mobile: body.mobile ?? null,
       emergency_contact: body.emergency_contact ?? null,
       emergency_phone: body.emergency_phone ?? null,
       address: body.address ?? null,

@@ -169,7 +169,7 @@ export default function EmployeeProfilePage() {
     gender: '',
     marital_status: '',
     nationality: '',
-    contacts: { personal_email: '', phone: '', cellphone: '', emergency_contact: '' },
+    contacts: { personal_email: '', phone: '', cellphone: '', emergency_contact: '', emergency_phone: '' },
     address: { street: '', neighborhood: '', city: '', zip: '', state: '' },
     employee_code: '',
     admission_date: '',
@@ -711,8 +711,12 @@ export default function EmployeeProfilePage() {
         marital_status: editData.marital_status || null,
         nationality: editData.nationality || null,
         phone: editData.contacts?.phone || null,
+        personal_email: editData.contacts?.personal_email || null,
+        mobile: editData.contacts?.cellphone || null,
         emergency_contact: editData.contacts?.emergency_contact || null,
+        emergency_phone: (editData as any).contacts?.emergency_phone ?? null,
         address: editData.address?.street || null,
+        neighborhood: editData.address?.neighborhood || null,
         city: editData.address?.city || null,
         state: editData.address?.state || null,
         zip_code: editData.address?.zip || null,
@@ -870,13 +874,12 @@ export default function EmployeeProfilePage() {
         ${employee.dependents && employee.dependents.length > 0 ? `
         <div style="margin-bottom: 25px;">
           <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">DEPENDENTES</h3>
-          ${employee.dependents.map((dep, index) => `
+              ${employee.dependents.map((dep, index) => `
             <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-left: 4px solid #1B263B;">
               <h4 style="color: #1B263B; font-size: 14px; margin: 0 0 10px 0;">Dependente ${index + 1}</h4>
               <div style="margin-bottom: 5px;"><strong>Nome:</strong> ${dep.name}</div>
               <div style="margin-bottom: 5px;"><strong>Parentesco:</strong> ${dep.relationship}</div>
               <div style="margin-bottom: 5px;"><strong>Data de Nascimento:</strong> ${dep.birth_date}</div>
-              <div style="margin-bottom: 5px;"><strong>CPF:</strong> ${dep.cpf || '-'}</div>
             </div>
           `).join('')}
         </div>
@@ -1045,7 +1048,6 @@ export default function EmployeeProfilePage() {
               <div class="field"><span class="label">Nome:</span><span class="value">${dep.name}</span></div>
               <div class="field"><span class="label">Parentesco:</span><span class="value">${dep.relationship}</span></div>
               <div class="field"><span class="label">Data de Nascimento:</span><span class="value">${dep.birth_date}</span></div>
-              <div class="field"><span class="label">CPF:</span><span class="value">${dep.cpf || '-'}</span></div>
             `).join('')}
           </div>
           ` : ''}
@@ -1321,8 +1323,8 @@ export default function EmployeeProfilePage() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-4 sm:gap-6 p-4 sm:p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <Field label="E-mail Corporativo" value={employee.email} />
-                  <Field label="E-mail Pessoal" value={employee.personal_email} />
+                  <Field label="E-mail Corporativo" value={employee.email ? <a className="break-all underline" href={`mailto:${employee.email}`}>{employee.email}</a> : '-'} />
+                  <Field label="E-mail Pessoal" value={employee.personal_email ? <a className="break-all underline" href={`mailto:${employee.personal_email}`}>{employee.personal_email}</a> : '-'} />
                   <Field label="Telefone" value={employee.phone} />
                   <Field label="Celular" value={employee.mobile} />
               </div>
@@ -1474,7 +1476,7 @@ export default function EmployeeProfilePage() {
                   <div className="space-y-4">
                     {employee.dependents.map((dep, index) => (
                       <div key={index} className="p-4 bg-white rounded-lg border border-slate-200">
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           <div>
                             <p className="text-sm text-slate-700">Nome</p>
                             <p className="text-slate-950 font-semibold">{dep.name}</p>
@@ -1486,10 +1488,6 @@ export default function EmployeeProfilePage() {
                           <div>
                             <p className="text-sm text-slate-700">Data de Nascimento</p>
                             <p className="text-slate-950 font-semibold">{dep.birth_date}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-700">CPF</p>
-                            <p className="text-slate-950 font-semibold">{dep.cpf || '-'}</p>
                           </div>
                         </div>
                       </div>
@@ -1871,6 +1869,18 @@ export default function EmployeeProfilePage() {
                             onChange={(e) => setEditData({ 
                               ...editData, 
                               contacts: { ...editData.contacts, emergency_contact: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-emergency-phone">Telefone de Emergência</Label>
+                          <Input
+                            id="edit-emergency-phone"
+                            placeholder="(11) 98765-1234"
+                            value={editData.contacts.emergency_phone || ''}
+                            onChange={(e) => setEditData({ 
+                              ...editData, 
+                              contacts: { ...editData.contacts, emergency_phone: e.target.value }
                             })}
                           />
                         </div>

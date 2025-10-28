@@ -58,6 +58,7 @@ export type Database = {
           id: string
           full_name: string
           email: string | null
+          personal_email: string | null
           position: string | null
           department: string | null
           cpf: string | null
@@ -67,9 +68,11 @@ export type Database = {
           marital_status: string | null
           nationality: string | null
           phone: string | null
+          mobile: string | null
           emergency_contact: string | null
           emergency_phone: string | null
           address: string | null
+          neighborhood: string | null
           city: string | null
           state: string | null
           zip_code: string | null
@@ -113,6 +116,7 @@ export type Database = {
           id?: string
           full_name: string
           email?: string | null
+          personal_email?: string | null
           position?: string | null
           department?: string | null
           cpf?: string | null
@@ -122,9 +126,11 @@ export type Database = {
           marital_status?: string | null
           nationality?: string | null
           phone?: string | null
+          mobile?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           address?: string | null
+          neighborhood?: string | null
           city?: string | null
           state?: string | null
           zip_code?: string | null
@@ -168,6 +174,7 @@ export type Database = {
           id?: string
           full_name?: string
           email?: string | null
+          personal_email?: string | null
           position?: string | null
           department?: string | null
           cpf?: string | null
@@ -177,9 +184,11 @@ export type Database = {
           marital_status?: string | null
           nationality?: string | null
           phone?: string | null
+          mobile?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           address?: string | null
+          neighborhood?: string | null
           city?: string | null
           state?: string | null
           zip_code?: string | null
