@@ -46,9 +46,26 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
 
-    const { data: invoices, error } = user.id === newAllowedId
-      ? await baseQuery
-      : await baseQuery.eq('recipient_id', user.id)
+    let invoices, error
+
+    if (user.id === newAllowedId) {
+      // Usuário especial pode ver todas as notas fiscais
+      const result = await baseQuery
+      invoices = result.data
+      error = result.error
+    } else {
+      // Usuários normais podem ver apenas notas fiscais enviadas para eles
+      const result = await baseQuery.eq('recipient_id', user.id)
+      invoices = result.data
+      error = result.error
+    }
+
+    console.log('Busca de notas fiscais:', {
+      userId: user.id,
+      isSpecialUser: user.id === newAllowedId,
+      invoicesFound: invoices?.length || 0,
+      error: error?.message
+    })
 
     // Se não encontrou notas com usuário normal, tentar com Service Role (bypass RLS)
     if ((!invoices || invoices.length === 0) && adminSupabase) {

@@ -47,11 +47,25 @@ export async function PATCH(
       .select('*')
       .eq('id', invoiceId)
 
-    const { data: invoice, error: fetchError } = user.id === newAllowedId
-      ? await baseFetch.single()
-      : await baseFetch.eq('recipient_id', user.id).single()
+    let invoice, fetchError
+
+    if (user.id === newAllowedId) {
+      // Usuário especial pode ver todas as notas fiscais
+      const result = await baseFetch.single()
+      invoice = result.data
+      fetchError = result.error
+    } else {
+      // Usuários normais podem ver apenas notas fiscais enviadas para eles
+      const result = await baseFetch.eq('recipient_id', user.id).single()
+      invoice = result.data
+      fetchError = result.error
+    }
 
     if (fetchError || !invoice) {
+      console.error('Erro ao buscar nota fiscal:', fetchError)
+      console.error('Invoice ID:', invoiceId)
+      console.error('User ID:', user.id)
+      console.error('Allowed IDs:', allowedIds)
       return NextResponse.json({ error: 'Nota fiscal não encontrada' }, { status: 404 })
     }
 
