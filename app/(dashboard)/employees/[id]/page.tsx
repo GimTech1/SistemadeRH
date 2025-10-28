@@ -906,13 +906,6 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
 
-        <div style="margin-bottom: 25px;">
-          <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">DESEMPENHO</h3>
-          <div style="margin-bottom: 8px;"><strong>Pontuação Geral:</strong> ${employee.overall_score || '-'}</div>
-          <div style="margin-bottom: 8px;"><strong>Total de Avaliações:</strong> ${employee.total_evaluations || 0}</div>
-          <div style="margin-bottom: 8px;"><strong>CHA:</strong> C ${employee.cha_scores?.conhecimento || '-'} | H ${employee.cha_scores?.habilidade || '-'} | A ${employee.cha_scores?.atitude || '-'}</div>
-        </div>
-
         ${employee.notes ? `
         <div style="margin-bottom: 25px;">
           <h3 style="color: #1B263B; font-size: 16px; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #1B263B;">OBSERVAÇÕES</h3>
@@ -1069,13 +1062,6 @@ export default function EmployeeProfilePage() {
             <div class="field"><span class="label">Conta:</span><span class="value">${employee.account || '-'}</span></div>
             <div class="field"><span class="label">Tipo de Conta:</span><span class="value">${employee.account_type || '-'}</span></div>
             <div class="field"><span class="label">Chave PIX:</span><span class="value">${employee.pix_key || '-'}</span></div>
-          </div>
-
-          <div class="section">
-            <h2>Desempenho</h2>
-            <div class="field"><span class="label">Pontuação Geral:</span><span class="value">${employee.overall_score || '-'}</span></div>
-            <div class="field"><span class="label">Total de Avaliações:</span><span class="value">${employee.total_evaluations || 0}</span></div>
-            <div class="field"><span class="label">CHA:</span><span class="value">C ${employee.cha_scores?.conhecimento || '-'} | H ${employee.cha_scores?.habilidade || '-'} | A ${employee.cha_scores?.atitude || '-'}</span></div>
           </div>
 
           ${employee.notes ? `
