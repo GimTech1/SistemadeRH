@@ -628,6 +628,7 @@ export default function InternalFeedbackPage() {
       case '5': return Award
       case '6': return Sparkles
       case '7': return ThumbsUp
+      case '8': return MessageSquare
       default: return Star
     }
   }
@@ -641,6 +642,7 @@ export default function InternalFeedbackPage() {
       case '5': return 'Liderança exemplar'
       case '6': return 'Trouxe inovação'
       case '7': return 'Apoio em momento difícil'
+      case '8': return 'Outro motivo'
       default: return reason
     }
   }
@@ -654,6 +656,7 @@ export default function InternalFeedbackPage() {
       case '5': return 'text-yellow-500 bg-yellow-50'
       case '6': return 'text-pink-500 bg-pink-50'
       case '7': return 'text-orange-500 bg-orange-50'
+      case '8': return 'text-gray-500 bg-gray-50'
       default: return 'text-gray-500 bg-gray-50'
     }
   }
