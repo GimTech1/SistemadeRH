@@ -25,6 +25,8 @@ export default function IdeasPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [canReveal, setCanReveal] = useState(false)
+  const [showRevealed, setShowRevealed] = useState(false)
 
   const loadIdeas = async () => {
     setLoading(true)
@@ -33,6 +35,7 @@ export default function IdeasPage() {
       if (!resp.ok) throw new Error('Falha ao carregar ideias')
       const data = await resp.json()
       setIdeas(data.ideas || [])
+      setCanReveal(Boolean(data.canReveal))
     } catch (e) {
       toast.error('Erro ao carregar ideias')
     } finally {
@@ -110,6 +113,13 @@ export default function IdeasPage() {
 
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold mb-4">Ideias enviadas</h2>
+        {canReveal && (
+          <div className="mb-4 flex justify-end">
+            <Button variant="outline" onClick={() => setShowRevealed(v => !v)}>
+              {showRevealed ? 'Ocultar autores anônimos' : 'Revelar autores anônimos'}
+            </Button>
+          </div>
+        )}
         {loading ? (
           <div className="text-sm text-gray-500">Carregando...</div>
         ) : ideas.length === 0 ? (
@@ -121,7 +131,7 @@ export default function IdeasPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium">{idea.title}</h3>
                   <div className="text-right">
-                    {idea.is_anonymous ? (
+                    {idea.is_anonymous && !showRevealed ? (
                       <span className="text-xs text-gray-500">Anônima</span>
                     ) : (
                       <span className="text-xs text-gray-600">por {idea.author_name || 'Usuário'}</span>

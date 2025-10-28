@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/supabase/database.types'
+
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    // Bypass de revelação de autores (IDs em env, separados por vírgula)
+    const bypassIds = (process.env.NEXT_PUBLIC_IDEA_BYPASS_IDS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const hasBypass = !!(user?.id && bypassIds.includes(user.id))
+
     // Listar ideias mais recentes primeiro
+    type IdeaRow = Database['public']['Tables']['ideas']['Row']
     const { data, error } = await supabase
       .from('ideas')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }) as unknown as { data: IdeaRow[] | null, error: any }
 
     if (error) {
       return NextResponse.json({ error: 'Erro ao buscar ideias' }, { status: 500 })
     }
 
     // Buscar nomes dos autores para ideias não anônimas
-    const authorIds = Array.from(new Set((data || [])
+    const authorIds = Array.from(new Set(((data || []) as IdeaRow[])
       .filter((row) => !row.is_anonymous && row.created_by)
       .map((row) => row.created_by))) as string[]
 
@@ -26,26 +37,28 @@ export async function GET(request: NextRequest) {
       const { data: authors } = await supabase
         .from('profiles')
         .select('id, full_name')
-        .in('id', authorIds)
-      for (const a of authors || []) {
-        authorsMap.set(a.id as unknown as string, (a as any).full_name || null)
+        .in('id', authorIds) as unknown as { data: { id: string; full_name: string | null }[] | null }
+      for (const a of (authors || [])) {
+        authorsMap.set(a.id, a.full_name || null)
       }
     }
 
-    // Se a ideia é anônima, não retornar o created_by
-    const sanitized = (data || []).map((row) => ({
+    // Se a ideia é anônima, não retornar o created_by, a menos que tenha bypass
+    const sanitized = ((data || []) as IdeaRow[]).map((row) => ({
       id: row.id,
       title: row.title,
       description: row.description,
       is_anonymous: row.is_anonymous,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      created_by: row.is_anonymous ? null : row.created_by,
-      author_name: row.is_anonymous ? null : (row.created_by ? authorsMap.get(row.created_by) || null : null),
+      created_by: row.is_anonymous && !hasBypass ? null : row.created_by,
+      author_name: (!row.is_anonymous || hasBypass)
+        ? (row.created_by ? authorsMap.get(row.created_by) || null : null)
+        : null,
       is_owner: user?.id ? row.created_by === user.id : false,
     }))
 
-    return NextResponse.json({ ideas: sanitized }, { status: 200 })
+    return NextResponse.json({ ideas: sanitized, canReveal: hasBypass }, { status: 200 })
   } catch (e) {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
