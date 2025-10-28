@@ -339,7 +339,7 @@ export default function EmployeeProfilePage() {
         agency: (data as any).bank_agency || '',
         account: (data as any).bank_account || '',
         account_type: (data as any).account_type || '',
-        pix_key: '',
+        pix_key: (data as any).pix_key || '',
         
         overall_score: (data as any).overall_score || null, 
         total_evaluations: (data as any).total_evaluations || 0, 
