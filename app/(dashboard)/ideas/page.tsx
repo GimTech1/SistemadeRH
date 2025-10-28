@@ -77,7 +77,7 @@ export default function IdeasPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-16">
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Compartilhe uma ideia</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,8 +114,12 @@ export default function IdeasPage() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold mb-4">Ideias enviadas</h2>
         {canReveal && (
-          <div className="mb-4 flex justify-end">
-            <Button variant="outline" onClick={() => setShowRevealed(v => !v)}>
+          <div className="mb-2 flex justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setShowRevealed(v => !v)}
+              className="h-8 px-2 text-xs text-gray-600 hover:text-gray-800"
+            >
               {showRevealed ? 'Ocultar autores anônimos' : 'Revelar autores anônimos'}
             </Button>
           </div>
@@ -147,6 +151,8 @@ export default function IdeasPage() {
           </ul>
         )}
       </div>
+      {/* Espaço final para respiro visual */}
+      <div className="h-8" />
     </div>
   )
 }
