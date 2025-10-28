@@ -224,6 +224,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       roles: ['admin', 'manager'],
     },
     {
+      title: 'Ideias',
+      icon: MessageSquare,
+      href: '/ideas',
+      roles: ['admin', 'manager', 'employee'],
+    },
+    {
       title: 'Horas Economizadas',
       icon: Clock,
       href: '/saved-hours',

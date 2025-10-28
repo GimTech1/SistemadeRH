@@ -130,6 +130,7 @@ export default function DashboardLayout({
       '/processes': 'Processos',
       '/one-on-one': 'One on One',
       '/saved-hours': 'Horas Economizadas',
+      '/ideas': 'Ideias',
     }
     if (map[pathname]) return map[pathname]
     const base = '/' + pathname.split('/').filter(Boolean)[0]

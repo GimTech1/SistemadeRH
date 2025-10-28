@@ -903,6 +903,35 @@ export type Database = {
           updated_at?: string
         }
       }
+      ideas: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          created_by: string | null
+          is_anonymous: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          created_by?: string | null
+          is_anonymous?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          created_by?: string | null
+          is_anonymous?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
