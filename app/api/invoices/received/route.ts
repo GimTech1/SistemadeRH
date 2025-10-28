@@ -60,12 +60,6 @@ export async function GET(request: NextRequest) {
       error = result.error
     }
 
-    console.log('Busca de notas fiscais:', {
-      userId: user.id,
-      isSpecialUser: user.id === newAllowedId,
-      invoicesFound: invoices?.length || 0,
-      error: error?.message
-    })
 
     // Se não encontrou notas com usuário normal, tentar com Service Role (bypass RLS)
     if ((!invoices || invoices.length === 0) && adminSupabase) {

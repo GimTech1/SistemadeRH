@@ -8,6 +8,16 @@ export async function PATCH(
   try {
     const supabase = await createClient()
     
+    // Preparar Service Role para fallback em caso de políticas RLS
+    let adminSupabase = null
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+    
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -62,11 +72,30 @@ export async function PATCH(
     }
 
     if (fetchError || !invoice) {
-      console.error('Erro ao buscar nota fiscal:', fetchError)
-      console.error('Invoice ID:', invoiceId)
-      console.error('User ID:', user.id)
-      console.error('Allowed IDs:', allowedIds)
-      return NextResponse.json({ error: 'Nota fiscal não encontrada' }, { status: 404 })
+      // Se não encontrou com usuário normal, tentar com Service Role (bypass RLS)
+      if ((!invoice) && adminSupabase) {
+        const adminResult = await adminSupabase
+          .from('invoice_files')
+          .select('*')
+          .eq('id', invoiceId)
+          .single()
+        
+        if (adminResult.data) {
+          // Verificar se o usuário tem permissão para esta nota fiscal
+          const noteRecipientId = adminResult.data.recipient_id
+          
+          if (noteRecipientId === user.id || user.id === newAllowedId) {
+            invoice = adminResult.data
+            fetchError = null
+          } else {
+            return NextResponse.json({ error: 'Acesso negado a esta nota fiscal' }, { status: 403 })
+          }
+        }
+      }
+      
+      if (!invoice) {
+        return NextResponse.json({ error: 'Nota fiscal não encontrada' }, { status: 404 })
+      }
     }
 
     // Atualizar o status da nota fiscal e/ou pagamento
@@ -77,17 +106,80 @@ export async function PATCH(
       updatePayload.paid_at = payment_status === 'paid' ? new Date().toISOString() : null
     }
 
-    const { data: updatedInvoice, error: updateError } = await (supabase as any)
-      .from('invoice_files')
-      .update(updatePayload)
-      .eq('id', invoiceId)
-      .select(`
-        *,
-        sender:profiles!employee_id(full_name, position)
-      `)
-      .single()
+    let updatedInvoice, updateError
+
+    // Se encontramos a nota via Service Role, usar Service Role para atualizar também
+    if (adminSupabase && fetchError) {
+      // Primeiro, tentar atualização simples sem join
+      const simpleResult = await adminSupabase
+        .from('invoice_files')
+        .update(updatePayload)
+        .eq('id', invoiceId)
+        .select('*')
+        .single()
+      
+      if (simpleResult.data) {
+        // Se a atualização simples funcionou, buscar com join
+        const joinResult = await adminSupabase
+          .from('invoice_files')
+          .select(`
+            *,
+            sender:profiles!employee_id(full_name, position)
+          `)
+          .eq('id', invoiceId)
+          .single()
+        
+        updatedInvoice = joinResult.data
+        updateError = joinResult.error
+      } else {
+        updatedInvoice = simpleResult.data
+        updateError = simpleResult.error
+      }
+    } else {
+      const result = await (supabase as any)
+        .from('invoice_files')
+        .update(updatePayload)
+        .eq('id', invoiceId)
+        .select(`
+          *,
+          sender:profiles!employee_id(full_name, position)
+        `)
+        .single()
+      
+      updatedInvoice = result.data
+      updateError = result.error
+    }
 
     if (updateError) {
+      // Última tentativa: atualização sem join, depois buscar separadamente
+      if (adminSupabase) {
+        try {
+          // Atualização simples sem join
+          const simpleUpdate = await adminSupabase
+            .from('invoice_files')
+            .update(updatePayload)
+            .eq('id', invoiceId)
+          
+          if (!simpleUpdate.error) {
+            // Buscar dados atualizados com join
+            const finalResult = await adminSupabase
+              .from('invoice_files')
+              .select(`
+                *,
+                sender:profiles!employee_id(full_name, position)
+              `)
+              .eq('id', invoiceId)
+              .single()
+            
+            if (finalResult.data) {
+              return NextResponse.json({ invoice: finalResult.data })
+            }
+          }
+        } catch (simpleError) {
+          console.error('Erro na atualização simples:', simpleError)
+        }
+      }
+      
       console.error('Erro ao atualizar nota fiscal:', updateError)
       return NextResponse.json({ error: 'Erro ao atualizar nota fiscal' }, { status: 500 })
     }
