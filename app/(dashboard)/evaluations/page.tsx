@@ -139,6 +139,47 @@ export default function EvaluationsPage() {
     }
   }
 
+  const exportEvaluationsAsCSV = () => {
+    const headers = [
+      'Colaborador',
+      'Avaliador', 
+      'Ciclo',
+      'Status',
+      'Pontuação Geral',
+      'Conhecimento',
+      'Habilidade',
+      'Atitude',
+      'Data de Criação',
+      'Data de Envio'
+    ]
+    
+    const rows = filteredEvaluations.map((evaluation) => [
+      (evaluation.employee_name ?? '').toString().replaceAll(';', ','),
+      (evaluation.evaluator_name ?? '').toString().replaceAll(';', ','),
+      (evaluation.cycle_name ?? '').toString().replaceAll(';', ','),
+      getStatusText(evaluation.status),
+      evaluation.overall_score > 0 ? evaluation.overall_score.toFixed(1) : '',
+      evaluation.cha_scores.conhecimento > 0 ? evaluation.cha_scores.conhecimento.toFixed(1) : '',
+      evaluation.cha_scores.habilidade > 0 ? evaluation.cha_scores.habilidade.toFixed(1) : '',
+      evaluation.cha_scores.atitude > 0 ? evaluation.cha_scores.atitude.toFixed(1) : '',
+      new Date(evaluation.created_at).toLocaleDateString('pt-BR'),
+      evaluation.submitted_at ? new Date(evaluation.submitted_at).toLocaleDateString('pt-BR') : ''
+    ])
+    
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n')
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `avaliacoes_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success('Avaliações exportadas com sucesso!')
+  }
+
   const filteredEvaluations = evaluations
     .filter(evaluation => {
       const matchesSearch = evaluation.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -313,7 +354,10 @@ export default function EvaluationsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2">
+              <button 
+                onClick={exportEvaluationsAsCSV}
+                className="bg-platinum-100 hover:bg-platinum-200 text-oxford-blue-600 px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2"
+              >
                 <Download className="h-4 w-4" />
                 Exportar
               </button>
