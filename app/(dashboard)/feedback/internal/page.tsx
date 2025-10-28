@@ -95,6 +95,17 @@ export default function InternalFeedbackPage() {
     used: 0,
     resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
   })
+
+  // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
+  const SPECIAL_USER_IDS = [
+    process.env.NEXT_PUBLIC_WATSON_USER_ID,
+    process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+  ].filter(Boolean) // Remove valores undefined/null
+
+  // Função para verificar se o usuário atual tem bypass de estrelas infinitas
+  const hasInfiniteStars = (userId: string | null) => {
+    return userId ? SPECIAL_USER_IDS.includes(userId) : false
+  }
   const [userDislikes, setUserDislikes] = useState({
     available: 3,
     used: 0,
@@ -137,6 +148,16 @@ export default function InternalFeedbackPage() {
 
   const loadUserStars = async () => {
     try {
+      // Se o usuário atual tem bypass de estrelas infinitas, definir estrelas infinitas
+      if (hasInfiniteStars(currentUserId)) {
+        setUserStars({
+          available: 999, // Estrelas infinitas
+          used: 0,
+          resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+        })
+        return
+      }
+
       const response = await fetch('/api/stars')
       const data = await response.json()
       
@@ -380,7 +401,8 @@ export default function InternalFeedbackPage() {
 
 
   const handleGiveStar = (colleague: Colleague) => {
-    if (userStars.available <= 0) {
+    // Verificar se o usuário tem bypass de estrelas infinitas
+    if (!hasInfiniteStars(currentUserId) && userStars.available <= 0) {
       toast.error('Você não tem estrelas disponíveis este mês')
       return
     }
@@ -449,7 +471,10 @@ export default function InternalFeedbackPage() {
       })
       
       // Recarregar dados do servidor para garantir consistência
-      loadUserStars()
+      // Para usuários especiais, não recarregar estrelas pois elas são infinitas
+      if (!hasInfiniteStars(currentUserId)) {
+        loadUserStars()
+      }
       loadColleagues()
     } catch (error) {
       console.error('Erro ao enviar estrela:', error)
@@ -665,27 +690,40 @@ export default function InternalFeedbackPage() {
             </div>
             <div className="text-right">
               <div className="text-3xl font-roboto font-semibold text-rich-black-900">
-                {userStars.available}/3
+                {hasInfiniteStars(currentUserId) ? '∞' : `${userStars.available}/3`}
               </div>
-              <div className="text-sm font-roboto font-light text-oxford-blue-400">disponíveis</div>
+              <div className="text-sm font-roboto font-light text-oxford-blue-400">
+                {hasInfiniteStars(currentUserId) ? 'estrelas infinitas' : 'disponíveis'}
+              </div>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="flex space-x-2">
-              {[...Array(3)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-8 w-8 ${
-                    i < userStars.available
-                      ? 'text-yellow-500 fill-yellow-500'
-                      : 'text-platinum-300'
-                  }`}
-                />
-              ))}
+              {hasInfiniteStars(currentUserId) ? (
+                // Para usuários especiais, mostrar 3 estrelas sempre preenchidas
+                [...Array(3)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-8 w-8 text-yellow-500 fill-yellow-500"
+                  />
+                ))
+              ) : (
+                // Para usuários normais, mostrar estrelas baseadas na disponibilidade
+                [...Array(3)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-8 w-8 ${
+                      i < userStars.available
+                        ? 'text-yellow-500 fill-yellow-500'
+                        : 'text-platinum-300'
+                    }`}
+                  />
+                ))
+              )}
             </div>
             <div className="text-xs font-roboto font-light text-oxford-blue-500">
-              Reset em {userStars.resetDate.toLocaleDateString('pt-BR')}
+              {hasInfiniteStars(currentUserId) ? 'Estrelas infinitas' : `Reset em ${userStars.resetDate.toLocaleDateString('pt-BR')}`}
             </div>
           </div>
         </div>
@@ -963,9 +1001,9 @@ export default function InternalFeedbackPage() {
                           <div className="flex gap-2 justify-center">
                             <button
                               onClick={() => handleGiveStar(colleague)}
-                              disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                              disabled={!hasInfiniteStars(currentUserId) && userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                               className={`px-3 py-2 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center gap-2 ${
-                                userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                                (hasInfiniteStars(currentUserId) || userStars.available > 0) && (!currentUserId || colleague.id !== currentUserId)
                                   ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
                                   : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                               }`}
@@ -1033,9 +1071,9 @@ export default function InternalFeedbackPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleGiveStar(colleague)}
-                        disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                        disabled={!hasInfiniteStars(currentUserId) && userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                         className={`flex-1 py-2 px-3 rounded-lg font-roboto font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                          userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                          (hasInfiniteStars(currentUserId) || userStars.available > 0) && (!currentUserId || colleague.id !== currentUserId)
                             ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white'
                             : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                         }`}
@@ -1182,9 +1220,9 @@ export default function InternalFeedbackPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleGiveStar(colleague)}
-                      disabled={userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
+                      disabled={!hasInfiniteStars(currentUserId) && userStars.available <= 0 || Boolean(currentUserId && colleague.id === currentUserId)}
                       className={`flex-1 py-3 px-4 rounded-2xl font-roboto font-medium transition-all duration-200 flex items-center justify-center ${
-                        userStars.available > 0 && (!currentUserId || colleague.id !== currentUserId)
+                        (hasInfiniteStars(currentUserId) || userStars.available > 0) && (!currentUserId || colleague.id !== currentUserId)
                           ? 'bg-[#1B263B] hover:bg-[#0D1B2A] text-white shadow-sm hover:shadow-md'
                           : 'bg-platinum-200 text-oxford-blue-400 cursor-not-allowed'
                       }`}

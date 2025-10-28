@@ -11,7 +11,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Buscar estrelas do usuário para o mês atual
+    // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
+    const SPECIAL_USER_IDS = [
+      process.env.NEXT_PUBLIC_WATSON_USER_ID,
+      process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+    ].filter(Boolean)
+
+    // Verificar se o usuário tem bypass de estrelas infinitas
+    const hasInfiniteStars = SPECIAL_USER_IDS.includes(user.id)
+
+    if (hasInfiniteStars) {
+      // Para usuários especiais, retornar estrelas infinitas
+      const resetDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+      return NextResponse.json({
+        available: 999, // Estrelas infinitas
+        used: 0,
+        resetDate: resetDate.toISOString()
+      })
+    }
+
+    // Para usuários normais, calcular estrelas normalmente
     const currentDate = new Date()
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -73,24 +92,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinatário não encontrado' }, { status: 400 })
     }
 
-    // Verificar se o usuário ainda tem estrelas disponíveis
-    const currentDate = new Date()
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+    // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
+    const SPECIAL_USER_IDS = [
+      process.env.NEXT_PUBLIC_WATSON_USER_ID,
+      process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+    ].filter(Boolean)
 
-    const { data: existingStars, error: starsError } = await supabase
-      .from('user_stars')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('created_at', startOfMonth.toISOString())
-      .lte('created_at', endOfMonth.toISOString())
+    // Verificar se o usuário tem bypass de estrelas infinitas
+    const hasInfiniteStars = SPECIAL_USER_IDS.includes(user.id)
 
-    if (starsError) {
-      return NextResponse.json({ error: 'Erro ao verificar estrelas' }, { status: 500 })
-    }
+    // Verificar se o usuário ainda tem estrelas disponíveis (apenas para usuários normais)
+    if (!hasInfiniteStars) {
+      const currentDate = new Date()
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
 
-    if (existingStars && existingStars.length >= 3) {
-      return NextResponse.json({ error: 'Você já usou todas as suas estrelas este mês' }, { status: 400 })
+      const { data: existingStars, error: starsError } = await supabase
+        .from('user_stars')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
+
+      if (starsError) {
+        return NextResponse.json({ error: 'Erro ao verificar estrelas' }, { status: 500 })
+      }
+
+      if (existingStars && existingStars.length >= 3) {
+        return NextResponse.json({ error: 'Você já usou todas as suas estrelas este mês' }, { status: 400 })
+      }
     }
 
     // Criar a estrela
@@ -115,10 +145,29 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Calcular estrelas restantes
+    let remaining = 0
+    if (hasInfiniteStars) {
+      remaining = 999 // Estrelas infinitas para usuários especiais
+    } else {
+      const currentDate = new Date()
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+
+      const { data: updatedStars } = await supabase
+        .from('user_stars')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
+
+      remaining = 3 - (updatedStars?.length || 0)
+    }
+
     return NextResponse.json({ 
       success: true, 
       star,
-      remaining: 3 - ((existingStars?.length || 0) + 1)
+      remaining
     })
   } catch (error) {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
