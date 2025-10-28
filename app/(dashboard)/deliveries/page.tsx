@@ -516,11 +516,6 @@ export default function DeliveriesPage() {
                       <Eye className="h-4 w-4" />
                     </button>
                   </Link>
-                  <Link href={`/deliveries/${delivery.id}?edit=true`}>
-                    <button className="p-2 text-oxford-blue-600 hover:text-yinmn-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                  </Link>
                 </div>
               </div>
 

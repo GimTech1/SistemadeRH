@@ -25,6 +25,9 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 
 interface Delivery {
   id: string
@@ -76,6 +79,30 @@ export default function DeliveryDetailPage() {
   const [uploading, setUploading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [userRole, setUserRole] = useState<'admin' | 'gerente' | 'employee'>('employee')
+  const supabase: SupabaseClient<Database> = createClient()
+
+  // Carregar informações do usuário e verificar permissões
+  const loadUserInfo = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) return
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError || !profile) return
+
+      const role = (profile as any).role?.toLowerCase() || 'employee'
+      setUserRole(role === 'admin' || role === 'administrador' ? 'admin' : 
+                 role === 'gerente' || role === 'manager' ? 'gerente' : 'employee')
+    } catch (error) {
+      console.error('Erro ao carregar informações do usuário:', error)
+    }
+  }
 
   // Carregar funcionários
   const loadEmployees = async () => {
@@ -213,6 +240,7 @@ export default function DeliveryDetailPage() {
 
     loadDelivery()
     loadEmployees() // Carregar funcionários também
+    loadUserInfo() // Carregar informações do usuário
   }, [params.id, router, searchParams])
 
   const getStatusColor = (status: string) => {
@@ -457,21 +485,25 @@ export default function DeliveryDetailPage() {
         <div className="flex items-center gap-3">
           {!isEditing ? (
             <>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-white px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                style={{ backgroundColor: '#1B263B' }}
-              >
-                <Edit className="h-4 w-4" />
-                Editar
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Excluir
-              </button>
+              {(userRole === 'admin' || userRole === 'gerente') && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-white px-4 py-2 rounded-lg font-roboto font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+                  style={{ backgroundColor: '#1B263B' }}
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </button>
+              )}
+              {(userRole === 'admin' || userRole === 'gerente') && (
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
+                </button>
+              )}
             </>
           ) : (
             <>
