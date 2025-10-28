@@ -40,6 +40,8 @@ export async function PUT(
       course_name?: string | null
       institution_name?: string | null
       graduation_year?: string | null
+      certifications?: string | null
+      languages?: string | null
       bank_name?: string | null
       bank_agency?: string | null
       bank_account?: string | null
@@ -103,6 +105,8 @@ export async function PUT(
       course_name: body.course_name ?? null,
       institution_name: body.institution_name ?? null,
       graduation_year: body.graduation_year ?? null,
+      certifications: body.certifications ?? null,
+      languages: body.languages ?? null,
       bank_name: body.bank_name ?? null,
       bank_agency: body.bank_agency ?? null,
       bank_account: body.bank_account ?? null,

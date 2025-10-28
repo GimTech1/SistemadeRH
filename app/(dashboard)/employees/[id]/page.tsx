@@ -268,8 +268,8 @@ export default function EmployeeProfilePage() {
         institution: (data as any).institution_name || '',
         course: (data as any).course_name || '',
         graduation_year: (data as any).graduation_year || '',
-        certifications: '',
-        languages: '',
+        certifications: (data as any).certifications || '',
+        languages: (data as any).languages || '',
       }
       const bank = {
         bank_name: (data as any).bank_name || '',
@@ -332,8 +332,8 @@ export default function EmployeeProfilePage() {
         institution: education.institution,
         course: education.course,
         graduation_year: education.graduation_year,
-        certifications: [],
-        languages: [],
+        certifications: (education.certifications ? String(education.certifications).split(',').map((s) => s.trim()).filter(Boolean) : []),
+        languages: (education.languages ? String(education.languages).split(',').map((s) => s.trim()).filter(Boolean) : []),
         
         bank: (data as any).bank_name || '',
         agency: (data as any).bank_agency || '',
@@ -729,6 +729,8 @@ export default function EmployeeProfilePage() {
         course_name: (editData as any).education?.course || null,
         institution_name: (editData as any).education?.institution || null,
         graduation_year: (editData as any).education?.graduation_year || null,
+        certifications: (editData as any).education?.certifications || null,
+        languages: (editData as any).education?.languages || null,
         dependent_name_1: editData.dependents?.[0]?.name || null,
         dependent_relationship_1: editData.dependents?.[0]?.relationship || null,
         dependent_birth_date_1: editData.dependents?.[0]?.birth_date || null,
@@ -2371,6 +2373,39 @@ export default function EmployeeProfilePage() {
                             }
                           })}
                         />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label>Certificações</Label>
+                        <Input 
+                          placeholder="Ex.: PMP, ITIL, AWS SA Associate"
+                          value={(editData as any).education?.certifications || ''}
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              certifications: e.target.value
+                            }
+                          })}
+                        />
+                        <p className="text-xs text-slate-500">Separe múltiplas certificações por vírgula.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Idiomas</Label>
+                        <Input 
+                          placeholder="Ex.: Português, Inglês, Espanhol"
+                          value={(editData as any).education?.languages || ''}
+                          onChange={(e) => setEditData({
+                            ...editData,
+                            education: {
+                              ...(editData as any).education,
+                              languages: e.target.value
+                            }
+                          })}
+                        />
+                        <p className="text-xs text-slate-500">Separe múltiplos idiomas por vírgula.</p>
                       </div>
                     </div>
                   </div>

@@ -103,6 +103,8 @@ export type Database = {
           course_name: string | null
           institution_name: string | null
           graduation_year: number | null
+          certifications: string | null
+          languages: string | null
           bank_name: string | null
           bank_agency: string | null
           bank_account: string | null
@@ -161,6 +163,8 @@ export type Database = {
           course_name?: string | null
           institution_name?: string | null
           graduation_year?: number | null
+          certifications?: string | null
+          languages?: string | null
           bank_name?: string | null
           bank_agency?: string | null
           bank_account?: string | null
@@ -219,6 +223,8 @@ export type Database = {
           course_name?: string | null
           institution_name?: string | null
           graduation_year?: number | null
+          certifications?: string | null
+          languages?: string | null
           bank_name?: string | null
           bank_agency?: string | null
           bank_account?: string | null
