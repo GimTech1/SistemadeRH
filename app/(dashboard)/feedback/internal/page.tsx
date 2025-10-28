@@ -64,6 +64,9 @@ interface Colleague {
     from: string
     date: string
   }>
+  // Arrays completos (não enriquecidos) para modal
+  allStars: any[]
+  allDislikes: any[]
 }
 
 interface SupabaseColleague {
@@ -125,6 +128,82 @@ export default function InternalFeedbackPage() {
   const [receivedStars, setReceivedStars] = useState<any[]>([])
   const [receivedDislikes, setReceivedDislikes] = useState<any[]>([])
   const supabase = createClient()
+
+  // Modal para ver todos os feedbacks recebidos
+  const [showAllFeedbackModal, setShowAllFeedbackModal] = useState(false)
+  const [modalColleague, setModalColleague] = useState<Colleague | null>(null)
+  const [modalLoading, setModalLoading] = useState(false)
+  const [modalStars, setModalStars] = useState<any[]>([])
+  const [modalDislikes, setModalDislikes] = useState<any[]>([])
+
+  const openAllFeedbackModal = async (colleague: Colleague) => {
+    try {
+      setModalLoading(true)
+      setShowAllFeedbackModal(true)
+      setModalColleague(colleague)
+
+      // Enriquecer todas as estrelas com nome do remetente
+      const enrichedStars = await Promise.all((colleague.allStars || []).map(async (star: any) => {
+        try {
+          const { data: senderData } = await supabase
+            .from('employees')
+            .select('full_name')
+            .eq('id', star.user_id)
+            .single()
+          return {
+            id: star.id,
+            reason: star.reason,
+            message: star.message,
+            from: (senderData as any)?.full_name || 'Usuário',
+            date: star.created_at
+          }
+        } catch {
+          return {
+            id: star.id,
+            reason: star.reason,
+            message: star.message,
+            from: 'Usuário',
+            date: star.created_at
+          }
+        }
+      }))
+
+      // Enriquecer todos os dislikes com nome do remetente
+      const enrichedDislikes = await Promise.all((colleague.allDislikes || []).map(async (dislike: any) => {
+        try {
+          const { data: senderData } = await supabase
+            .from('employees')
+            .select('full_name')
+            .eq('id', dislike.user_id)
+            .single()
+          return {
+            id: dislike.id,
+            reason: dislike.reason,
+            message: dislike.message,
+            from: (senderData as any)?.full_name || 'Usuário',
+            date: dislike.created_at
+          }
+        } catch {
+          return {
+            id: dislike.id,
+            reason: dislike.reason,
+            message: dislike.message,
+            from: 'Usuário',
+            date: dislike.created_at
+          }
+        }
+      }))
+
+      // Ordenar por data desc
+      enrichedStars.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      enrichedDislikes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      setModalStars(enrichedStars)
+      setModalDislikes(enrichedDislikes)
+    } finally {
+      setModalLoading(false)
+    }
+  }
 
   useEffect(() => {
     loadCurrentUser()
@@ -385,7 +464,9 @@ export default function InternalFeedbackPage() {
           starsReceived: totalStars,
           dislikesReceived: totalDislikes,
           recentStars: starsWithSenders,
-          recentDislikes: dislikesWithSenders
+          recentDislikes: dislikesWithSenders,
+          allStars: userStars,
+          allDislikes: userDislikes
         }
       }))
 
@@ -1156,6 +1237,18 @@ export default function InternalFeedbackPage() {
                           />
                         </div>
                     </div>
+                {/* Botão fora da área de dislikes */}
+                <div className="mt-3 text-right">
+                  <button
+                    onClick={() => {
+                      setModalColleague(colleague)
+                      openAllFeedbackModal(colleague)
+                    }}
+                    className="text-sm text-oxford-blue-600 hover:text-oxford-blue-800 underline"
+                  >
+                    Ver todas
+                  </button>
+                </div>
 
                     {/* Estrelas recentes */}
                     {colleague.recentStars.length > 0 && (
@@ -1548,6 +1641,107 @@ export default function InternalFeedbackPage() {
                   Enviar Dislike
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal: Ver todas as estrelas e dislikes */}
+      {showAllFeedbackModal && modalColleague && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-platinum-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-roboto font-medium text-rich-black-900">Feedback de {modalColleague.name}</h3>
+                <p className="text-sm font-roboto font-light text-oxford-blue-600">Todas as estrelas e dislikes recebidos</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAllFeedbackModal(false)
+                  setModalColleague(null)
+                  setModalStars([])
+                  setModalDislikes([])
+                }}
+                className="text-oxford-blue-400 hover:text-oxford-blue-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-auto">
+              {modalLoading ? (
+                <div className="text-center py-12 text-oxford-blue-600">Carregando feedbacks...</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Estrelas */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                        <span className="font-roboto font-medium text-rich-black-900">Estrelas ({modalStars.length})</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {modalStars.length === 0 ? (
+                        <p className="text-sm text-oxford-blue-400">Nenhuma estrela</p>
+                      ) : modalStars.map((s) => {
+                        const Icon = getReasonIcon(String(s.reason))
+                        const color = getReasonColor(String(s.reason))
+                        return (
+                          <div key={s.id} className="bg-platinum-50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={`p-1 rounded ${color}`}>
+                                <Icon className="h-3 w-3" />
+                              </div>
+                              <span className="text-xs font-roboto font-medium text-rich-black-900">
+                                {getReasonText(String(s.reason))}
+                              </span>
+                              <span className="ml-auto text-xs text-oxford-blue-400">{new Date(s.date).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                            <p className="text-xs font-roboto font-light text-oxford-blue-600">{s.message}</p>
+                            <p className="text-[11px] font-roboto font-light text-oxford-blue-400 mt-1">Por {s.from}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dislikes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <ThumbsDown className="h-5 w-5 text-red-500" />
+                        <span className="font-roboto font-medium text-rich-black-900">Dislikes ({modalDislikes.length})</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {modalDislikes.length === 0 ? (
+                        <p className="text-sm text-oxford-blue-400">Nenhum dislike</p>
+                      ) : modalDislikes.map((d) => {
+                        const Icon = getDislikeReasonIcon(String(d.reason))
+                        const color = getDislikeReasonColor(String(d.reason))
+                        return (
+                          <div key={d.id} className="bg-gray-50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={`p-1 rounded ${color}`}>
+                                <Icon className="h-3 w-3" />
+                              </div>
+                              <span className="text-xs font-roboto font-medium text-rich-black-900">
+                                {getDislikeReasonText(String(d.reason))}
+                              </span>
+                              <span className="ml-auto text-xs text-oxford-blue-400">{new Date(d.date).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                            <p className="text-xs font-roboto font-light text-oxford-blue-600">{d.message}</p>
+                            <p className="text-[11px] font-roboto font-light text-oxford-blue-400 mt-1">Por {d.from}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
