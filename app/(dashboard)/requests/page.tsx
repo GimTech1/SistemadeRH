@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 
 type RequestStatus = 'requested' | 'approved' | 'rejected' | 'done'
 
@@ -51,6 +51,11 @@ export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestStatus | 'all'>('requested')
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loadingRequests, setLoadingRequests] = useState(false)
+  
+  // Estados para modal de aprovação
+  const [showApproveModal, setShowApproveModal] = useState(false)
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null)
+  const [dueDate, setDueDate] = useState('')
   
   // Estados para controle de permissões e informações do usuário
   const [userRole, setUserRole] = useState<'admin' | 'gerente' | 'employee'>('employee')
@@ -458,22 +463,9 @@ export default function RequestsPage() {
                             variant="secondary"
                             size="sm"
                             onClick={() => {
-                              const input = window.prompt('Informe o prazo (data) para esta solicitação (formato AAAA-MM-DD):')
-                              if (input === null) return
-                              const trimmed = input.trim()
-                              if (!trimmed) {
-                                toast.error('Prazo inválido')
-                                return
-                              }
-                              // Aceita formatos AAAA-MM-DD ou data válida parsável
-                              const isISODate = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
-                              const parsed = isISODate ? new Date(trimmed + 'T00:00:00') : new Date(trimmed)
-                              if (isNaN(parsed.getTime())) {
-                                toast.error('Data inválida')
-                                return
-                              }
-                              const isoDate = parsed.toISOString().slice(0, 10)
-                              handleUpdateStatus(item.id, 'approved', { dueDate: isoDate })
+                              setApprovingRequestId(item.id)
+                              setDueDate('')
+                              setShowApproveModal(true)
                             }}
                           >
                             Aprovar
@@ -497,6 +489,104 @@ export default function RequestsPage() {
       
       {/* Espaçamento no final da página para mobile */}
       <div className="h-8 sm:h-12"></div>
+
+      {/* Modal de Aprovação com Prazo */}
+      {showApproveModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowApproveModal(false)
+            setApprovingRequestId(null)
+            setDueDate('')
+          }}
+        >
+          <Card 
+            className="w-full max-w-md p-6 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg sm:text-xl font-roboto text-rich-black-900" style={{ fontWeight: 500 }}>
+                  Aprovar Solicitação
+                </h3>
+                <p className="text-sm text-oxford-blue-600 mt-1">
+                  Defina o prazo para conclusão desta solicitação
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowApproveModal(false)
+                  setApprovingRequestId(null)
+                  setDueDate('')
+                }}
+                className="p-2 text-oxford-blue-400 hover:text-oxford-blue-600 hover:bg-platinum-100 rounded-lg transition-all duration-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="dueDate" className="text-rich-black-900">
+                  Prazo para conclusão
+                </Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="mt-2"
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <p className="text-xs text-oxford-blue-600 mt-1">
+                  Selecione a data limite para conclusão desta solicitação
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-platinum-200">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowApproveModal(false)
+                  setApprovingRequestId(null)
+                  setDueDate('')
+                }}
+                className="min-h-[44px]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!dueDate) {
+                    toast.error('Por favor, selecione uma data de prazo')
+                    return
+                  }
+                  
+                  const selectedDate = new Date(dueDate + 'T00:00:00')
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  
+                  if (selectedDate < today) {
+                    toast.error('A data de prazo não pode ser no passado')
+                    return
+                  }
+                  
+                  const isoDate = selectedDate.toISOString().slice(0, 10)
+                  handleUpdateStatus(approvingRequestId!, 'approved', { dueDate: isoDate })
+                  setShowApproveModal(false)
+                  setApprovingRequestId(null)
+                  setDueDate('')
+                }}
+                className="text-white hover:brightness-110 min-h-[44px]"
+                style={{ backgroundColor: '#1B263B' }}
+              >
+                Aprovar com Prazo
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
