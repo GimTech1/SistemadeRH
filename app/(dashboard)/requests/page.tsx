@@ -28,6 +28,7 @@ type RequestItem = {
   department: string
   requestedToEmployeeId?: string | null
   requestedToEmployeeName?: string
+  dueDate?: string | null
   title: string
   description: string
   urgency: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
@@ -222,15 +223,17 @@ export default function RequestsPage() {
             created_at,
             employee_id,
             department_id,
+            due_date,
             requested_to_employee_id,
             employees:employee_id ( full_name ),
             departments:department_id ( name ),
             requested_to_employees:requested_to_employee_id ( full_name )
           `)
         
-        // Admin vê todas as solicitações, outros usuários apenas as que receberam
+        // Admin vê todas as solicitações
+        // Outros usuários veem as que enviaram OU receberam
         if (userRole !== 'admin' && userId) {
-          query = query.eq('requested_to_employee_id', userId)
+          query = query.or(`employee_id.eq.${userId},requested_to_employee_id.eq.${userId}` as any)
         }
         
         query = query.order('created_at', { ascending: false })
@@ -264,6 +267,7 @@ export default function RequestsPage() {
             department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
             requestedToEmployeeId: r.requested_to_employee_id,
             requestedToEmployeeName: requestedToName,
+            dueDate: r.due_date || null,
             title,
             description,
             urgency: r.urgency,
@@ -289,13 +293,13 @@ export default function RequestsPage() {
     // Admin pode aprovar qualquer request
     if (userRole === 'admin') return true
     
-    // Gerente pode aprovar apenas requests do seu departamento
-    if (userRole === 'gerente' && userDepartmentId === request.departmentId) return true
+    // O destinatário da solicitação pode aprovar/rejeitar
+    if (userId && request.requestedToEmployeeId === userId) return true
     
     return false
   }
 
-  const handleUpdateStatus = async (id: string, status: RequestStatus) => {
+  const handleUpdateStatus = async (id: string, status: RequestStatus, options?: { dueDate?: string | null }) => {
     try {
       const current = requests.find(r => r.id === id)
       if (current?.status === 'done') {
@@ -309,12 +313,17 @@ export default function RequestsPage() {
         return
       }
       
+      const updatePayload: any = { status }
+      if (status === 'approved') {
+        updatePayload.due_date = options?.dueDate ?? null
+      }
+
       const { error } = await (supabase as any)
         .from('requests')
-        .update({ status } as any)
+        .update(updatePayload)
         .eq('id', id)
       if (error) throw error
-      updateStatus(id, status)
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status, dueDate: status === 'approved' ? (options?.dueDate ?? null) : r.dueDate } : r))
     } catch (err) {
       toast.error('Falha ao atualizar status')
     }
@@ -429,6 +438,9 @@ export default function RequestsPage() {
                 )}
                 <p className="text-sm font-medium text-rich-black-900">{item.title}</p>
                 <p className="text-sm text-oxford-blue-700">{item.description}</p>
+                {item.dueDate && (
+                  <p className="text-xs text-oxford-blue-700">Prazo: {new Date(item.dueDate).toLocaleDateString()}</p>
+                )}
                 <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -438,25 +450,42 @@ export default function RequestsPage() {
                   </span>
                 ) : (
                   <>
-                    {/* Mostrar botões apenas para admin ou gerente */}
-                    {canApproveRequest(item) && (
+                    {/* Mostrar botões apenas para quem recebeu a solicitação ou admin */}
+                    {canApproveRequest(item) && item.status !== 'done' && (
                       <>
-                        {activeTab !== 'approved' && (
-                          <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'approved')}>Aprovar</Button>
+                        {item.status !== 'approved' && activeTab !== 'approved' && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              const input = window.prompt('Informe o prazo (data) para esta solicitação (formato AAAA-MM-DD):')
+                              if (input === null) return
+                              const trimmed = input.trim()
+                              if (!trimmed) {
+                                toast.error('Prazo inválido')
+                                return
+                              }
+                              // Aceita formatos AAAA-MM-DD ou data válida parsável
+                              const isISODate = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+                              const parsed = isISODate ? new Date(trimmed + 'T00:00:00') : new Date(trimmed)
+                              if (isNaN(parsed.getTime())) {
+                                toast.error('Data inválida')
+                                return
+                              }
+                              const isoDate = parsed.toISOString().slice(0, 10)
+                              handleUpdateStatus(item.id, 'approved', { dueDate: isoDate })
+                            }}
+                          >
+                            Aprovar
+                          </Button>
                         )}
-                        {activeTab !== 'rejected' && (
+                        {item.status !== 'rejected' && activeTab !== 'rejected' && (
                           <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
                         )}
                         {item.status === 'approved' && (
                           <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
                         )}
                       </>
-                    )}
-                    {/* Mostrar mensagem para usuários sem permissão */}
-                    {!canApproveRequest(item) && userRole === 'employee' && (
-                      <span className="text-xs px-3 py-1 rounded-xl bg-platinum-100 text-oxford-blue-700">
-                        Apenas gerentes e administradores podem aprovar solicitações
-                      </span>
                     )}
                   </>
                 )}
