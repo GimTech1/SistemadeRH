@@ -43,12 +43,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Buscar nomes dos departamentos
+    const departmentIds = Array.from(new Set(((data || []) as IdeaRow[])
+      .filter((row) => row.department_id)
+      .map((row) => row.department_id))) as string[]
+
+    let departmentsMap = new Map<string, string | null>()
+    if (departmentIds.length > 0) {
+      const { data: departments } = await supabase
+        .from('departments')
+        .select('id, name')
+        .in('id', departmentIds) as unknown as { data: { id: string; name: string }[] | null }
+      for (const d of (departments || [])) {
+        departmentsMap.set(d.id, d.name)
+      }
+    }
+
     // Se a ideia é anônima, não retornar o created_by, a menos que tenha bypass
     const sanitized = ((data || []) as IdeaRow[]).map((row) => ({
       id: row.id,
       title: row.title,
       description: row.description,
       is_anonymous: row.is_anonymous,
+      department_id: row.department_id,
+      department_name: row.department_id ? departmentsMap.get(row.department_id) || null : null,
       created_at: row.created_at,
       updated_at: row.updated_at,
       created_by: row.is_anonymous && !hasBypass ? null : row.created_by,
@@ -73,14 +91,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, is_anonymous } = body as {
+    const { title, description, is_anonymous, department_id } = body as {
       title: string
       description?: string
       is_anonymous?: boolean
+      department_id: string
     }
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Título é obrigatório' }, { status: 400 })
+    }
+
+    if (!department_id || !department_id.trim()) {
+      return NextResponse.json({ error: 'Setor é obrigatório' }, { status: 400 })
     }
 
     const now = new Date().toISOString()
@@ -88,6 +111,7 @@ export async function POST(request: NextRequest) {
       title: String(title).trim(),
       description: description?.trim() || null,
       is_anonymous: Boolean(is_anonymous),
+      department_id: String(department_id).trim(),
       created_by: user.id,
       created_at: now,
       updated_at: now,

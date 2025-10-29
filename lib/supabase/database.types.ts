@@ -909,6 +909,7 @@ export type Database = {
           title: string
           description: string | null
           created_by: string | null
+          department_id: string | null
           is_anonymous: boolean
           created_at: string
           updated_at: string
@@ -918,6 +919,7 @@ export type Database = {
           title: string
           description?: string | null
           created_by?: string | null
+          department_id?: string | null
           is_anonymous?: boolean
           created_at?: string
           updated_at?: string
@@ -927,6 +929,7 @@ export type Database = {
           title?: string
           description?: string | null
           created_by?: string | null
+          department_id?: string | null
           is_anonymous?: boolean
           created_at?: string
           updated_at?: string

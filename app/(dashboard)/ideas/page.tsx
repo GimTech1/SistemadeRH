@@ -14,8 +14,15 @@ type Idea = {
   created_at: string
   updated_at: string
   created_by: string | null
+  department_id: string | null
+  department_name?: string | null
   is_owner?: boolean
   author_name?: string | null
+}
+
+type Department = {
+  id: string
+  name: string
 }
 
 export default function IdeasPage() {
@@ -24,9 +31,12 @@ export default function IdeasPage() {
   const [submitting, setSubmitting] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [departmentId, setDepartmentId] = useState<string>('')
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [canReveal, setCanReveal] = useState(false)
   const [showRevealed, setShowRevealed] = useState(false)
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(true)
 
   const loadIdeas = async () => {
     setLoading(true)
@@ -43,8 +53,23 @@ export default function IdeasPage() {
     }
   }
 
+  const loadDepartments = async () => {
+    setLoadingDepartments(true)
+    try {
+      const resp = await fetch('/api/departments')
+      if (!resp.ok) throw new Error('Falha ao carregar departamentos')
+      const data = await resp.json()
+      setDepartments(data.departments || [])
+    } catch (e) {
+      toast.error('Erro ao carregar departamentos')
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
   useEffect(() => {
     loadIdeas()
+    loadDepartments()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,12 +78,21 @@ export default function IdeasPage() {
       toast.error('Informe um título')
       return
     }
+    if (!departmentId) {
+      toast.error('Selecione um setor')
+      return
+    }
     setSubmitting(true)
     try {
       const resp = await fetch('/api/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, is_anonymous: isAnonymous }),
+        body: JSON.stringify({ 
+          title, 
+          description, 
+          is_anonymous: isAnonymous,
+          department_id: departmentId || null
+        }),
       })
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}))
@@ -67,6 +101,7 @@ export default function IdeasPage() {
       toast.success('Ideia enviada!')
       setTitle('')
       setDescription('')
+      setDepartmentId('')
       setIsAnonymous(false)
       await loadIdeas()
     } catch (e: any) {
@@ -81,6 +116,24 @@ export default function IdeasPage() {
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Compartilhe uma ideia</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+            <Label htmlFor="department">Setor</Label>
+            <select
+              id="department"
+              className="w-full border rounded-md p-2 text-sm no-native-arrow"
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              disabled={loadingDepartments}
+              required
+            >
+              <option value="">Selecione um setor</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <Label htmlFor="title">Título</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Melhorar o onboarding" />
@@ -145,7 +198,14 @@ export default function IdeasPage() {
                 {idea.description && (
                   <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{idea.description}</p>
                 )}
-                <div className="text-xs text-gray-500 mt-3">Enviada em {new Date(idea.created_at).toLocaleString()}</div>
+                <div className="flex items-center justify-between mt-3">
+                  <div className="text-xs text-gray-500">
+                    {idea.department_name && (
+                      <span className="mr-3">Setor: {idea.department_name}</span>
+                    )}
+                    <span>Enviada em {new Date(idea.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
