@@ -412,7 +412,7 @@ export default function RequestsPage() {
             { key: 'all', label: 'Todas' },
             { key: 'requested', label: 'Solicitado' },
             { key: 'approved', label: 'Aprovado' },
-            { key: 'rejected', label: 'Não Aprovado' },
+            { key: 'rejected', label: 'Recusado' },
             { key: 'done', label: 'Concluído' },
           ].map(t => (
             <button
@@ -472,7 +472,7 @@ export default function RequestsPage() {
                           </Button>
                         )}
                         {item.status !== 'rejected' && activeTab !== 'rejected' && (
-                          <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Recusar</Button>
                         )}
                         {item.status === 'approved' && (
                           <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
