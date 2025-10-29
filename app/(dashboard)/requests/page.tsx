@@ -26,6 +26,8 @@ type RequestItem = {
   employeeName: string
   departmentId: string
   department: string
+  requestedToEmployeeId?: string | null
+  requestedToEmployeeName?: string
   title: string
   description: string
   urgency: 'Pequena' | 'Média' | 'Grande' | 'Urgente'
@@ -36,10 +38,13 @@ type RequestItem = {
 export default function RequestsPage() {
   const supabase: SupabaseClient<Database> = createClient()
   const [departments, setDepartments] = useState<EmployeeOption[]>([])
+  const [employees, setEmployees] = useState<EmployeeOption[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(true)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [urgency, setUrgency] = useState<'Pequena' | 'Média' | 'Grande' | 'Urgente' | ''>('')
+  const [requestedToEmployeeId, setRequestedToEmployeeId] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const [activeTab, setActiveTab] = useState<RequestStatus | 'all'>('requested')
@@ -111,6 +116,31 @@ export default function RequestsPage() {
     loadDepartments()
   }, [supabase])
 
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        setLoadingEmployees(true)
+        const { data, error } = await supabase
+          .from('employees')
+          .select('id, full_name, department')
+          .eq('is_active', true)
+          .order('full_name', { ascending: true })
+        if (error) throw error
+        const options: EmployeeOption[] = (data || []).map((e: any) => ({
+          id: e.id,
+          name: e.full_name || 'Sem nome',
+          departmentId: e.department ?? null,
+        }))
+        setEmployees(options)
+      } catch (err) {
+        toast.error('Não foi possível carregar colaboradores')
+      } finally {
+        setLoadingEmployees(false)
+      }
+    }
+    loadEmployees()
+  }, [supabase])
+
   const filteredByTab = useMemo(() => {
     if (activeTab === 'all') return requests
     return requests.filter(r => r.status === activeTab)
@@ -118,7 +148,7 @@ export default function RequestsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userId || !userDepartmentId || !title || !description || !urgency) {
+    if (!userId || !userDepartmentId || !title || !description || !urgency || !requestedToEmployeeId) {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
@@ -131,6 +161,7 @@ export default function RequestsPage() {
         .insert({
           employee_id: userId,
           department_id: userDepartmentId,
+          requested_to_employee_id: requestedToEmployeeId,
           description: `${title.trim()} - ${description.trim()}`,
           urgency,
           status: 'requested',
@@ -143,12 +174,15 @@ export default function RequestsPage() {
         throw insert.error
       }
 
+      const requestedToEmployee = employees.find(e => e.id === requestedToEmployeeId)
       const item: RequestItem = {
         id: (insert.data as any).id,
         employeeId: userId,
         employeeName: userEmployeeName || 'Colaborador',
         departmentId: userDepartmentId,
         department: dept?.name || '—',
+        requestedToEmployeeId: requestedToEmployeeId,
+        requestedToEmployeeName: requestedToEmployee?.name || '—',
         title: title.trim(),
         description: description.trim(),
         urgency: urgency as any,
@@ -160,6 +194,7 @@ export default function RequestsPage() {
       setTitle('')
       setDescription('')
       setUrgency('')
+      setRequestedToEmployeeId('')
       toast.success('Solicitação criada')
       setActiveTab('requested')
     } catch (err) {
@@ -177,7 +212,7 @@ export default function RequestsPage() {
     const loadRequests = async () => {
       try {
         setLoadingRequests(true)
-        const { data, error } = await (supabase as any)
+        let query = (supabase as any)
           .from('requests')
           .select(`
             id,
@@ -187,10 +222,14 @@ export default function RequestsPage() {
             created_at,
             employee_id,
             department_id,
+            requested_to_employee_id,
             employees:employee_id ( full_name ),
-            departments:department_id ( name )
+            departments:department_id ( name ),
+            requested_to_employees:requested_to_employee_id ( full_name )
           `)
+          .eq('requested_to_employee_id', userId)
           .order('created_at', { ascending: false })
+        const { data, error } = await query
         if (error) throw error
 
         const mapped: RequestItem[] = (data || []).map((r: any) => {
@@ -200,12 +239,26 @@ export default function RequestsPage() {
           const title = titleDescSplit[0] || 'Sem título'
           const description = titleDescSplit.slice(1).join(' - ') || fullDescription
           
+          // Buscar nome do employee destinatário
+          let requestedToName = '—'
+          if (r.requested_to_employee_id) {
+            if (r.requested_to_employees?.full_name) {
+              requestedToName = r.requested_to_employees.full_name
+            } else {
+              // Fallback: buscar na lista de employees já carregada
+              const foundEmployee = employees.find(e => e.id === r.requested_to_employee_id)
+              requestedToName = foundEmployee?.name || '—'
+            }
+          }
+          
           return {
             id: r.id,
             employeeId: r.employee_id,
             employeeName: r.employees?.full_name || 'Colaborador',
             departmentId: r.department_id,
             department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
+            requestedToEmployeeId: r.requested_to_employee_id,
+            requestedToEmployeeName: requestedToName,
             title,
             description,
             urgency: r.urgency,
@@ -221,10 +274,10 @@ export default function RequestsPage() {
       }
     }
 
-    if (departments.length > 0) {
+    if (departments.length > 0 && employees.length > 0 && userId) {
       loadRequests()
     }
-  }, [supabase, departments])
+  }, [supabase, departments, employees, userId])
 
   // Função para verificar se o usuário pode aprovar requests
   const canApproveRequest = (request: RequestItem) => {
@@ -279,6 +332,32 @@ export default function RequestsPage() {
           <div>
             <Label htmlFor="description">Descrição e Motivo</Label>
             <Input id="description" placeholder="Ex.: Necessário para novo colaborador do setor de vendas" value={description} onChange={e => setDescription(e.target.value)} className="mt-2" />
+          </div>
+
+          <div>
+            <Label htmlFor="requestedTo">Para quem</Label>
+            <div className="relative mt-2">
+              <select
+                id="requestedTo"
+                className={cn(
+                  'w-full appearance-none rounded-md border border-platinum-300 bg-white px-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-yinmn-blue-500 no-native-arrow',
+                )}
+                value={requestedToEmployeeId}
+                onChange={e => setRequestedToEmployeeId(e.target.value)}
+                disabled={loadingEmployees}
+              >
+                <option value="">Favor selecionar</option>
+                {employees.map(emp => {
+                  const depLabel = emp.departmentId ? departments.find(d => d.id === emp.departmentId)?.name : undefined
+                  return (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name}{depLabel ? ` — ${depLabel}` : ''}
+                    </option>
+                  )
+                })}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
+            </div>
           </div>
 
           <div>
@@ -340,6 +419,9 @@ export default function RequestsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1 flex-1">
                 <p className="text-rich-black-900 font-medium">{item.employeeName} • {item.department || 'Sem setor'}</p>
+                {item.requestedToEmployeeName && (
+                  <p className="text-sm text-oxford-blue-600">Para: {item.requestedToEmployeeName}</p>
+                )}
                 <p className="text-sm font-medium text-rich-black-900">{item.title}</p>
                 <p className="text-sm text-oxford-blue-700">{item.description}</p>
                 <p className="text-xs text-oxford-blue-600">Urgência: {item.urgency} • {new Date(item.createdAt).toLocaleString()}</p>
