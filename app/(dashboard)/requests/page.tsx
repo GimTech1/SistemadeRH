@@ -227,8 +227,13 @@ export default function RequestsPage() {
             departments:department_id ( name ),
             requested_to_employees:requested_to_employee_id ( full_name )
           `)
-          .eq('requested_to_employee_id', userId)
-          .order('created_at', { ascending: false })
+        
+        // Admin vê todas as solicitações, outros usuários apenas as que receberam
+        if (userRole !== 'admin' && userId) {
+          query = query.eq('requested_to_employee_id', userId)
+        }
+        
+        query = query.order('created_at', { ascending: false })
         const { data, error } = await query
         if (error) throw error
 
@@ -274,10 +279,10 @@ export default function RequestsPage() {
       }
     }
 
-    if (departments.length > 0 && employees.length > 0 && userId) {
+    if (departments.length > 0 && employees.length > 0 && (userId || userRole === 'admin')) {
       loadRequests()
     }
-  }, [supabase, departments, employees, userId])
+  }, [supabase, departments, employees, userId, userRole])
 
   // Função para verificar se o usuário pode aprovar requests
   const canApproveRequest = (request: RequestItem) => {
