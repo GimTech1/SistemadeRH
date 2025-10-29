@@ -35,13 +35,8 @@ type RequestItem = {
 
 export default function RequestsPage() {
   const supabase: SupabaseClient<Database> = createClient()
-  const [employees, setEmployees] = useState<EmployeeOption[]>([])
-  const [loadingEmployees, setLoadingEmployees] = useState(true)
   const [departments, setDepartments] = useState<EmployeeOption[]>([])
-  const [loadingDepartments, setLoadingDepartments] = useState(true)
 
-  const [selectedEmployee, setSelectedEmployee] = useState('')
-  const [departmentId, setDepartmentId] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [urgency, setUrgency] = useState<'Pequena' | 'Média' | 'Grande' | 'Urgente' | ''>('')
@@ -51,9 +46,11 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loadingRequests, setLoadingRequests] = useState(false)
   
-  // Estados para controle de permissões
+  // Estados para controle de permissões e informações do usuário
   const [userRole, setUserRole] = useState<'admin' | 'gerente' | 'employee'>('employee')
   const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userEmployeeName, setUserEmployeeName] = useState<string>('')
 
   // Carregar informações do usuário e verificar permissões
   useEffect(() => {
@@ -62,9 +59,11 @@ export default function RequestsPage() {
         const { data: { user }, error: authError } = await supabase.auth.getUser()
         if (authError || !user) return
 
+        setUserId(user.id)
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role, department_id')
+          .select('role, department_id, full_name')
           .eq('id', user.id)
           .single()
 
@@ -74,6 +73,19 @@ export default function RequestsPage() {
         setUserRole(role === 'admin' || role === 'administrador' ? 'admin' : 
                    role === 'gerente' || role === 'manager' ? 'gerente' : 'employee')
         setUserDepartmentId((profile as any).department_id)
+        
+        // Buscar informações do employee para obter o nome completo
+        const { data: employee } = await supabase
+          .from('employees')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+
+        if (employee) {
+          setUserEmployeeName((employee as any).full_name || (profile as any).full_name || 'Colaborador')
+        } else {
+          setUserEmployeeName((profile as any).full_name || 'Colaborador')
+        }
       } catch (error) {
         console.error('Erro ao carregar informações do usuário:', error)
       }
@@ -85,7 +97,6 @@ export default function RequestsPage() {
   useEffect(() => {
     const loadDepartments = async () => {
       try {
-        setLoadingDepartments(true)
         const { data, error } = await supabase
           .from('departments')
           .select('id, name')
@@ -94,44 +105,11 @@ export default function RequestsPage() {
         const options: EmployeeOption[] = (data || []).map((d: any) => ({ id: d.id, name: d.name }))
         setDepartments(options)
       } catch (err) {
-        toast.error('Não foi possível carregar departamentos')
-      } finally {
-        setLoadingDepartments(false)
+        // Não precisa mostrar erro, pois só é usado para exibição
       }
     }
     loadDepartments()
   }, [supabase])
-
-  useEffect(() => {
-    const loadEmployeesByDepartment = async () => {
-      if (!departmentId) {
-        setEmployees([])
-        return
-      }
-      try {
-        setLoadingEmployees(true)
-        const { data, error } = await supabase
-          .from('employees')
-          .select('id, full_name, department')
-          .eq('department', departmentId)
-          .order('full_name', { ascending: true })
-        if (error) throw error
-        const options: EmployeeOption[] = (data || []).map((e: any) => ({
-          id: e.id,
-          name: e.full_name || 'Sem nome',
-          departmentId: e.department ?? null,
-        }))
-        setEmployees(options)
-      } catch (err) {
-        toast.error('Não foi possível carregar colaboradores')
-      } finally {
-        setLoadingEmployees(false)
-      }
-    }
-
-    setSelectedEmployee('')
-    loadEmployeesByDepartment()
-  }, [departmentId, supabase])
 
   const filteredByTab = useMemo(() => {
     if (activeTab === 'all') return requests
@@ -140,20 +118,19 @@ export default function RequestsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedEmployee || !title || !description || !urgency || !departmentId) {
+    if (!userId || !userDepartmentId || !title || !description || !urgency) {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
     try {
       setSubmitting(true)
-      const employee = employees.find(e => e.id === selectedEmployee)
-      const dept = departments.find(d => d.id === departmentId)
+      const dept = departments.find(d => d.id === userDepartmentId)
       const insert = await (supabase as any)
         .from('requests')
         .insert({
-          employee_id: selectedEmployee,
-          department_id: departmentId,
+          employee_id: userId,
+          department_id: userDepartmentId,
           description: `${title.trim()} - ${description.trim()}`,
           urgency,
           status: 'requested',
@@ -168,9 +145,9 @@ export default function RequestsPage() {
 
       const item: RequestItem = {
         id: (insert.data as any).id,
-        employeeId: selectedEmployee,
-        employeeName: employee?.name || 'Colaborador',
-        departmentId,
+        employeeId: userId,
+        employeeName: userEmployeeName || 'Colaborador',
+        departmentId: userDepartmentId,
         department: dept?.name || '—',
         title: title.trim(),
         description: description.trim(),
@@ -180,8 +157,6 @@ export default function RequestsPage() {
       }
 
       setRequests(prev => [item, ...prev])
-      setSelectedEmployee('')
-      setDepartmentId('')
       setTitle('')
       setDescription('')
       setUrgency('')
@@ -228,7 +203,7 @@ export default function RequestsPage() {
           return {
             id: r.id,
             employeeId: r.employee_id,
-            employeeName: r.employees?.full_name || employees.find(e => e.id === r.employee_id)?.name || 'Colaborador',
+            employeeName: r.employees?.full_name || 'Colaborador',
             departmentId: r.department_id,
             department: r.departments?.name || departments.find(d => d.id === r.department_id)?.name || '—',
             title,
@@ -249,7 +224,7 @@ export default function RequestsPage() {
     if (departments.length > 0) {
       loadRequests()
     }
-  }, [supabase, departments, employees])
+  }, [supabase, departments])
 
   // Função para verificar se o usuário pode aprovar requests
   const canApproveRequest = (request: RequestItem) => {
@@ -296,51 +271,6 @@ export default function RequestsPage() {
       <Card className="p-4 sm:p-6 mb-8">
         <h2 className="text-lg sm:text-xl mb-4 text-rich-black-900" style={{ fontWeight: 500 }}>Formulário de Pedido</h2>
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          <div>
-            <Label htmlFor="department">Setor</Label>
-            <div className="relative mt-2">
-              <select
-                id="department"
-                className={cn('w-full appearance-none rounded-md border border-platinum-300 bg-white px-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-yinmn-blue-500 no-native-arrow')}
-                value={departmentId}
-                onChange={e => setDepartmentId(e.target.value)}
-                disabled={loadingDepartments}
-              >
-                <option value="">Favor selecionar</option>
-                {departments.map(dep => (
-                  <option key={dep.id} value={dep.id}>{dep.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="employee">Colaborador</Label>
-            <div className="relative mt-2">
-              <select
-                id="employee"
-                className={cn(
-                  'w-full appearance-none rounded-md border border-platinum-300 bg-white px-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-yinmn-blue-500 no-native-arrow',
-                )}
-                value={selectedEmployee}
-                onChange={e => setSelectedEmployee(e.target.value)}
-                disabled={loadingEmployees || !departmentId}
-              >
-                <option value="">Favor selecionar</option>
-              {employees.map(emp => {
-                const depLabel = emp.departmentId ? departments.find(d => d.id === emp.departmentId)?.name : undefined
-                return (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name}{depLabel ? ` — ${depLabel}` : ''}
-                  </option>
-                )
-              })}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-oxford-blue-600" />
-            </div>
-          </div>
-
           <div>
             <Label htmlFor="title">Título do Pedido</Label>
             <Input id="title" placeholder="Ex.: Solicitação de Notebook" value={title} onChange={e => setTitle(e.target.value)} className="mt-2" />
@@ -430,7 +360,7 @@ export default function RequestsPage() {
                         {activeTab !== 'rejected' && (
                           <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'rejected')}>Não Aprovar</Button>
                         )}
-                        {activeTab !== 'done' && (
+                        {item.status === 'approved' && (
                           <Button variant="secondary" size="sm" onClick={() => handleUpdateStatus(item.id, 'done')}>Concluir</Button>
                         )}
                       </>
