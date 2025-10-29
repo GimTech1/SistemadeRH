@@ -451,7 +451,7 @@ export default function RequestsPage() {
                 ) : (
                   <>
                     {/* Mostrar botões apenas para quem recebeu a solicitação ou admin */}
-                    {canApproveRequest(item) && item.status !== 'done' && (
+                    {canApproveRequest(item) && (
                       <>
                         {item.status !== 'approved' && activeTab !== 'approved' && (
                           <Button
