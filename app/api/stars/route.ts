@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
     // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
     const SPECIAL_USER_IDS = [
       process.env.NEXT_PUBLIC_WATSON_USER_ID,
-      process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+      process.env.NEXT_PUBLIC_MATHEUS_USER_ID,
+      process.env.NEXT_PUBLIC_ANA_USER_ID,
+      process.env.NEXT_PUBLIC_BRUNO_RODRIGUES_USER_ID,
+      process.env.NEXT_PUBLIC_SANDOVAL_USER_ID
     ].filter(Boolean)
 
     // Verificar se o usuário tem bypass de estrelas infinitas
@@ -95,7 +98,10 @@ export async function POST(request: NextRequest) {
     // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
     const SPECIAL_USER_IDS = [
       process.env.NEXT_PUBLIC_WATSON_USER_ID,
-      process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+      process.env.NEXT_PUBLIC_MATHEUS_USER_ID,
+      process.env.NEXT_PUBLIC_ANA_USER_ID,
+      process.env.NEXT_PUBLIC_BRUNO_RODRIGUES_USER_ID,
+      process.env.NEXT_PUBLIC_SANDOVAL_USER_ID
     ].filter(Boolean)
 
     // Verificar se o usuário tem bypass de estrelas infinitas

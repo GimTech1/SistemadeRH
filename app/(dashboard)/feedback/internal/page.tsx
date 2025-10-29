@@ -102,7 +102,10 @@ export default function InternalFeedbackPage() {
   // IDs dos usuários especiais com bypass de estrelas infinitas (do .env)
   const SPECIAL_USER_IDS = [
     process.env.NEXT_PUBLIC_WATSON_USER_ID,
-    process.env.NEXT_PUBLIC_MATHEUS_USER_ID
+    process.env.NEXT_PUBLIC_MATHEUS_USER_ID,
+    process.env.NEXT_PUBLIC_ANA_USER_ID,
+    process.env.NEXT_PUBLIC_BRUNO_RODRIGUES_USER_ID,
+    process.env.NEXT_PUBLIC_SANDOVAL_USER_ID
   ].filter(Boolean) // Remove valores undefined/null
 
   // Função para verificar se o usuário atual tem bypass de estrelas infinitas
