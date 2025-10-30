@@ -37,7 +37,7 @@ import {
   PolarRadiusAxis,
   Radar,
   Area,
-    AreaChart,
+  AreaChart,
     ReferenceLine,
 } from 'recharts'
 import toast from 'react-hot-toast'
@@ -60,6 +60,8 @@ export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [selectedReport, setSelectedReport] = useState('overview')
+  const [trafficStart, setTrafficStart] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0,10) })
+  const [trafficEnd, setTrafficEnd] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [loading, setLoading] = useState(false)
   const [reportData, setReportData] = useState<ReportData>({})
   const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([])
@@ -69,11 +71,19 @@ export default function ReportsPage() {
   const distributionRef = useRef<HTMLDivElement | null>(null)
   const topRef = useRef<HTMLDivElement | null>(null)
   const insightsRef = useRef<HTMLDivElement | null>(null)
+  const trafficCardsRef = useRef<HTMLDivElement | null>(null)
+  const trafficChartRef = useRef<HTMLDivElement | null>(null)
+  const trafficTableRef = useRef<HTMLDivElement | null>(null)
   const [hoverY, setHoverY] = useState<number | null>(null)
   const [showAllTopPerformers, setShowAllTopPerformers] = useState(false)
   const [insights, setInsights] = useState<any | null>(null)
   const [insightsLoading, setInsightsLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [showTrafficModal, setShowTrafficModal] = useState(false)
+  const [trafficForm, setTrafficForm] = useState({
+    date: new Date().toISOString().slice(0,10),
+    spent: '', meetingsScheduled: '', meetingsHeld: '', motherContacts: '', firstOp: ''
+  })
 
   // Carregar departamentos na inicialização
   useEffect(() => {
@@ -104,6 +114,10 @@ export default function ReportsPage() {
         if (selectedReport === 'overview' && showAllTopPerformers) {
           params.set('limit', 'all')
         }
+        if (selectedReport === 'traffic') {
+          params.set('start', trafficStart)
+          params.set('end', trafficEnd)
+        }
         
         const response = await fetch(`/api/reports?${params}`)
         const data = await response.json()
@@ -122,7 +136,7 @@ export default function ReportsPage() {
     }
     
     loadReportData()
-  }, [selectedPeriod, selectedDepartment, selectedReport, showAllTopPerformers])
+  }, [selectedPeriod, selectedDepartment, selectedReport, showAllTopPerformers, trafficStart, trafficEnd])
 
   // Usar somente dados reais vindos da API (sem mocks)
   // Para a visão Overview, usar EXCLUSIVAMENTE a série temporal enviada pela API (performanceTrend)
@@ -135,6 +149,8 @@ export default function ReportsPage() {
   const radarData = reportData.radarData || []
   const goalsProgress = reportData.goalsProgress || []
   const topPerformers = reportData.topPerformers || []
+  const traffic = (reportData as any).traffic || []
+  const trafficTotals = (reportData as any).trafficTotals || { spent: 0, meetingsScheduled: 0, meetingsHeld: 0, motherContacts: 0, firstOp: 0 }
 
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
@@ -142,7 +158,11 @@ export default function ReportsPage() {
       if (format === 'pdf') {
         const { default: html2canvas } = await import('html2canvas')
         const { default: jsPDF } = await import('jspdf')
-        let sections = [overviewTrendRef.current, distributionRef.current, topRef.current, insightsRef.current].filter(Boolean) as HTMLDivElement[]
+        let sections = (
+          selectedReport === 'traffic'
+            ? [trafficCardsRef.current, trafficChartRef.current, trafficTableRef.current]
+            : [overviewTrendRef.current, distributionRef.current, topRef.current, insightsRef.current]
+        ).filter(Boolean) as HTMLDivElement[]
         if (sections.length === 0 && reportContainerRef.current) {
           sections = [reportContainerRef.current]
         }
@@ -165,8 +185,13 @@ export default function ReportsPage() {
 
         const generatedAt = new Date().toLocaleString()
         const periodMap: Record<string, string> = { week: 'Última Semana', month: 'Último Mês', quarter: 'Último Trimestre', year: 'Último Ano' }
-        const periodLabel = periodMap[selectedPeriod] || selectedPeriod
-        const deptLabel = selectedDepartment === 'all' ? 'Todos os Departamentos' : (departments.find(d => d.id === selectedDepartment)?.name || selectedDepartment)
+        const periodLabel = selectedReport === 'traffic'
+          ? `${new Date(trafficStart).toLocaleDateString('pt-BR')} a ${new Date(trafficEnd).toLocaleDateString('pt-BR')}`
+          : (periodMap[selectedPeriod] || selectedPeriod)
+        const deptLabel = selectedReport === 'traffic'
+          ? 'Tráfego Pago'
+          : (selectedDepartment === 'all' ? 'Todos os Departamentos' : (departments.find(d => d.id === selectedDepartment)?.name || selectedDepartment))
+        const reportTitle = selectedReport === 'traffic' ? 'Relatório - Tráfego Pago' : 'Relatório - Visão Geral'
 
         // Tentar carregar logo (com dimensões naturais para manter proporção)
         type LoadedLogo = { dataUrl: string; w: number; h: number }
@@ -226,7 +251,7 @@ export default function ReportsPage() {
           pdf.setFont('helvetica', 'bold')
           pdf.setFontSize(16)
           const textLeft = marginX + (logoW > 0 ? (logoW + 16) : 0)
-          pdf.text('Relatório - Visão Geral', textLeft, 36)
+          pdf.text(reportTitle, textLeft, 36)
           pdf.setFont('helvetica', 'normal')
           pdf.setFontSize(11)
           pdf.text(`Período: ${periodLabel}`, textLeft, 54)
@@ -256,14 +281,8 @@ export default function ReportsPage() {
         const rows: Array<Record<string, any>> = []
         if (selectedReport === 'overview') {
           if (Array.isArray(performanceTrend)) rows.push(...performanceTrend)
-        } else if (selectedReport === 'performance' && Array.isArray(reportData.performanceData)) {
-          rows.push(...reportData.performanceData)
-        } else if (selectedReport === 'cha' && Array.isArray(reportData.chaData)) {
-          rows.push(...reportData.chaData)
-        } else if (selectedReport === 'goals' && Array.isArray(reportData.goalsProgress)) {
-          rows.push(...reportData.goalsProgress)
-        } else if (selectedReport === 'departments' && Array.isArray((reportData as any).departments)) {
-          rows.push(...((reportData as any).departments))
+        } else if (selectedReport === 'traffic' && Array.isArray(traffic)) {
+          rows.push(...traffic)
         }
         if (rows.length === 0) {
           toast.error('Sem dados para exportar')
@@ -321,23 +340,31 @@ export default function ReportsPage() {
               try {
                 setInsightsLoading(true)
                 setInsights(null)
-                const overviewSample = {
-                  performanceTrend: (reportData as any).performanceTrend || [],
-                  topPerformers: reportData.topPerformers || [],
-                  departmentDistribution: reportData.departmentDistribution || [],
-                  totals: {
-                    employees: reportData.totalEmployees,
-                    evaluations: reportData.totalEvaluations,
-                  }
-                }
+                const payload = selectedReport === 'traffic'
+                  ? {
+                      period: `${trafficStart}..${trafficEnd}`,
+                      traffic: traffic,
+                      totals: trafficTotals,
+                      type: 'traffic'
+                    }
+                  : {
+                      period: selectedPeriod,
+                      departmentId: selectedDepartment !== 'all' ? selectedDepartment : undefined,
+                      overviewSample: {
+                        performanceTrend: (reportData as any).performanceTrend || [],
+                        topPerformers: reportData.topPerformers || [],
+                        departmentDistribution: reportData.departmentDistribution || [],
+                        totals: {
+                          employees: reportData.totalEmployees,
+                          evaluations: reportData.totalEvaluations,
+                        }
+                      },
+                      type: 'overview'
+                    }
                 const resp = await fetch('/api/reports/insights', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    period: selectedPeriod,
-                    departmentId: selectedDepartment !== 'all' ? selectedDepartment : undefined,
-                    overviewSample
-                  })
+                  body: JSON.stringify(payload)
                 })
                 const data = await resp.json()
                 if (!resp.ok) throw new Error(data?.error || 'Falha ao gerar insights')
@@ -359,6 +386,27 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id: 'overview', name: 'Visão Geral', icon: BarChart3 },
+          { id: 'traffic', name: 'Tráfego Pago', icon: Activity },
+        ].map((type) => {
+          const Icon = type.icon as any
+          return (
+            <Button
+              key={type.id}
+              onClick={() => setSelectedReport(type.id)}
+              variant={selectedReport === type.id ? 'primary' : 'outline'}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Icon className="h-4 w-4" />
+              {type.name}
+            </Button>
+          )
+        })}
+      </div>
+
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <style jsx>{`
@@ -369,6 +417,7 @@ export default function ReportsPage() {
               background-size: 1.5em 1.5em;
             }
           `}</style>
+          {selectedReport === 'overview' && (
            <select
              value={selectedPeriod}
              onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -378,12 +427,13 @@ export default function ReportsPage() {
             <option value="month">Último Mês</option>
             <option value="quarter">Último Trimestre</option>
             <option value="year">Último Ano</option>
-          </select>
+          </select>)}
+          {selectedReport === 'overview' && (
            <select
              value={selectedDepartment}
              onChange={(e) => setSelectedDepartment(e.target.value)}
-             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8 min-w-[220px]"
-             disabled={loading}
+              className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8 min-w-[220px]"
+              disabled={loading}
            >
             <option value="all">Todos os Departamentos</option>
             {departments.map((dept) => (
@@ -392,6 +442,23 @@ export default function ReportsPage() {
               </option>
             ))}
           </select>
+          )}
+          {selectedReport === 'traffic' && (
+            <div className="flex items-center gap-2 w-full">
+              <input type="date" value={trafficStart} onChange={(e) => setTrafficStart(e.target.value)} className="px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500" />
+              <span className="text-oxford-blue-600">até</span>
+              <input type="date" value={trafficEnd} onChange={(e) => setTrafficEnd(e.target.value)} className="px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500" />
+              <Button
+                onClick={() => setShowTrafficModal(true)}
+                variant="primary"
+                size="sm"
+                disabled={loading || exporting}
+                className="ml-auto"
+              >
+                + Adicionar dados
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -592,8 +659,8 @@ export default function ReportsPage() {
                         </li>
                       ))}
                     </ul>
-                  </div>
-                )}
+        </div>
+      )}
                 {Array.isArray(insights?.recommendations) && insights.recommendations.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-rich-black-900 mb-2">Recomendações Práticas</h4>
@@ -602,21 +669,153 @@ export default function ReportsPage() {
                         <li key={idx} className="text-oxford-blue-700">{rec}</li>
                       ))}
                     </ol>
-                  </div>
-                )}
+              </div>
+            )}
                 {insights?.risk && (
                   <div>
                     <h4 className="font-semibold text-rich-black-900 mb-2">Alerta de Risco</h4>
                     <p className="text-oxford-blue-700">{insights.risk}</p>
-                  </div>
-                )}
+        </div>
+      )}
                 {!insights?.insights?.length && !insights?.recommendations?.length && !insights?.risk && (
                   <p className="text-oxford-blue-600">Sem conteúdo.</p>
-                )}
-              </div>
+            )}
+          </div>
             ) : (
               <div className="text-oxford-blue-600">Clique em "Gerar insights" para produzir a análise contextual com base nos dados atuais.</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'traffic' && !loading && (
+        <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4" ref={trafficCardsRef}>
+            <div className="card p-4"><div className="text-xs text-oxford-blue-600">Gasto</div><div className="text-xl font-semibold text-rich-black-900">R$ {trafficTotals.spent?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div></div>
+            <div className="card p-4"><div className="text-xs text-oxford-blue-600">Reuniões Agendadas</div><div className="text-xl font-semibold text-rich-black-900">{trafficTotals.meetingsScheduled}</div></div>
+            <div className="card p-4"><div className="text-xs text-oxford-blue-600">Reuniões Realizadas</div><div className="text-xl font-semibold text-rich-black-900">{trafficTotals.meetingsHeld}</div></div>
+            <div className="card p-4"><div className="text-xs text-oxford-blue-600">Ctt Mãe</div><div className="text-xl font-semibold text-rich-black-900">{trafficTotals.motherContacts}</div></div>
+            <div className="card p-4"><div className="text-xs text-oxford-blue-600">1ª Op</div><div className="text-xl font-semibold text-rich-black-900">{trafficTotals.firstOp}</div></div>
+          </div>
+
+          <div className="card p-6" ref={trafficChartRef}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Evolução Diária</h3>
+            {traffic.length > 0 ? (
+              <ResponsiveContainer width="100%" height={380}>
+                <LineChart data={traffic}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="date" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+                  <Legend iconType="plainline" />
+                  <Line type="monotone" dataKey="spent" name="Gasto" stroke="#ef4444" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="meetingsScheduled" name="Reuniões Ag." stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="meetingsHeld" name="Reuniões Real." stroke="#10b981" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="motherContacts" name="Ctt Mãe" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="firstOp" name="1ª Op" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[380px] text-oxford-blue-600">Sem dados no período</div>
+            )}
+          </div>
+
+          <div className="card p-6" ref={trafficTableRef}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Tabela Diária</h3>
+            {traffic.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="text-left text-xs font-medium text-oxford-blue-600 uppercase tracking-wider">
+                    <tr className="border-b border-neutral-800">
+                      <th className="pb-3">Data</th>
+                      <th className="pb-3">Gasto</th>
+                      <th className="pb-3">Reuniões Agendadas</th>
+                      <th className="pb-3">Reuniões Realizadas</th>
+                      <th className="pb-3">Ctt Mãe</th>
+                      <th className="pb-3">1ª Op</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800">
+                    {traffic.map((d: any, idx: number) => (
+                      <tr key={idx} className="text-sm">
+                        <td className="py-3 text-rich-black-900 font-medium">{new Date(d.date).toLocaleDateString('pt-BR')}</td>
+                        <td className="py-3 text-oxford-blue-600">R$ {Number(d.spent).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-3 text-oxford-blue-600">{d.meetingsScheduled}</td>
+                        <td className="py-3 text-oxford-blue-600">{d.meetingsHeld}</td>
+                        <td className="py-3 text-oxford-blue-600">{d.motherContacts}</td>
+                        <td className="py-3 text-oxford-blue-600">{d.firstOp}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-oxford-blue-600">Sem dados</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal adicionar dados de Tráfego */}
+      {showTrafficModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Adicionar dados - Tráfego Pago</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="text-xs text-oxford-blue-600">Data</label>
+                <input type="date" value={trafficForm.date} onChange={(e)=>setTrafficForm({...trafficForm, date:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs text-oxford-blue-600">Gasto (R$)</label>
+                <input type="number" step="0.01" value={trafficForm.spent} onChange={(e)=>setTrafficForm({...trafficForm, spent:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs text-oxford-blue-600">Reuniões Agendadas</label>
+                <input type="number" value={trafficForm.meetingsScheduled} onChange={(e)=>setTrafficForm({...trafficForm, meetingsScheduled:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs text-oxford-blue-600">Reuniões Realizadas</label>
+                <input type="number" value={trafficForm.meetingsHeld} onChange={(e)=>setTrafficForm({...trafficForm, meetingsHeld:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs text-oxford-blue-600">Ctt Mãe</label>
+                <input type="number" value={trafficForm.motherContacts} onChange={(e)=>setTrafficForm({...trafficForm, motherContacts:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs text-oxford-blue-600">1ª Op</label>
+                <input type="number" value={trafficForm.firstOp} onChange={(e)=>setTrafficForm({...trafficForm, firstOp:e.target.value})} className="w-full px-3 py-2 bg-white border border-platinum-300 rounded-lg" />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={()=>setShowTrafficModal(false)}>Cancelar</Button>
+              <Button
+                variant="primary" size="sm"
+                onClick={async ()=>{
+                  try{
+                    const resp = await fetch('/api/traffic',{
+                      method:'POST', headers:{'Content-Type':'application/json'},
+                      body: JSON.stringify({
+                        date: trafficForm.date,
+                        spent: Number(trafficForm.spent||0),
+                        meetingsScheduled: Number(trafficForm.meetingsScheduled||0),
+                        meetingsHeld: Number(trafficForm.meetingsHeld||0),
+                        motherContacts: Number(trafficForm.motherContacts||0),
+                        firstOp: Number(trafficForm.firstOp||0),
+                      })
+                    })
+                    const data = await resp.json()
+                    if(!resp.ok){ throw new Error(data?.error || 'Falha ao salvar') }
+                    toast.success('Dados salvos')
+                    setShowTrafficModal(false)
+                    // refresh
+                    setTrafficEnd(prev=>prev)
+                  }catch(e:any){ toast.error(e?.message||'Erro ao salvar') }
+                }}
+              >
+                Salvar
+              </Button>
+              </div>
           </div>
         </div>
       )}

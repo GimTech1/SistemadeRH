@@ -53,6 +53,14 @@ export async function GET(request: NextRequest) {
         return await getGoalsData(supabase, startDate, endDate, departmentId)
       case 'departments':
         return await getDepartmentsData(supabase, startDate, endDate, departmentId)
+      case 'traffic':
+        {
+          const startParam = searchParams.get('start')
+          const endParam = searchParams.get('end')
+          const s = startParam ? new Date(startParam) : startDate
+          const e = endParam ? new Date(endParam) : endDate
+          return await getTrafficData(supabase, s, e)
+        }
       default:
         return await getOverviewData(supabase, startDate, endDate, departmentId, limitParam)
     }
@@ -382,6 +390,40 @@ async function getDepartmentsData(supabase: any, startDate: Date, endDate: Date,
   } catch (error) {
     console.error('Erro ao buscar dados de departamentos:', error)
     return NextResponse.json({ error: 'Erro ao buscar dados de departamentos' }, { status: 500 })
+  }
+}
+
+async function getTrafficData(supabase: any, startDate: Date, endDate: Date) {
+  try {
+    // Tabela esperada: paid_traffic_daily (date, spent, meetings_scheduled, meetings_held, mother_contacts, first_op)
+    const { data } = await supabase
+      .from('paid_traffic_daily')
+      .select('date, spent, meetings_scheduled, meetings_held, mother_contacts, first_op')
+      .gte('date', startDate.toISOString().slice(0, 10))
+      .lte('date', endDate.toISOString().slice(0, 10))
+      .order('date', { ascending: true })
+
+    const daily = (data || []).map((row: any) => ({
+      date: row.date,
+      spent: Number(row.spent || 0),
+      meetingsScheduled: Number(row.meetings_scheduled || 0),
+      meetingsHeld: Number(row.meetings_held || 0),
+      motherContacts: Number(row.mother_contacts || 0),
+      firstOp: Number(row.first_op || 0),
+    }))
+
+    const totals = daily.reduce((acc: any, d: any) => ({
+      spent: acc.spent + d.spent,
+      meetingsScheduled: acc.meetingsScheduled + d.meetingsScheduled,
+      meetingsHeld: acc.meetingsHeld + d.meetingsHeld,
+      motherContacts: acc.motherContacts + d.motherContacts,
+      firstOp: acc.firstOp + d.firstOp,
+    }), { spent: 0, meetingsScheduled: 0, meetingsHeld: 0, motherContacts: 0, firstOp: 0 })
+
+    return NextResponse.json({ traffic: daily, trafficTotals: totals })
+  } catch (error) {
+    console.error('Erro ao buscar dados de tráfego pago:', error)
+    return NextResponse.json({ error: 'Erro ao buscar dados de tráfego pago' }, { status: 500 })
   }
 }
 
