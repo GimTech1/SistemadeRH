@@ -155,18 +155,45 @@ export default function ReportsPage() {
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
-        // Layout minimalista com cores do projeto
+        // Layout elegante com a cor solicitada
         const marginX = 40
-        const headerHeight = 60
-        const footerHeight = 40
-        const primary = '#2b50aa' // aproximação yinmn-blue
-        const accent = '#1f2937'  // rich-black/oxford nuance
-        const subtle = 220        // linhas suaves (draw color - escala 0-255)
+        const headerHeight = 72
+        const footerHeight = 48
+        const primary = '#1b263b'
+        const accent = '#111827'
+        const subtle = 210
 
         const generatedAt = new Date().toLocaleString()
         const periodMap: Record<string, string> = { week: 'Última Semana', month: 'Último Mês', quarter: 'Último Trimestre', year: 'Último Ano' }
         const periodLabel = periodMap[selectedPeriod] || selectedPeriod
         const deptLabel = selectedDepartment === 'all' ? 'Todos os Departamentos' : (departments.find(d => d.id === selectedDepartment)?.name || selectedDepartment)
+
+        // Tentar carregar logo (com dimensões naturais para manter proporção)
+        type LoadedLogo = { dataUrl: string; w: number; h: number }
+        const loadLogo = async (): Promise<LoadedLogo | null> => {
+          const candidates = ['/logo-full-horizontal-branco.png']
+          for (const path of candidates) {
+            try {
+              const res = await fetch(path)
+              if (!res.ok) continue
+              const blob = await res.blob()
+              const reader = new FileReader()
+              const dataUrl: string = await new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string)
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
+              })
+              const img = new Image()
+              const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+                img.onload = () => resolve({ w: img.width, h: img.height })
+                img.src = dataUrl
+              })
+              return { dataUrl, w: dims.w, h: dims.h }
+            } catch {}
+          }
+          return null
+        }
+        const logoLoaded = await loadLogo()
 
         for (let i = 0; i < sections.length; i++) {
           const sec = sections[i]
@@ -180,33 +207,46 @@ export default function ReportsPage() {
           const x = marginX + (availWidth - imgWidth) / 2
           const y = headerHeight + (availHeight - imgHeight) / 2
           if (i > 0) pdf.addPage()
-          // Header
-          // barra sutil superior
-          pdf.setDrawColor(primary)
+          // Header elegante
           pdf.setFillColor(primary)
-          pdf.rect(0, 0, pageWidth, 6, 'F')
-
-          pdf.setTextColor(accent)
+          pdf.rect(0, 0, pageWidth, headerHeight, 'F')
+          // logo opcional com proporção correta
+          let logoW = 0
+          let logoH = 0
+          if (logoLoaded) {
+            const maxW = 260
+            const maxH = headerHeight - 28
+            const ratio = Math.min(maxW / logoLoaded.w, maxH / logoLoaded.h)
+            logoW = Math.round(logoLoaded.w * ratio)
+            logoH = Math.round(logoLoaded.h * ratio)
+            const logoY = Math.round((headerHeight - logoH) / 2)
+            try { pdf.addImage(logoLoaded.dataUrl, 'PNG', marginX, logoY, logoW, logoH) } catch {}
+          }
+          pdf.setTextColor('#ffffff')
           pdf.setFont('helvetica', 'bold')
-          pdf.setFontSize(14)
-          pdf.text('Relatório - Visão Geral', marginX, 26)
+          pdf.setFontSize(16)
+          const textLeft = marginX + (logoW > 0 ? (logoW + 16) : 0)
+          pdf.text('Relatório - Visão Geral', textLeft, 36)
           pdf.setFont('helvetica', 'normal')
           pdf.setFontSize(11)
-          pdf.text(`Período: ${periodLabel}`, marginX, 42)
-          pdf.text(`Departamento: ${deptLabel}`, marginX + 220, 42)
-          pdf.setDrawColor(subtle)
-          pdf.line(marginX, headerHeight - 10, pageWidth - marginX, headerHeight - 10)
+          pdf.text(`Período: ${periodLabel}`, textLeft, 54)
+          pdf.text(`Departamento: ${deptLabel}`, textLeft + 260, 54)
 
           // Conteúdo
           pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
 
-          // Footer minimalista
+          // Footer elegante
           pdf.setDrawColor(subtle)
-          pdf.line(marginX, pageHeight - footerHeight + 10, pageWidth - marginX, pageHeight - footerHeight + 10)
+          pdf.line(marginX, pageHeight - footerHeight, pageWidth - marginX, pageHeight - footerHeight)
           pdf.setFontSize(10)
-          pdf.setTextColor('#4b5563')
-          pdf.text(`Gerado em: ${generatedAt}`, marginX, pageHeight - 14)
-          pdf.text(`${i + 1}/${sections.length}`, pageWidth - marginX, pageHeight - 14, { align: 'right' as any })
+          pdf.setTextColor(accent)
+          // data/hora à esquerda
+          pdf.text(`Gerado em ${generatedAt}`, marginX, pageHeight - footerHeight + 22)
+          // página ao centro
+          pdf.text(`${i + 1} / ${sections.length}`, pageWidth / 2, pageHeight - footerHeight + 22, { align: 'center' as any })
+          // marca/assinatura à direita
+          pdf.setTextColor(primary)
+          pdf.text('Sistema de RH', pageWidth - marginX, pageHeight - footerHeight + 22, { align: 'right' as any })
         }
 
         pdf.save(`relatorio-overview-${selectedPeriod}.pdf`)
