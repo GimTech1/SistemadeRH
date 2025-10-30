@@ -736,7 +736,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800">
-                    {traffic.map((d: any, idx: number) => (
+                    {[...traffic].reverse().map((d: any, idx: number) => (
                       <tr key={idx} className="text-sm">
                         <td className="py-3 text-rich-black-900 font-medium">{new Date(d.date).toLocaleDateString('pt-BR')}</td>
                         <td className="py-3 text-oxford-blue-600">R$ {Number(d.spent).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
