@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   FileText,
@@ -37,7 +37,8 @@ import {
   PolarRadiusAxis,
   Radar,
   Area,
-  AreaChart,
+    AreaChart,
+    ReferenceLine,
 } from 'recharts'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,10 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData>({})
   const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([])
   const supabase = createClient()
+  const overviewTrendRef = useRef<HTMLDivElement | null>(null)
+  const currentViewRef = useRef<HTMLDivElement | null>(null)
+  const [hoverY, setHoverY] = useState<number | null>(null)
+  const [showAllTopPerformers, setShowAllTopPerformers] = useState(false)
 
   // Carregar departamentos na inicialização
   useEffect(() => {
@@ -90,6 +95,9 @@ export default function ReportsPage() {
           type: selectedReport,
           ...(selectedDepartment !== 'all' && { department_id: selectedDepartment })
         })
+        if (selectedReport === 'overview' && showAllTopPerformers) {
+          params.set('limit', 'all')
+        }
         
         const response = await fetch(`/api/reports?${params}`)
         const data = await response.json()
@@ -108,75 +116,81 @@ export default function ReportsPage() {
     }
     
     loadReportData()
-  }, [selectedPeriod, selectedDepartment, selectedReport])
+  }, [selectedPeriod, selectedDepartment, selectedReport, showAllTopPerformers])
 
-  // Dados padrão para fallback
-  const defaultPerformanceData = [
-    { month: 'Jan', vendas: 85, marketing: 88, ti: 82, rh: 90, financeiro: 87 },
-    { month: 'Fev', vendas: 87, marketing: 86, ti: 84, rh: 91, financeiro: 85 },
-    { month: 'Mar', vendas: 88, marketing: 89, ti: 85, rh: 89, financeiro: 88 },
-    { month: 'Abr', vendas: 86, marketing: 91, ti: 87, rh: 92, financeiro: 86 },
-    { month: 'Mai', vendas: 90, marketing: 90, ti: 88, rh: 91, financeiro: 89 },
-    { month: 'Jun', vendas: 92, marketing: 92, ti: 89, rh: 93, financeiro: 90 },
-  ]
+  // Usar somente dados reais vindos da API (sem mocks)
+  // Para a visão Overview, usar EXCLUSIVAMENTE a série temporal enviada pela API (performanceTrend)
+  const performanceTrend = (reportData as any).performanceTrend as Array<any> | undefined
+  const trendData = Array.isArray(performanceTrend) ? performanceTrend : []
+  // performanceData é utilizado nas demais visões (não-temporais)
+  const performanceData = reportData.performanceData || []
+  const chaData = reportData.chaData || []
+  const departmentDistribution = reportData.departmentDistribution || []
+  const radarData = reportData.radarData || []
+  const goalsProgress = reportData.goalsProgress || []
+  const topPerformers = reportData.topPerformers || []
 
-  const defaultChaData = [
-    { skill: 'Conhecimento', atual: 85, meta: 90, anterior: 80 },
-    { skill: 'Habilidade', atual: 88, meta: 85, anterior: 82 },
-    { skill: 'Atitude', atual: 90, meta: 88, anterior: 85 },
-  ]
-
-  const defaultDepartmentDistribution = [
-    { name: 'Comercial Securitizadora', value: 11, fill: '#3b82f6' },
-    { name: 'Marketing', value: 5, fill: '#8b5cf6' },
-    { name: 'Tecnologia', value: 5, fill: '#10b981' },
-    { name: 'Controladoria', value: 5, fill: '#f59e0b' },
-    { name: 'Financeiro', value: 0, fill: '#ef4444' },
-    { name: 'Engenharia', value: 2, fill: '#06b6d4' },
-    { name: 'Jurídico', value: 1, fill: '#84cc16' },
-    { name: 'Administrativo', value: 1, fill: '#f97316' },
-    { name: 'Limpeza', value: 1, fill: '#ec4899' },
-    { name: 'Comercial Incorporadora', value: 3, fill: '#6366f1' },
-  ]
-
-  const defaultRadarData = [
-    { subject: 'Liderança', A: 85, B: 90, fullMark: 100 },
-    { subject: 'Comunicação', A: 88, B: 85, fullMark: 100 },
-    { subject: 'Técnica', A: 92, B: 88, fullMark: 100 },
-    { subject: 'Trabalho em Equipe', A: 87, B: 92, fullMark: 100 },
-    { subject: 'Inovação', A: 83, B: 87, fullMark: 100 },
-    { subject: 'Resultados', A: 90, B: 89, fullMark: 100 },
-  ]
-
-  const defaultGoalsProgress = [
-    { category: 'Performance', total: 45, completed: 32 },
-    { category: 'Habilidade', total: 30, completed: 24 },
-    { category: 'Carreira', total: 25, completed: 18 },
-    { category: 'Pessoal', total: 20, completed: 12 },
-  ]
-
-  const defaultTopPerformers = [
-    { name: 'Juliana Lima', score: 9.5, department: 'Marketing', trend: 'up' },
-    { name: 'Lucas Martins', score: 9.4, department: 'TI', trend: 'up' },
-    { name: 'Beatriz Costa', score: 9.3, department: 'RH', trend: 'stable' },
-    { name: 'Carlos Mendes', score: 9.2, department: 'Vendas', trend: 'up' },
-    { name: 'Marina Souza', score: 9.1, department: 'TI', trend: 'down' },
-  ]
-
-  // Usar dados reais ou fallback
-  const performanceData = reportData.performanceData || defaultPerformanceData
-  const chaData = reportData.chaData || defaultChaData
-  const departmentDistribution = reportData.departmentDistribution || defaultDepartmentDistribution
-  const radarData = reportData.radarData || defaultRadarData
-  const goalsProgress = reportData.goalsProgress || defaultGoalsProgress
-  const topPerformers = reportData.topPerformers || defaultTopPerformers
-
-  const handleExport = (format: 'pdf' | 'excel') => {
-    setLoading(true)
-    setTimeout(() => {
-      toast.success(`Relatório exportado em ${format.toUpperCase()}!`)
+  const handleExport = async (format: 'pdf' | 'excel') => {
+    try {
+      setLoading(true)
+      if (format === 'pdf') {
+        const { default: html2canvas } = await import('html2canvas')
+        const { default: jsPDF } = await import('jspdf')
+        const target = currentViewRef.current || overviewTrendRef.current
+        if (!target) {
+          toast.error('Nada para exportar')
+          setLoading(false)
+          return
+        }
+        const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff' })
+        const imgData = canvas.toDataURL('image/png')
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+        const pageWidth = pdf.internal.pageSize.getWidth()
+        const pageHeight = pdf.internal.pageSize.getHeight()
+        const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height)
+        const imgWidth = canvas.width * ratio
+        const imgHeight = canvas.height * ratio
+        const x = (pageWidth - imgWidth) / 2
+        const y = (pageHeight - imgHeight) / 2
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+        pdf.save(`relatorio-${selectedReport}-${selectedPeriod}.pdf`)
+        toast.success('PDF gerado com sucesso')
+      } else {
+        // Exportar CSV simples (compatível com Excel)
+        const rows: Array<Record<string, any>> = []
+        if (selectedReport === 'overview') {
+          if (Array.isArray(performanceTrend)) rows.push(...performanceTrend)
+        } else if (selectedReport === 'performance' && Array.isArray(reportData.performanceData)) {
+          rows.push(...reportData.performanceData)
+        } else if (selectedReport === 'cha' && Array.isArray(reportData.chaData)) {
+          rows.push(...reportData.chaData)
+        } else if (selectedReport === 'goals' && Array.isArray(reportData.goalsProgress)) {
+          rows.push(...reportData.goalsProgress)
+        } else if (selectedReport === 'departments' && Array.isArray((reportData as any).departments)) {
+          rows.push(...((reportData as any).departments))
+        }
+        if (rows.length === 0) {
+          toast.error('Sem dados para exportar')
+          setLoading(false)
+          return
+        }
+        const headers = Array.from(new Set(rows.flatMap(r => Object.keys(r))))
+        const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n')
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `relatorio-${selectedReport}-${selectedPeriod}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('CSV exportado (abra no Excel)')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error('Falha ao exportar')
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   const reportTypes = [
@@ -248,7 +262,7 @@ export default function ReportsPage() {
            <select
              value={selectedPeriod}
              onChange={(e) => setSelectedPeriod(e.target.value)}
-             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8"
+             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8 min-w-[180px]"
            >
             <option value="week">Última Semana</option>
             <option value="month">Último Mês</option>
@@ -258,7 +272,8 @@ export default function ReportsPage() {
            <select
              value={selectedDepartment}
              onChange={(e) => setSelectedDepartment(e.target.value)}
-             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8"
+             className="custom-select px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500 appearance-none pr-8 min-w-[220px]"
+             disabled={loading}
            >
             <option value="all">Todos os Departamentos</option>
             {departments.map((dept) => (
@@ -278,27 +293,57 @@ export default function ReportsPage() {
       )}
 
       {selectedReport === 'overview' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" ref={currentViewRef}>
+          <div className="card p-6" ref={overviewTrendRef}>
+            <style jsx>{`
+              /* Esconde marcadores ativos (bolinhas) no hover do LineChart */
+              :global(.recharts-active-dot) { display: none; }
+            `}</style>
             <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Tendência de Performance</h3>
-            {performanceData.length > 0 ? (
+            {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={350}>
-                <AreaChart data={performanceData}>
-                  <defs>
-                    <linearGradient id="colorVendas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <LineChart 
+                  data={trendData}
+                  onMouseMove={(state: any) => {
+                    try {
+                      const payload = state?.activePayload || []
+                      const first = payload.find((p: any) => typeof p?.value === 'number')
+                      if (first && typeof first.value === 'number') {
+                        setHoverY(first.value)
+                      }
+                    } catch {}
+                  }}
+                  onMouseLeave={() => setHoverY(null)}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="month" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />
                   <Tooltip 
+                    cursor={false}
                     contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     itemStyle={{ color: '#1f2937' }}
                   />
-                  <Area type="monotone" dataKey="vendas" stroke="#3b82f6" fillOpacity={1} fill="url(#colorVendas)" />
-                </AreaChart>
+                  <Legend iconType="plainline" />
+                  {hoverY !== null && (
+                    <ReferenceLine y={hoverY} stroke="#3b82f6" strokeDasharray="0" strokeWidth={2} ifOverflow="extendDomain" />
+                  )}
+                  {(() => {
+                    const keys = Object.keys(trendData[0] || {}).filter(k => k !== 'month')
+                    const palette = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
+                    return keys.map((key, idx) => (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={palette[idx % palette.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={false}
+                        connectNulls
+                      />
+                    ))
+                  })()}
+                </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[350px] text-oxford-blue-600">
@@ -371,7 +416,18 @@ export default function ReportsPage() {
           </div>
 
           <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Top Performers</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-rich-black-900">Top Performers</h3>
+              {topPerformers.length > 0 && (
+                <button
+                  className="text-sm text-yinmn-blue-600 hover:underline disabled:opacity-50"
+                  onClick={() => setShowAllTopPerformers(prev => !prev)}
+                  disabled={loading}
+                >
+                  {showAllTopPerformers ? 'Ver menos' : 'Ver todos'}
+                </button>
+              )}
+            </div>
             {topPerformers.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -424,12 +480,23 @@ export default function ReportsPage() {
                     contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     itemStyle={{ color: '#1f2937' }}
                   />
-                  <Legend />
-                  <Line type="monotone" dataKey="vendas" stroke="#3b82f6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="marketing" stroke="#8b5cf6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="ti" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="rh" stroke="#f59e0b" strokeWidth={2} />
-                  <Line type="monotone" dataKey="financeiro" stroke="#ef4444" strokeWidth={2} />
+                  <Legend iconType="plainline" />
+                  {(() => {
+                    const keys = Object.keys(performanceData[0] || {}).filter(k => k !== 'month')
+                    const palette = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
+                    return keys.map((key, idx) => (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={palette[idx % palette.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={false}
+                        connectNulls
+                      />
+                    ))
+                  })()}
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -447,19 +514,19 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Análise CHA</h3>
             {chaData.length > 0 ? (
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chaData}>
+                <LineChart data={chaData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="skill" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" domain={[0, 100]} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     itemStyle={{ color: '#1f2937' }}
                   />
-                  <Legend />
-                  <Bar dataKey="anterior" fill="#6b7280" />
-                  <Bar dataKey="atual" fill="#3b82f6" />
-                  <Bar dataKey="meta" fill="#10b981" />
-                </BarChart>
+                  <Legend iconType="plainline" />
+                  <Line type="monotone" dataKey="anterior" stroke="#6b7280" strokeWidth={2} dot={false} activeDot={false} />
+                  <Line type="monotone" dataKey="atual" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={false} />
+                  <Line type="monotone" dataKey="meta" stroke="#10b981" strokeWidth={2} dot={false} activeDot={false} />
+                </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[350px] text-oxford-blue-600">
@@ -546,8 +613,40 @@ export default function ReportsPage() {
               </div>
             )}
           </div>
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Métricas por Departamento</h3>
+            {Array.isArray((reportData as any).departments) && (reportData as any).departments.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="text-left text-xs font-medium text-oxford-blue-600 uppercase tracking-wider">
+                    <tr className="border-b border-neutral-800">
+                      <th className="pb-3">Departamento</th>
+                      <th className="pb-3">Colaboradores Ativos</th>
+                      <th className="pb-3">Média de Score</th>
+                      <th className="pb-3">Total de Avaliações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800">
+                    {((reportData as any).departments as Array<any>).map((dept, idx) => (
+                      <tr key={dept.id || idx} className="text-sm">
+                        <td className="py-3 text-rich-black-900 font-medium">{dept.name}</td>
+                        <td className="py-3 text-oxford-blue-600">{dept.employeeCount}</td>
+                        <td className="py-3"><span className="text-yellow-500 font-semibold">{dept.avgScore}</span></td>
+                        <td className="py-3 text-oxford-blue-600">{dept.evaluationCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-oxford-blue-600">
+                Nenhuma métrica encontrada
+              </div>
+            )}
+          </div>
         </div>
       )}
+      <div className="h-10" />
     </div>
   )
 }
