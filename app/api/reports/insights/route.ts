@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!apiKey) return NextResponse.json({ error: 'OPENAI_API_KEY ausente' }, { status: 500 })
 
     const body = await request.json().catch(() => ({}))
-    const { period = 'month', departmentId, overviewSample } = body || {}
+    const { period = 'month', departmentId, overviewSample, type, traffic, totals } = body || {}
 
     const system = `Você é um analista sênior de RH e performance. Gere insights curtos, práticos e acionáveis.
     Regras:
@@ -25,7 +25,17 @@ export async function POST(request: NextRequest) {
         "risk": string
       }`
 
-    const userContent = {
+    const userContent = type === 'traffic' ? {
+      type: 'traffic',
+      period,
+      traffic: Array.isArray(traffic) ? traffic : [],
+      totals: totals || {},
+      // Regras específicas para insights de tráfego pago
+      kpis: {
+        description: 'Calcule taxas e eficiências como: custo por reunião agendada/realizada, taxa de agendamento (agendadas/ctt), taxa de realização (realizadas/agendadas), taxa de primeira oportunidade (1ªOp/ctt) e variações diárias.'
+      }
+    } : {
+      type: 'overview',
       period,
       departmentId: departmentId || 'all',
       data: overviewSample || {},
@@ -35,6 +45,7 @@ export async function POST(request: NextRequest) {
       { role: 'system', content: system },
       { role: 'user', content: `Analise o JSON a seguir e gere a saída EXATAMENTE no formato especificado (apenas JSON válido).
         Preferir 3 a 6 "insights" (cada um com title e detail curtos), 2 a 4 "recommendations" e um "risk".
+        Se type == 'traffic', inclua KPIs calculados quando relevante no detail (ex.: custo por reunião, taxas de conversão, tendências de gasto) e compare dias quando possível.
         INPUT_JSON:
         ${JSON.stringify(userContent)}
       ` }

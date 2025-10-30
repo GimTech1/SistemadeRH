@@ -59,7 +59,7 @@ interface ReportData {
 export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
-  const [selectedReport, setSelectedReport] = useState('overview')
+  const [selectedReport, setSelectedReport] = useState<string>('overview')
   const [trafficStart, setTrafficStart] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0,10) })
   const [trafficEnd, setTrafficEnd] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [loading, setLoading] = useState(false)
@@ -643,7 +643,7 @@ export default function ReportsPage() {
 
           {/* Insights gerados por IA */}
           <div className="card p-6 lg:col-span-2" ref={insightsRef}>
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Insights Powered by OpenAI</h3>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">{(selectedReport as string) === 'traffic' ? 'Insights de Tráfego Pago (IA)' : 'Insights de Performance - Powered by OpenAI'}</h3>
             {insightsLoading ? (
               <div className="text-oxford-blue-600">Gerando análise...</div>
             ) : insights ? (
@@ -751,6 +751,51 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-oxford-blue-600">Sem dados</div>
+            )}
+          </div>
+
+          {/* Insights de Tráfego Pago abaixo da tabela diária */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Insights de Tráfego Pago - Powered by OpenAI</h3>
+            {insightsLoading ? (
+              <div className="text-oxford-blue-600">Gerando análise...</div>
+            ) : insights ? (
+              <div className="space-y-4">
+                {Array.isArray(insights?.insights) && insights.insights.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Insights</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {insights.insights.map((it: any, idx: number) => (
+                        <li key={idx}>
+                          {it?.title ? (<><span className="font-semibold">{it.title}:</span> </>) : null}
+                          <span className="text-oxford-blue-700">{it?.detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(insights?.recommendations) && insights.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Recomendações Práticas</h4>
+                    <ol className="list-decimal pl-5 space-y-1">
+                      {insights.recommendations.map((rec: any, idx: number) => (
+                        <li key={idx} className="text-oxford-blue-700">{rec}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                {insights?.risk && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Alerta de Risco</h4>
+                    <p className="text-oxford-blue-700">{insights.risk}</p>
+                  </div>
+                )}
+                {!insights?.insights?.length && !insights?.recommendations?.length && !insights?.risk && (
+                  <p className="text-oxford-blue-600">Clique em "Gerar insights" para produzir a análise do período selecionado.</p>
+                )}
+              </div>
+            ) : (
+              <div className="text-oxford-blue-600">Clique em "Gerar insights" para produzir a análise do período selecionado.</div>
             )}
           </div>
         </div>
