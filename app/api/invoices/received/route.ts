@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
-    // Buscar notas fiscais: se for o novo ID, retorna todas as recebidas; senão, apenas as destinadas ao usuário
-    const baseQuery = supabase
+    // Buscar notas fiscais: preferir Service Role para evitar bloqueios de RLS
+    const queryClient = (adminSupabase as any) || (supabase as any)
+    const baseQuery = queryClient
       .from('invoice_files')
       .select(`
         *,
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
 
 
     // Se não encontrou notas com usuário normal, tentar com Service Role (bypass RLS)
+    // Com Service Role acima, fallback raramente será necessário; manter por segurança
     if ((!invoices || invoices.length === 0) && adminSupabase) {
       const { data: fallbackInvoices, error: fallbackError } = await adminSupabase
         .from('invoice_files')
