@@ -64,10 +64,16 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData>({})
   const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([])
   const supabase = createClient()
+  const reportContainerRef = useRef<HTMLDivElement | null>(null)
   const overviewTrendRef = useRef<HTMLDivElement | null>(null)
-  const currentViewRef = useRef<HTMLDivElement | null>(null)
+  const distributionRef = useRef<HTMLDivElement | null>(null)
+  const topRef = useRef<HTMLDivElement | null>(null)
+  const insightsRef = useRef<HTMLDivElement | null>(null)
   const [hoverY, setHoverY] = useState<number | null>(null)
   const [showAllTopPerformers, setShowAllTopPerformers] = useState(false)
+  const [insights, setInsights] = useState<any | null>(null)
+  const [insightsLoading, setInsightsLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Carregar departamentos na inicialização
   useEffect(() => {
@@ -132,28 +138,78 @@ export default function ReportsPage() {
 
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
-      setLoading(true)
+      if (format === 'pdf') setExporting(true)
       if (format === 'pdf') {
         const { default: html2canvas } = await import('html2canvas')
         const { default: jsPDF } = await import('jspdf')
-        const target = currentViewRef.current || overviewTrendRef.current
-        if (!target) {
+        let sections = [overviewTrendRef.current, distributionRef.current, topRef.current, insightsRef.current].filter(Boolean) as HTMLDivElement[]
+        if (sections.length === 0 && reportContainerRef.current) {
+          sections = [reportContainerRef.current]
+        }
+        if (sections.length === 0) {
           toast.error('Nada para exportar')
           setLoading(false)
           return
         }
-        const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff' })
-        const imgData = canvas.toDataURL('image/png')
+
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
-        const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height)
-        const imgWidth = canvas.width * ratio
-        const imgHeight = canvas.height * ratio
-        const x = (pageWidth - imgWidth) / 2
-        const y = (pageHeight - imgHeight) / 2
-        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
-        pdf.save(`relatorio-${selectedReport}-${selectedPeriod}.pdf`)
+        // Layout minimalista com cores do projeto
+        const marginX = 40
+        const headerHeight = 60
+        const footerHeight = 40
+        const primary = '#2b50aa' // aproximação yinmn-blue
+        const accent = '#1f2937'  // rich-black/oxford nuance
+        const subtle = 220        // linhas suaves (draw color - escala 0-255)
+
+        const generatedAt = new Date().toLocaleString()
+        const periodMap: Record<string, string> = { week: 'Última Semana', month: 'Último Mês', quarter: 'Último Trimestre', year: 'Último Ano' }
+        const periodLabel = periodMap[selectedPeriod] || selectedPeriod
+        const deptLabel = selectedDepartment === 'all' ? 'Todos os Departamentos' : (departments.find(d => d.id === selectedDepartment)?.name || selectedDepartment)
+
+        for (let i = 0; i < sections.length; i++) {
+          const sec = sections[i]
+          const canvas = await html2canvas(sec, { scale: 2, backgroundColor: '#ffffff' })
+          const imgData = canvas.toDataURL('image/png')
+          const availWidth = pageWidth - marginX * 2
+          const availHeight = pageHeight - headerHeight - footerHeight
+          const ratio = Math.min(availWidth / canvas.width, availHeight / canvas.height)
+          const imgWidth = canvas.width * ratio
+          const imgHeight = canvas.height * ratio
+          const x = marginX + (availWidth - imgWidth) / 2
+          const y = headerHeight + (availHeight - imgHeight) / 2
+          if (i > 0) pdf.addPage()
+          // Header
+          // barra sutil superior
+          pdf.setDrawColor(primary)
+          pdf.setFillColor(primary)
+          pdf.rect(0, 0, pageWidth, 6, 'F')
+
+          pdf.setTextColor(accent)
+          pdf.setFont('helvetica', 'bold')
+          pdf.setFontSize(14)
+          pdf.text('Relatório - Visão Geral', marginX, 26)
+          pdf.setFont('helvetica', 'normal')
+          pdf.setFontSize(11)
+          pdf.text(`Período: ${periodLabel}`, marginX, 42)
+          pdf.text(`Departamento: ${deptLabel}`, marginX + 220, 42)
+          pdf.setDrawColor(subtle)
+          pdf.line(marginX, headerHeight - 10, pageWidth - marginX, headerHeight - 10)
+
+          // Conteúdo
+          pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+
+          // Footer minimalista
+          pdf.setDrawColor(subtle)
+          pdf.line(marginX, pageHeight - footerHeight + 10, pageWidth - marginX, pageHeight - footerHeight + 10)
+          pdf.setFontSize(10)
+          pdf.setTextColor('#4b5563')
+          pdf.text(`Gerado em: ${generatedAt}`, marginX, pageHeight - 14)
+          pdf.text(`${i + 1}/${sections.length}`, pageWidth - marginX, pageHeight - 14, { align: 'right' as any })
+        }
+
+        pdf.save(`relatorio-overview-${selectedPeriod}.pdf`)
         toast.success('PDF gerado com sucesso')
       } else {
         // Exportar CSV simples (compatível com Excel)
@@ -189,30 +245,22 @@ export default function ReportsPage() {
       console.error(e)
       toast.error('Falha ao exportar')
     } finally {
-      setLoading(false)
+      setExporting(false)
     }
   }
-
-  const reportTypes = [
-    { id: 'overview', name: 'Visão Geral', icon: BarChart3 },
-    { id: 'performance', name: 'Performance', icon: TrendingUp },
-    { id: 'cha', name: 'Análise CHA', icon: Award },
-    { id: 'goals', name: 'Metas', icon: Target },
-    { id: 'departments', name: 'Departamentos', icon: Users },
-  ]
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-rich-black-900">Visualize métricas e gere relatórios detalhados - PAGINA EM DESENVOLVIMENTO</h1>
+          <h1 className="text-2xl font-semibold text-rich-black-900">Visualize métricas e gere relatórios detalhado</h1>
         </div>
         <div className="flex gap-2">
           <Button 
             onClick={() => handleExport('pdf')}
-            variant="secondary"
+            variant="primary"
             size="sm"
-            disabled={loading}
+            disabled={loading || exporting}
             className="flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
@@ -222,31 +270,53 @@ export default function ReportsPage() {
             onClick={() => handleExport('excel')}
             variant="primary"
             size="sm"
-            disabled={loading}
+            disabled={loading || exporting}
             className="flex items-center gap-2"
           >
             <FileSpreadsheet className="h-4 w-4" />
             Exportar Excel
           </Button>
+          <Button
+            onClick={async () => {
+              try {
+                setInsightsLoading(true)
+                setInsights(null)
+                const overviewSample = {
+                  performanceTrend: (reportData as any).performanceTrend || [],
+                  topPerformers: reportData.topPerformers || [],
+                  departmentDistribution: reportData.departmentDistribution || [],
+                  totals: {
+                    employees: reportData.totalEmployees,
+                    evaluations: reportData.totalEvaluations,
+                  }
+                }
+                const resp = await fetch('/api/reports/insights', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    period: selectedPeriod,
+                    departmentId: selectedDepartment !== 'all' ? selectedDepartment : undefined,
+                    overviewSample
+                  })
+                })
+                const data = await resp.json()
+                if (!resp.ok) throw new Error(data?.error || 'Falha ao gerar insights')
+                setInsights(data?.insights || null)
+              } catch (e: any) {
+                toast.error(e?.message || 'Falha ao gerar insights')
+              } finally {
+                setInsightsLoading(false)
+              }
+            }}
+            variant="outline"
+            size="sm"
+            disabled={loading || insightsLoading}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            {insightsLoading ? 'Gerando...' : 'Gerar insights'}
+          </Button>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {reportTypes.map((type) => {
-          const Icon = type.icon
-          return (
-            <Button
-              key={type.id}
-              onClick={() => setSelectedReport(type.id)}
-              variant={selectedReport === type.id ? 'primary' : 'outline'}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Icon className="h-4 w-4" />
-              {type.name}
-            </Button>
-          )
-        })}
       </div>
 
       <div className="card p-4">
@@ -293,7 +363,7 @@ export default function ReportsPage() {
       )}
 
       {selectedReport === 'overview' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" ref={currentViewRef}>
+        <div ref={reportContainerRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6" ref={overviewTrendRef}>
             <style jsx>{`
               /* Esconde marcadores ativos (bolinhas) no hover do LineChart */
@@ -352,7 +422,7 @@ export default function ReportsPage() {
             )}
           </div>
 
-          <div className="card p-6">
+          <div className="card p-6" ref={distributionRef}>
             <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Distribuição por Departamento</h3>
             {departmentDistribution.length > 0 ? (
               <ResponsiveContainer width="100%" height={350}>
@@ -415,7 +485,7 @@ export default function ReportsPage() {
             )}
           </div>
 
-          <div className="card p-6 lg:col-span-2">
+          <div className="card p-6 lg:col-span-2" ref={topRef}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-rich-black-900">Top Performers</h3>
               {topPerformers.length > 0 && (
@@ -463,189 +533,55 @@ export default function ReportsPage() {
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {selectedReport === 'performance' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Performance por Departamento</h3>
-            {performanceData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={450}>
-                <LineChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#1f2937' }}
-                  />
-                  <Legend iconType="plainline" />
-                  {(() => {
-                    const keys = Object.keys(performanceData[0] || {}).filter(k => k !== 'month')
-                    const palette = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
-                    return keys.map((key, idx) => (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={palette[idx % palette.length]}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={false}
-                        connectNulls
-                      />
-                    ))
-                  })()}
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[450px] text-oxford-blue-600">
-                Nenhum dado de performance disponível
+          {/* Insights gerados por IA */}
+          <div className="card p-6 lg:col-span-2" ref={insightsRef}>
+            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Insights Powered by OpenAI</h3>
+            {insightsLoading ? (
+              <div className="text-oxford-blue-600">Gerando análise...</div>
+            ) : insights ? (
+              <div className="space-y-4">
+                {Array.isArray(insights?.insights) && insights.insights.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Insights</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {insights.insights.map((it: any, idx: number) => (
+                        <li key={idx}>
+                          {it?.title ? (<><span className="font-semibold">{it.title}:</span> </>) : null}
+                          <span className="text-oxford-blue-700">{it?.detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(insights?.recommendations) && insights.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Recomendações Práticas</h4>
+                    <ol className="list-decimal pl-5 space-y-1">
+                      {insights.recommendations.map((rec: any, idx: number) => (
+                        <li key={idx} className="text-oxford-blue-700">{rec}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                {insights?.risk && (
+                  <div>
+                    <h4 className="font-semibold text-rich-black-900 mb-2">Alerta de Risco</h4>
+                    <p className="text-oxford-blue-700">{insights.risk}</p>
+                  </div>
+                )}
+                {!insights?.insights?.length && !insights?.recommendations?.length && !insights?.risk && (
+                  <p className="text-oxford-blue-600">Sem conteúdo.</p>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {selectedReport === 'cha' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Análise CHA</h3>
-            {chaData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={chaData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="skill" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#1f2937' }}
-                  />
-                  <Legend iconType="plainline" />
-                  <Line type="monotone" dataKey="anterior" stroke="#6b7280" strokeWidth={2} dot={false} activeDot={false} />
-                  <Line type="monotone" dataKey="atual" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={false} />
-                  <Line type="monotone" dataKey="meta" stroke="#10b981" strokeWidth={2} dot={false} activeDot={false} />
-                </LineChart>
-              </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[350px] text-oxford-blue-600">
-                Nenhum dado CHA disponível
-              </div>
-            )}
-          </div>
-
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Competências</h3>
-            {radarData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={350}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#374151" />
-                  <PolarAngleAxis dataKey="subject" stroke="#9ca3af" />
-                  <PolarRadiusAxis stroke="#374151" />
-                  <Radar name="Atual" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-                  <Radar name="Meta" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
-                  <Legend />
-                </RadarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[350px] text-oxford-blue-600">
-                Nenhum dado de competências disponível
-              </div>
+              <div className="text-oxford-blue-600">Clique em "Gerar insights" para produzir a análise contextual com base nos dados atuais.</div>
             )}
           </div>
         </div>
       )}
 
-      {selectedReport === 'goals' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Progresso de Metas</h3>
-            {goalsProgress.length > 0 ? (
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={goalsProgress}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="category" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#1f2937' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="completed" stackId="a" fill="#10b981" />
-                  <Bar dataKey="total" stackId="a" fill="#6b7280" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[350px] text-oxford-blue-600">
-                Nenhum dado de metas disponível
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {selectedReport === 'departments' && !loading && (
-        <div className="grid grid-cols-1 gap-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Análise Comparativa</h3>
-            {performanceData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={450}>
-                <BarChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#1f2937' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="vendas" fill="#3b82f6" />
-                  <Bar dataKey="marketing" fill="#8b5cf6" />
-                  <Bar dataKey="ti" fill="#10b981" />
-                  <Bar dataKey="rh" fill="#f59e0b" />
-                  <Bar dataKey="financeiro" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[450px] text-oxford-blue-600">
-                Nenhum dado de departamentos disponível
-              </div>
-            )}
-          </div>
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-rich-black-900 mb-4">Métricas por Departamento</h3>
-            {Array.isArray((reportData as any).departments) && (reportData as any).departments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="text-left text-xs font-medium text-oxford-blue-600 uppercase tracking-wider">
-                    <tr className="border-b border-neutral-800">
-                      <th className="pb-3">Departamento</th>
-                      <th className="pb-3">Colaboradores Ativos</th>
-                      <th className="pb-3">Média de Score</th>
-                      <th className="pb-3">Total de Avaliações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {((reportData as any).departments as Array<any>).map((dept, idx) => (
-                      <tr key={dept.id || idx} className="text-sm">
-                        <td className="py-3 text-rich-black-900 font-medium">{dept.name}</td>
-                        <td className="py-3 text-oxford-blue-600">{dept.employeeCount}</td>
-                        <td className="py-3"><span className="text-yellow-500 font-semibold">{dept.avgScore}</span></td>
-                        <td className="py-3 text-oxford-blue-600">{dept.evaluationCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-oxford-blue-600">
-                Nenhuma métrica encontrada
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Outras abas removidas: Performance, Análise CHA, Metas e Departamentos */}
       <div className="h-10" />
     </div>
   )
