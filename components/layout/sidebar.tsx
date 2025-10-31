@@ -72,6 +72,12 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
     '5e6734c0-491a-4355-87cb-cce6f36c0350',
   ]
 
+  // IDs que podem ver o atalho de Relatórios, vindos do .env (NEXT_PUBLIC)
+  const allowedReportsUserIds = (process.env.NEXT_PUBLIC_REPORTS_ALLOWED_IDS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+
   const isOpen = mobileOpen ?? internalOpen
   const setIsOpen = onMobileOpenChange ?? setInternalOpen
   const shouldExpand = !isCollapsed || (isHovered && typeof window !== 'undefined' && window.innerWidth >= 1024)
@@ -263,6 +269,10 @@ export function Sidebar({ userRole = 'employee', onCollapseChange, mobileOpen, o
       }) || false
     }
     
+    // Permitir acesso ao atalho de Relatórios para usuários do .env, independente do papel
+    if (item.href === '/reports') {
+      if (userId && allowedReportsUserIds.includes(userId)) return true
+    }
     if (!item.roles.includes(userRole)) return false
     if (item.href === '/meetings') {
       if (!userId) return false
