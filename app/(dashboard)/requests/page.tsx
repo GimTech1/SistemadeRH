@@ -78,24 +78,33 @@ export default function RequestsPage() {
           .eq('id', user.id)
           .single()
 
-        if (profileError || !profile) return
-
-        const role = (profile as any).role?.toLowerCase() || 'employee'
+        const role = profile && !profileError ? ((profile as any).role?.toLowerCase() || 'employee') : 'employee'
         setUserRole(role === 'admin' || role === 'administrador' ? 'admin' : 
                    role === 'gerente' || role === 'manager' ? 'gerente' : 'employee')
-        setUserDepartmentId((profile as any).department_id)
         
-        // Buscar informações do employee para obter o nome completo
+        // Buscar informações do employee para obter department_id e nome completo
+        // Muitos employees têm department_id apenas na tabela employees, não em profiles
         const { data: employee } = await supabase
           .from('employees')
-          .select('full_name')
+          .select('full_name, department')
           .eq('id', user.id)
           .single()
 
-        if (employee) {
-          setUserEmployeeName((employee as any).full_name || (profile as any).full_name || 'Colaborador')
+        // Priorizar department_id do employee, depois do profile
+        if (employee && (employee as any).department) {
+          setUserDepartmentId((employee as any).department)
+        } else if (profile && (profile as any).department_id) {
+          setUserDepartmentId((profile as any).department_id)
         } else {
+          setUserDepartmentId(null)
+        }
+
+        if (employee) {
+          setUserEmployeeName((employee as any).full_name || (profile as any)?.full_name || 'Colaborador')
+        } else if (profile) {
           setUserEmployeeName((profile as any).full_name || 'Colaborador')
+        } else {
+          setUserEmployeeName('Colaborador')
         }
       } catch (error) {
         console.error('Erro ao carregar informações do usuário:', error)
@@ -154,19 +163,44 @@ export default function RequestsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userId || !userDepartmentId || !title || !description || !urgency || !requestedToEmployeeId) {
-      toast.error('Preencha todos os campos obrigatórios')
+    
+    // Validação detalhada dos campos obrigatórios
+    if (!userId) {
+      toast.error('Erro: usuário não identificado. Por favor, faça logout e login novamente.')
+      return
+    }
+    if (!title || !title.trim()) {
+      toast.error('Preencha o título do pedido')
+      return
+    }
+    if (!description || !description.trim()) {
+      toast.error('Preencha a descrição do pedido')
+      return
+    }
+    if (!urgency) {
+      toast.error('Selecione a urgência do pedido')
+      return
+    }
+    if (!requestedToEmployeeId) {
+      toast.error('Selecione para quem é o pedido')
+      return
+    }
+    // Department_id pode ser null para alguns employees, então vamos usar um fallback
+    const departmentIdToUse = userDepartmentId || departments[0]?.id || null
+    
+    if (!departmentIdToUse) {
+      toast.error('Erro: não foi possível identificar o departamento. Entre em contato com o administrador.')
       return
     }
 
     try {
       setSubmitting(true)
-      const dept = departments.find(d => d.id === userDepartmentId)
+      const dept = departments.find(d => d.id === departmentIdToUse)
       const insert = await (supabase as any)
         .from('requests')
         .insert({
           employee_id: userId,
-          department_id: userDepartmentId,
+          department_id: departmentIdToUse,
           requested_to_employee_id: requestedToEmployeeId,
           description: `${title.trim()} - ${description.trim()}`,
           urgency,
@@ -185,7 +219,7 @@ export default function RequestsPage() {
         id: (insert.data as any).id,
         employeeId: userId,
         employeeName: userEmployeeName || 'Colaborador',
-        departmentId: userDepartmentId,
+        departmentId: departmentIdToUse,
         department: dept?.name || '—',
         requestedToEmployeeId: requestedToEmployeeId,
         requestedToEmployeeName: requestedToEmployee?.name || '—',
