@@ -16,6 +16,16 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+    // Usar Service Role para gravar mesmo com RLS habilitado (quando disponível)
+    let adminSupabase: any = null
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+
     const body = await request.json()
     const { date, spent, meetingsScheduled, meetingsHeld, motherContacts, firstOp } = body || {}
     if (!date) return NextResponse.json({ error: 'Campo "date" é obrigatório (YYYY-MM-DD)' }, { status: 400 })
@@ -29,7 +39,8 @@ export async function POST(request: NextRequest) {
       first_op: Number(firstOp || 0),
     }
 
-    const { error } = await supabase
+    const client = (adminSupabase as any) || (supabase as any)
+    const { error } = await client
       .from('paid_traffic_daily' as any)
       .upsert(payload as any, { onConflict: 'date' })
 

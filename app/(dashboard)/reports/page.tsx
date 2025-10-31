@@ -85,6 +85,15 @@ export default function ReportsPage() {
     spent: '', meetingsScheduled: '', meetingsHeld: '', motherContacts: '', firstOp: ''
   })
 
+  // Formata YYYY-MM-DD para DD/MM/YYYY sem criar Date (evita offset de timezone)
+  const formatYmdToBr = (value?: string) => {
+    if (!value || typeof value !== 'string') return ''
+    const parts = value.split('-')
+    if (parts.length !== 3) return value
+    const [y, m, d] = parts
+    return `${d}/${m}/${y}`
+  }
+
   // Carregar departamentos na inicialização
   useEffect(() => {
     const loadDepartments = async () => {
@@ -186,7 +195,7 @@ export default function ReportsPage() {
         const generatedAt = new Date().toLocaleString()
         const periodMap: Record<string, string> = { week: 'Última Semana', month: 'Último Mês', quarter: 'Último Trimestre', year: 'Último Ano' }
         const periodLabel = selectedReport === 'traffic'
-          ? `${new Date(trafficStart).toLocaleDateString('pt-BR')} a ${new Date(trafficEnd).toLocaleDateString('pt-BR')}`
+          ? `${formatYmdToBr(trafficStart)} a ${formatYmdToBr(trafficEnd)}`
           : (periodMap[selectedPeriod] || selectedPeriod)
         const deptLabel = selectedReport === 'traffic'
           ? 'Tráfego Pago'
@@ -738,7 +747,7 @@ export default function ReportsPage() {
                   <tbody className="divide-y divide-neutral-800">
                     {[...traffic].reverse().map((d: any, idx: number) => (
                       <tr key={idx} className="text-sm">
-                        <td className="py-3 text-rich-black-900 font-medium">{new Date(d.date).toLocaleDateString('pt-BR')}</td>
+                        <td className="py-3 text-rich-black-900 font-medium">{formatYmdToBr(d.date)}</td>
                         <td className="py-3 text-oxford-blue-600">R$ {Number(d.spent).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                         <td className="py-3 text-oxford-blue-600">{d.meetingsScheduled}</td>
                         <td className="py-3 text-oxford-blue-600">{d.meetingsHeld}</td>
