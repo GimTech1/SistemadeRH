@@ -5,6 +5,16 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     
+    // Preparar Service Role para consultas que não devem ser bloqueadas por RLS
+    let adminSupabase: any = null
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+    
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -59,7 +69,8 @@ export async function GET(request: NextRequest) {
           const endParam = searchParams.get('end')
           const s = startParam ? new Date(startParam) : startDate
           const e = endParam ? new Date(endParam) : endDate
-          return await getTrafficData(supabase, s, e)
+          const queryClient = (adminSupabase as any) || (supabase as any)
+          return await getTrafficData(queryClient, s, e)
         }
       default:
         return await getOverviewData(supabase, startDate, endDate, departmentId, limitParam)
