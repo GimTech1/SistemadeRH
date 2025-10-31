@@ -56,6 +56,12 @@ interface ReportData {
   departments?: Array<{ id: string; name: string; employeeCount: number; avgScore: number }>
 }
 
+// IDs permitidos para adicionar dados de Tráfego Pago vindos do .env (NEXT_PUBLIC)
+const allowedTrafficIds = (process.env.NEXT_PUBLIC_TRAFFIC_ALLOWED_IDS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
 export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
@@ -80,6 +86,8 @@ export default function ReportsPage() {
   const [insightsLoading, setInsightsLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [showTrafficModal, setShowTrafficModal] = useState(false)
+  const [refreshToken, setRefreshToken] = useState(0)
+  const [canAddTraffic, setCanAddTraffic] = useState(false)
   const [trafficForm, setTrafficForm] = useState({
     date: new Date().toISOString().slice(0,10),
     spent: '', meetingsScheduled: '', meetingsHeld: '', motherContacts: '', firstOp: ''
@@ -108,6 +116,20 @@ export default function ReportsPage() {
       }
     }
     loadDepartments()
+  }, [])
+
+  // Verificar permissão para adicionar dados de Tráfego Pago
+  useEffect(() => {
+    const checkPermission = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const allowed = user && allowedTrafficIds.includes(user.id)
+        setCanAddTraffic(Boolean(allowed))
+      } catch (e) {
+        setCanAddTraffic(false)
+      }
+    }
+    checkPermission()
   }, [])
 
   // Carregar dados do relatório quando os filtros mudarem
@@ -145,7 +167,7 @@ export default function ReportsPage() {
     }
     
     loadReportData()
-  }, [selectedPeriod, selectedDepartment, selectedReport, showAllTopPerformers, trafficStart, trafficEnd])
+  }, [selectedPeriod, selectedDepartment, selectedReport, showAllTopPerformers, trafficStart, trafficEnd, refreshToken])
 
   // Usar somente dados reais vindos da API (sem mocks)
   // Para a visão Overview, usar EXCLUSIVAMENTE a série temporal enviada pela API (performanceTrend)
@@ -457,15 +479,17 @@ export default function ReportsPage() {
               <input type="date" value={trafficStart} onChange={(e) => setTrafficStart(e.target.value)} className="px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500" />
               <span className="text-oxford-blue-600">até</span>
               <input type="date" value={trafficEnd} onChange={(e) => setTrafficEnd(e.target.value)} className="px-3 py-2 bg-white border border-platinum-300 rounded-lg text-rich-black-900 focus:ring-2 focus:ring-yinmn-blue-500 focus:border-yinmn-blue-500" />
-              <Button
-                onClick={() => setShowTrafficModal(true)}
-                variant="primary"
-                size="sm"
-                disabled={loading || exporting}
-                className="ml-auto"
-              >
-                + Adicionar dados
-              </Button>
+              {canAddTraffic && (
+                <Button
+                  onClick={() => setShowTrafficModal(true)}
+                  variant="primary"
+                  size="sm"
+                  disabled={loading || exporting}
+                  className="ml-auto"
+                >
+                  + Adicionar dados
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -862,8 +886,8 @@ export default function ReportsPage() {
                     if(!resp.ok){ throw new Error(data?.error || 'Falha ao salvar') }
                     toast.success('Dados salvos')
                     setShowTrafficModal(false)
-                    // refresh
-                    setTrafficEnd(prev=>prev)
+                    // Forçar recarregamento dos dados da aba selecionada
+                    setRefreshToken((n)=>n+1)
                   }catch(e:any){ toast.error(e?.message||'Erro ao salvar') }
                 }}
               >
